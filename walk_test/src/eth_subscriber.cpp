@@ -9,6 +9,7 @@
 #include "trajectory_planner/JntAngs.h"
 #include "trajectory_planner/Trajectory.h"
 #include <ctime>
+#include "trajectory_planner/Robot.h"
 
 using namespace std;
 
@@ -29,12 +30,22 @@ class WalkTest{
         walkService_ = n->advertiseService("walk_service", &WalkTest::walk, this);
         homeService_ = n->advertiseService("home_service", &WalkTest::home, this);
 
+        b = 0.049;
+        c = 0.35;
+        r1 = 0.36;
+        r0 = 0.047;
+        r30_inner << 0.035, 0.034, -0.002;
+        r30_outer << 0.035, -0.034, -0.002;
+
         qcInitialBool_ = true;
         int temp_ratio[12] = {100, 100, 50, 80, 100, 100, 50, 80, 120, 120, 120, 120};
         int temp_home_abs[12] = {122018, 135266, 135529, 15199, 125880, 129579, 140562, 131167, 126854, 16320, 138922, 141328};
-        int temp_abs_high[12] = {145354, 183778, 180841, 15199, 203256, 160491, 150225, 146143, 168562, 131334, 191978, 172752};
-        int temp_abs_low[12] = {108426, 119010, 89833, 131615, 71608, 102443, 119697, 82527, 71238, 16320, 61482, 111376};
-        int temp_motor_dir[12] = {1, -1, -1, -1, 1, 1, 1, -1, -1, 1, 1, 1};
+        int temp_abs_high[12] = {145354, 183778, 180841, 131615, 203256, 160491, 150225, 146143, 168562, 131334, 191978, 172752};
+        int temp_abs_low[12] = {108426, 119010, 89733, 15099, 71608, 102443, 119697, 82527, 71238, 16120, 61482, 111376};
+        int temp_abs2inc_dir[12] = {1, -1, -1, -1, -1, 1, 1, -1, -1, 1, 1, 1};
+        int temp_abs_dir[12] = {-1, -1, -1, 1, -1, -1, -1, -1, 1, 1, 1, -1};
+        int temp_motor_dir[12] = {1, 1, 1, -1, -1, 1, 1, 1, -1, 1, 1, -1};
+
         collision_ = false;
 
         for (int i=0; i<12; i++){
@@ -42,7 +53,9 @@ class WalkTest{
             homeAbs_[i] = temp_home_abs[i];
             absHigh_[i] = temp_abs_high[i];
             absLow_[i] = temp_abs_low[i];
-            motorDir_[i] = temp_motor_dir[i]; 
+            abs2incDir_[i] = temp_abs2inc_dir[i];
+            absDir_[i] = temp_abs_dir[i];
+            motorDir_[i] = temp_motor_dir[i];
         }
         
     }   
@@ -55,11 +68,11 @@ class WalkTest{
         while(abs(abs(absData_[jointID]) - dest) > 100){
             if (abs(absData_[jointID]) < 262144){
                 if (abs(absData_[jointID]) > dest){
-                    motorCommand_.data[jointID] -= motorDir_[jointID]*(4096*4*0.01);
+                    motorCommand_.data[jointID] -= abs2incDir_[jointID]*(4096*4*0.01);
                     cout << "!!!!!!!" << abs(absData_[jointID]) - dest << endl;
                 }
                 else{
-                    motorCommand_.data[jointID] += motorDir_[jointID]*(4096*4*0.01);
+                    motorCommand_.data[jointID] += abs2incDir_[jointID]*(4096*4*0.01);
                     cout << "@@@@@@" << abs(absData_[jointID]) - dest << endl;
 
                 }
@@ -86,9 +99,8 @@ class WalkTest{
         setPos(9, homeAbs_[9]);
         setPos(8, homeAbs_[8]);
         setPos(7, homeAbs_[7]);
-
-       
-     
+        qcInitialBool_ = true;
+        ros::spinOnce();
         return true;
     }
 
@@ -100,8 +112,6 @@ class WalkTest{
                 qcOffset_[i]=int(msg.position[i+1]);
                 motorCommand_.data.push_back(qcOffset_[i]);
                 //qcOffset_[i]=int(0);
-
-
             }
             qcInitialBool_=false;
             ROS_INFO("Offset=%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t\n",
@@ -113,45 +123,181 @@ class WalkTest{
         
     }
 
+    bool emptyCommand(){
+        ros::spinOnce();
+        ros::Rate rate_(100);
+        for(int i=0; i<32; i++)
+            motorCommand_.data[i] = incData_[i];
+        for(int i = 0; i < 1; i++){
+            motorCommand_.data[0] += 1;
+            motorDataPub_.publish(motorCommand_);
+            rate_.sleep();
+            motorCommand_.data[0] -= 1;
+            motorDataPub_.publish(motorCommand_);
+            rate_.sleep();
+        }
+
+        return true;
+    }
+
     bool sendCommand(walk_test::command::Request &req, walk_test::command::Response &res){
-        
-        ros::Rate rate_(200);
-        for (int i = 0; i < 100; i++){
-        motorCommand_.data[req.motor_id] += req.angle*4*4096;
-        motorDataPub_.publish(motorCommand_);
-        rate_.sleep();
+
+        ros::Rate rate_(10);
+        this->emptyCommand();
+        if(req.motor_id == 4){
+            
+            double theta_inner;
+            double theta_outer;
+            double cur_pitch = absDir_[4] * (absData_[4] - homeAbs_[4]) * 2 * M_PI / pow(2, 19);
+            double cur_roll = absDir_[5] * (absData_[5] - homeAbs_[5]) * 2 * M_PI / pow(2, 19);
+
+            double desired_pitch = cur_pitch + req.angle;
+            this->ankleMechanism(theta_inner, theta_outer, desired_pitch, cur_roll, false);
+            double inner_inc = motorDir_[5] * theta_inner * 4096 * 4 * 100 * 1.5 / 2 / M_PI + qcOffset_[5];
+            double outer_inc = motorDir_[4] * theta_outer * 4096 * 4 * 100 * 1.5 / 2 / M_PI + qcOffset_[4];
+
+            double inner_delta_inc = inner_inc - incData_[5];
+            double outer_delta_inc = outer_inc - incData_[4];
+            
+            motorCommand_.data[4] = incData_[4];
+            motorCommand_.data[5] = incData_[5];
+
+            for (int i = 0; i < 100; i++){
+                motorCommand_.data[4] += outer_delta_inc / 100;
+                motorCommand_.data[5] +=  inner_delta_inc / 100;
+                motorDataPub_.publish(motorCommand_);
+                ros::spinOnce();
+                rate_.sleep();
+            }
+        } else if(req.motor_id == 5){
+
+            double theta_inner;
+            double theta_outer;
+            double cur_pitch = absDir_[4] * (absData_[4] - homeAbs_[4]) * 2 * M_PI / pow(2, 19);
+            double cur_roll = absDir_[5] * (absData_[5] - homeAbs_[5]) * 2 * M_PI / pow(2, 19);
+
+            double desired_roll = cur_roll + req.angle;
+            this->ankleMechanism(theta_inner, theta_outer, cur_pitch, desired_roll, false);
+            double inner_inc = motorDir_[5] * theta_inner * 4096 * 4 * 100 * 1.5 / 2 / M_PI + qcOffset_[5];
+            double outer_inc = motorDir_[4] * theta_outer * 4096 * 4 * 100 * 1.5 / 2 / M_PI + qcOffset_[4];
+
+            double inner_delta_inc = inner_inc - incData_[5];
+            double outer_delta_inc = outer_inc - incData_[4];
+            
+            motorCommand_.data[4] = incData_[4];
+            motorCommand_.data[5] = incData_[5];
+
+            for (int i = 0; i < 100; i++){
+                motorCommand_.data[4] += outer_delta_inc / 100;
+                motorCommand_.data[5] +=  inner_delta_inc / 100;
+                motorDataPub_.publish(motorCommand_);
+                ros::spinOnce();
+                rate_.sleep();
+            }
+        } else if(req.motor_id == 10){
+
+            double theta_inner;
+            double theta_outer;
+            double cur_pitch = absDir_[10] * (absData_[10] - homeAbs_[10]) * 2 * M_PI / pow(2, 19);
+            double cur_roll = absDir_[11] * (absData_[11] - homeAbs_[11]) * 2 * M_PI / pow(2, 19);
+
+            double desired_pitch = cur_pitch + req.angle;
+            this->ankleMechanism(theta_inner, theta_outer, desired_pitch, cur_roll, true);
+            double inner_inc = motorDir_[11] * theta_inner * 4096 * 4 * 100 * 1.5 / 2 / M_PI + qcOffset_[11];
+            double outer_inc = motorDir_[10] * theta_outer * 4096 * 4 * 100 * 1.5 / 2 / M_PI + qcOffset_[10];
+
+            double inner_delta_inc = inner_inc - incData_[11];
+            double outer_delta_inc = outer_inc - incData_[10];
+            
+            motorCommand_.data[10] = incData_[10];
+            motorCommand_.data[11] = incData_[11];
+
+            for (int i = 0; i < 100; i++){
+                motorCommand_.data[10] += outer_delta_inc / 100;
+                motorCommand_.data[11] +=  inner_delta_inc / 100;
+                motorDataPub_.publish(motorCommand_);
+                ros::spinOnce();
+                rate_.sleep();
+            }
+        } else if(req.motor_id == 11){
+
+            double theta_inner;
+            double theta_outer;
+            double cur_pitch = absDir_[10] * (absData_[10] - homeAbs_[10]) * 2 * M_PI / pow(2, 19);
+            double cur_roll = absDir_[11] * (absData_[11] - homeAbs_[11]) * 2 * M_PI / pow(2, 19);
+
+            double desired_roll = cur_roll + req.angle;
+            this->ankleMechanism(theta_inner, theta_outer, cur_pitch, desired_roll, true);
+            double inner_inc = motorDir_[11] * theta_inner * 4096 * 4 * 100 * 1.5 / 2 / M_PI + qcOffset_[11];
+            double outer_inc = motorDir_[10] * theta_outer * 4096 * 4 * 100 * 1.5 / 2 / M_PI + qcOffset_[10];
+
+            double inner_delta_inc = inner_inc - incData_[11];
+            double outer_delta_inc = outer_inc - incData_[10];
+            
+            motorCommand_.data[10] = incData_[10];
+            motorCommand_.data[11] = incData_[11];
+
+            for (int i = 0; i < 100; i++){
+                motorCommand_.data[10] += outer_delta_inc / 100;
+                motorCommand_.data[11] +=  inner_delta_inc / 100;
+                motorDataPub_.publish(motorCommand_);
+                ros::spinOnce();
+                rate_.sleep();
+            }
+        } else if(req.motor_id == 0){
+            double theta;
+            this->yawMechanism(theta, req.angle, 0.03435, 0.088, false);
+            double yaw_inc =  motorDir_[0] * theta * 4096 * 4 * 100 / 2 / M_PI;
+            cout << theta << ": theta" << endl;
+            for (int i = 0; i < 100; i++){
+                motorCommand_.data[0] += yaw_inc / 100;
+                motorDataPub_.publish(motorCommand_);
+                ros::spinOnce();
+                rate_.sleep();
+            }
+        } else if(req.motor_id == 6){
+            double theta;
+            this->yawMechanism(theta, req.angle, 0.03435, 0.088, true);
+            double yaw_inc = motorDir_[6] * theta * 4096 * 4 * 100 / 2 / M_PI;
+            for (int i = 0; i < 100; i++){
+                motorCommand_.data[6] += yaw_inc / 100;
+                motorDataPub_.publish(motorCommand_);
+                ros::spinOnce();
+                rate_.sleep();
+            }           
+        } else{
+            double inc = motorDir_[req.motor_id] * req.angle * 4096 * 4 * 160 / 2 / M_PI;
+            for (int i = 0; i < 100; i++){
+                motorCommand_.data[req.motor_id] += inc / 100;
+                motorDataPub_.publish(motorCommand_);
+                ros::spinOnce();
+                rate_.sleep();
+            }           
         }
-        for (int i = 0; i < 32; i++){
-            cout << motorCommand_.data[i] << "\t";
-        }
-        //motorDataPub_.publish(motorCommand_);
-        cout << "----------------------"<<endl;
-        
     }
 
     void absReader(const sensor_msgs::JointState &msg){
         for(int i=0; i<32; i++){
             absData_[i] = msg.position[i+1];
             //Lower body collision detection
-            if(abs(absData_[i]) > 262144){
-                cout << "Invalid Abs Data, id: " << i << endl;
+            if(i < 12 && abs(absData_[i]) > 262144){
+                //cout << "Invalid Abs Data, id: " << i << endl;
                 continue;
             }
             if(i < 12 && (absData_[i] >= (absHigh_[i] - 100) || absData_[i] <= (absLow_[i] + 100))){
                 collision_ = true;
-                cout << "Error: Collision detected!!" << endl;
+                //cout << "Error: Collision detected!!, id: " << i << endl;
             }
         }
         //cout << "pitch" << absData_[1] << endl;
-        cout << "roll" << absData_[11] << endl;
-        cout << "pitch" << absData_[10] << endl;
+        //cout << "roll" << absData_[11] << endl;
+        //cout << "pitch" << absData_[10] << endl;
     }
 
     void incReader(const sensor_msgs::JointState &msg){
         for(int i=0; i<32; i++){
             incData_[i] = msg.position[i+1];
         }
-        //cout << incData_[0] << endl;
     }
 
     bool absPrinter(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res){
@@ -286,6 +432,52 @@ class WalkTest{
         }
     }
 
+    void ankleMechanism(double &theta_inner, double &theta_outer, double teta_p, double teta_r, bool is_left){
+        
+        Matrix3d pitch_rot;
+        pitch_rot<<cos(teta_p), 0, sin(teta_p),
+                    0, 1, 0,
+                    -sin(teta_p), 0, cos(teta_p);
+        Matrix3d roll_rot;
+        roll_rot<<1, 0, 0,
+                    0, cos(teta_r), -sin(teta_r),
+                    0, sin(teta_r), cos(teta_r); 
+        Matrix3d rot_mat = pitch_rot * roll_rot;
+        Vector3d r3_inner = rot_mat * r30_inner;
+        Vector3d r3_outer = rot_mat * r30_outer;
+        Vector3d r4_inner(0, -b, -c);
+        Vector3d r4_outer(0, b, -c);
+        Vector3d r2_inner = r3_inner + r4_inner;
+        Vector3d r2_outer = r3_outer + r4_outer;
+        Vector3d norm1(r2_inner(0),0,r2_inner(2));
+        Vector3d norm2(r2_outer(0),0,r2_outer(2));
+
+
+        if(is_left){
+            theta_inner = acos((pow(r2_outer.norm(),2) + pow(r0,2) -pow(r1,2)) / ((norm2.norm()*2*r0))) + atan2(r2_outer(0) , -r2_outer(2));
+            theta_outer = acos((pow(r2_inner.norm(),2) + pow(r0,2) -pow(r1,2)) / ((norm1.norm()*2*r0))) + atan2(r2_inner(0) , -r2_inner(2));
+        }else{
+            theta_inner = acos((pow(r2_inner.norm(),2) + pow(r0,2) -pow(r1,2)) / ((norm1.norm()*2*r0))) + atan2(r2_inner(0) , -r2_inner(2));
+            theta_outer = acos((pow(r2_outer.norm(),2) + pow(r0,2) -pow(r1,2)) / ((norm2.norm()*2*r0))) + atan2(r2_outer(0) , -r2_outer(2));
+        }
+        theta_inner = -(theta_inner - M_PI / 2 - 0.160405462422601);
+        theta_outer = -(theta_outer - M_PI / 2 - 0.160405462422601);
+    }
+
+    void yawMechanism(double &theta, double alpha1, double R, double B, bool is_left){
+        double theta_home, alpha_home;
+        if(is_left){
+            alpha_home = 0.0529;
+            theta_home = 0.1868;  
+        }else{
+            alpha_home = 0.0227;
+            theta_home = 0.0809;
+        }
+
+        double alpha = alpha_home + alpha1;
+        theta = atan2(tan(alpha) * (-(B * pow(tan(alpha), 0.2e1) - sqrt(-B * B * pow(tan(alpha), 0.2e1) + pow(tan(alpha), 0.2e1) * R * R + R * R)) / (pow(tan(alpha), 0.2e1) + 0.1e1) + B) / R, -(B * pow(tan(alpha), 0.2e1) - sqrt(-B * B * pow(tan(alpha), 0.2e1) + pow(tan(alpha), 0.2e1) * R * R + R * R)) / (pow(tan(alpha), 0.2e1) + 0.1e1) / R);
+        theta = theta_home - theta;
+    }
 private:
     ros::Publisher motorDataPub_;
     ros::Subscriber incSub_;
@@ -306,9 +498,22 @@ private:
     int homeAbs_[12];
     int absHigh_[12];
     int absLow_[12];
-    int motorDir_[12];
+    int abs2incDir_[12];
     int absDir_[12];
+    int motorDir_[12];
     bool collision_;
+
+    // Ankle Mechanism Parameters
+
+    float b;
+    float c;
+    float r1;
+    float r0;
+    Vector3d r30_inner;
+    Vector3d r30_outer;
+    MatrixXd r4_inner;
+    MatrixXd r4_outer;
+        
 };
 
 int main(int argc, char **argv){

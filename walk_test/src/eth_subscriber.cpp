@@ -1,6 +1,7 @@
 #include <ros/ros.h>
 #include <sensor_msgs/JointState.h>
 #include <std_msgs/Int32MultiArray.h>
+#include "geometry_msgs/Wrench.h"
 #include <vector>
 #include "walk_test/command.h"
 #include <math.h>
@@ -31,6 +32,9 @@ class WalkTest{
         absPrinter_ = n->advertiseService("print_absolute", &WalkTest::absPrinter, this);
         walkService_ = n->advertiseService("walk_service", &WalkTest::walk, this);
         homeService_ = n->advertiseService("home_service", &WalkTest::home, this);
+        dummyCommand_ = n->advertiseService("get_data", &WalkTest::dummyCallback, this);
+        lFT_ = n->subscribe("/surena/ft_l_state",100, &WalkTest::ftCallbackLeft, this);
+        rFT_ = n->subscribe("/surena/ft_r_state",100, &WalkTest::ftCallbackRight, this);
 
         b = 0.049;
         c = 0.35;
@@ -60,6 +64,14 @@ class WalkTest{
             motorDir_[i] = temp_motor_dir[i];
         }
         
+        leftFTFile_.open("/home/surena/SurenaV/log/left_ft.csv");
+        rightFTFile_.open("/home/surena/SurenaV/log/right_ft.csv");
+        if(!leftFTFile_.is_open())
+            ROS_DEBUG("left FT log file not open!");
+        if(!rightFTFile_.is_open())
+            ROS_DEBUG("right FT log file not open!");
+
+        FTOffsetPeriod_ = 60;
     }   
 
     bool setPos(int jointID, int dest){
@@ -67,16 +79,18 @@ class WalkTest{
         // the value of dest is on the basis of absolute incs.
         ros::Rate rate_(200);
         int temp_roll = jointID;
-
-        while(abs(abs(absData_[jointID]) - dest) > 100){
-            if (abs(absData_[jointID]) < 262144){
-                if (abs(absData_[jointID]) > dest){
-                    motorCommand_.data[jointID] -= abs2incDir_[jointID]*(4096*4*0.01);
-                    cout << "!!!!!!!" << abs(absData_[jointID]) - dest << endl;
-                }
-                else{
-                    motorCommand_.data[jointID] += abs2incDir_[jointID]*(4096*4*0.01);
-                    cout << "@@@@@@" << abs(absData_[jointID]) - dest << endl;
+        if(jointID == 1){
+            temp_roll = 0;   // For Fixing Right Hip Roll Problem
+        }
+        while(abs(abs(absData_[temp_roll]) - dest) > 100){
+            if (abs(absData_[temp_roll]) < 262144){
+                    if (abs(absData_[temp_roll]) > dest){
+                        motorCommand_.data[temp_roll] -= abs2incDir_[jointID]*(4096*4*0.01);
+                        //cout << "!!!!!!!" << abs(absData_[temp_roll]) - dest << endl;
+                    }
+                    else{
+                        motorCommand_.data[temp_roll] += abs2incDir_[jointID]*(4096*4*0.01);
+                        //cout << "@@@@@@" << abs(absData_[temp_roll]) - dest << endl;
 
                 }
             }
@@ -92,7 +106,7 @@ class WalkTest{
         //ankleHome(false);
         setPos(6, homeAbs_[6]);
         setPos(1, homeAbs_[1] + 20000);
-        setPos(0, homeAbs_[0]);
+        //setPos(0, homeAbs_[0]);
         setPos(7, homeAbs_[7] - 20000);
         ankleHome(false, homeAbs_[5], homeAbs_[4]);
         setPos(3, homeAbs_[3]);
@@ -124,6 +138,48 @@ class WalkTest{
         
         }
         
+    }
+
+
+    void ftCallbackLeft(const geometry_msgs::Wrench &msg){
+        leftFTFile_ << msg.force.x << "," << msg.force.y << "," << msg.force.z << endl;
+        if(recentLFT_.size() < FTOffsetPeriod_){
+            recentLFT_.push_back(Vector3d(msg.force.x, msg.force.y, msg.force.z));
+        }
+        else{
+            recentLFT_.erase (recentLFT_.begin());
+            recentLFT_.push_back(Vector3d(msg.force.x, msg.force.y, msg.force.z));
+        }
+        for (int i = 0; i < recentLFT_.size(); i++){
+            lFTOffset_ += recentLFT_[i];
+        }
+        lFTOffset_ = lFTOffset_ / recentLFT_.size();
+        //cout << "left ft offset: " << lFTOffset_ << endl;
+    }
+
+    void ftCallbackRight(const geometry_msgs::Wrench &msg){
+
+        rightFTFile_ << msg.force.x << "," << msg.force.y << "," << msg.force.z << endl;
+        rFTOffset_ = Vector3d::Zero();
+        if(recentRFT_.size() < FTOffsetPeriod_){
+            recentRFT_.push_back(Vector3d(msg.force.x, msg.force.y, msg.force.z));
+        }
+        else{
+            recentRFT_.erase (recentRFT_.begin());
+            recentRFT_.push_back(Vector3d(msg.force.x, msg.force.y, msg.force.z));
+        }
+        for (int i = 0; i < recentRFT_.size(); i++){
+            rFTOffset_ += recentRFT_[i];
+        }
+        rFTOffset_ = rFTOffset_ / recentRFT_.size();
+        //cout << "right ft offset: "<< rFTOffset_ << endl;
+    }
+
+    bool dummyCallback(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res){
+        for(int i = 0; i < 30 * 100; i ++){
+            emptyCommand();
+        }
+        return true;
     }
 
     bool emptyCommand(){
@@ -375,7 +431,7 @@ class WalkTest{
         trajectory_planner::GeneralTraj general_traj;
         general_traj.request.init_com_pos = {0, 0, 0.71};
         general_traj.request.init_com_orient = {0, 0, 0};
-        general_traj.request.final_com_pos = {0, 0, req.COM_height};
+        general_traj.request.final_com_pos = {0, 0, 0.68};
         general_traj.request.final_com_orient = {0, 0, 0};
 
         general_traj.request.init_lankle_pos = {0, 0.1, 0};
@@ -405,10 +461,12 @@ class WalkTest{
         traj_srv.request.ankle_height = req.ankle_height;
         traj_srv.request.theta = req.theta;
         trajectoryGenerator_.call(traj_srv);
-        if(traj_srv.response.result){
+        //if(traj_srv.response.result){
+           
+        if(true){
             
             int i = 0;
-            while(i < 1599){
+            while(i < 39){
                 
                 trajectory_planner::JntAngs jnt_srv;
                 jnt_srv.request.iter = i;
@@ -431,8 +489,9 @@ class WalkTest{
                             double outer_inc;
                             
                         case 0:
-                            this->yawMechanism(theta, jnt_srv.response.jnt_angs[j], 0.03435, 0.088, false);
-                            motorCommand_.data[j] =  motorDir_[j] * theta * 4096 * 4 * 100 / 2 / M_PI + qcOffset_[j];
+                            //this->yawMechanism(theta, jnt_srv.response.jnt_angs[j], 0.03435, 0.088, false);
+                            //motorCommand_.data[j] =  motorDir_[j] * theta * 4096 * 4 * 100 / 2 / M_PI + qcOffset_[j];
+                            motorCommand_.data[j] =  motorDir_[1] * jnt_srv.response.jnt_angs[1] * 4096 * 4 * 100 / 2 / M_PI + qcOffset_[j];
                             break;
                         case 6:
                             this->yawMechanism(theta, jnt_srv.response.jnt_angs[j], 0.03435, 0.088, true);
@@ -570,6 +629,8 @@ private:
     ros::Subscriber incSub_;
     ros::Subscriber offsetSub_;
     ros::Subscriber absSub_;
+    ros::Subscriber lFT_;
+    ros::Subscriber rFT_;
     ros::ServiceServer jointCommand_;
     ros::ServiceServer absPrinter_;
     ros::ServiceClient trajectoryGenerator_;
@@ -577,6 +638,7 @@ private:
     ros::ServiceClient jointAngles_;
     ros::ServiceServer walkService_;
     ros::ServiceServer homeService_;
+    ros::ServiceServer dummyCommand_;
     bool qcInitialBool_;
     int qcOffset_[32];
     std_msgs::Int32MultiArray motorCommand_;
@@ -601,7 +663,15 @@ private:
     Vector3d r30_outer;
     MatrixXd r4_inner;
     MatrixXd r4_outer;
-        
+    
+    ofstream leftFTFile_;
+    ofstream rightFTFile_;
+
+    Vector3d rFTOffset_;
+    Vector3d lFTOffset_;
+    vector<Vector3d> recentLFT_;
+    vector<Vector3d> recentRFT_;
+    int FTOffsetPeriod_;
 };
 
 int main(int argc, char **argv){

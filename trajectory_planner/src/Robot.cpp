@@ -27,9 +27,9 @@ Robot::Robot(ros::NodeHandle *nh, Controller robot_ctrl){
     
     // SURENA IV geometrical params
     
-    thigh_ = 0.37;  // SR1: 0.3535, Surena4: 0.37, Surena5: 0.36
-    shank_ = 0.36;     // SR1: 0.3, Surena4: 0.36, Surena5: 0.35
-    torso_ = 0.115;    // SR1: 0.09, Surena4: 0.115, Surena5: 0.1
+    thigh_ = 0.36;  // SR1: 0.3535, Surena4: 0.37, Surena5: 0.36
+    shank_ = 0.35;     // SR1: 0.3, Surena4: 0.36, Surena5: 0.35
+    torso_ = 0.1;    // SR1: 0.09, Surena4: 0.115, Surena5: 0.1
 
     mass_ = 48.3; // SR1: ?, Surena4: 48.3, Surena5: ?
 
@@ -545,6 +545,7 @@ bool Robot::trajGenCallback(trajectory_planner::Trajectory::Request  &req,
     //auto stop = high_resolution_clock::now();
     //auto duration = duration_cast<microseconds>(stop - start);
     //cout << duration.count()/1000000.0 << endl;
+    cout << "DCM trajectory Okay" << endl;
     return true;
 }
 
@@ -608,6 +609,7 @@ bool Robot::generalTrajCallback(trajectory_planner::GeneralTraj::Request  &req,
     realZMP_ = new Vector3d[dataSize_];
     rSoles_ = new Vector3d[dataSize_];
     lSoles_ = new Vector3d[dataSize_];
+    cout << "general trajectory Okay" << endl;
     return true;
 }
 

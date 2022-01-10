@@ -1,18 +1,5 @@
 #include "MinJerk.h"
 
-Vector3d* MinJerk::cubicInterpolate(Vector3d theta_ini, Vector3d theta_f, Vector3d theta_dot_ini, Vector3d theta_dot_f, double tf){
-    /* 
-        Returns Cubic Polynomial with the Given Boundary Conditions
-        https://www.tu-chemnitz.de/informatik//KI/edu/robotik/ws2016/lecture-tg%201.pdf
-    */
-    Vector3d* coefs = new Vector3d[4]; // a0, a1, a2, a3
-    coefs[0] = theta_ini;
-    coefs[1] = theta_dot_ini;
-    coefs[2] = 3/pow(tf,2) * (theta_f - theta_ini) - 1/tf * (2 * theta_dot_ini + theta_dot_f);
-    coefs[3] = -2/pow(tf,3) * (theta_f - theta_ini) + 1/pow(tf,2) * (theta_dot_ini + theta_dot_f);
-    return coefs;
-}
-
 Vector3d* MinJerk::poly6Interpolate(Vector3d x_ini, Vector3d x_mid, Vector3d x_f, double tf){
     /* 
         This function fits a 5th order (C2) Polynomial to given given inputs

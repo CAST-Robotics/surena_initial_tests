@@ -8,8 +8,9 @@
 #include <iostream>
 #include "trajectory_planner/JntAngs.h"
 #include "trajectory_planner/Trajectory.h"
+#include "trajectory_planner/GeneralTraj.h"
 #include <ctime>
-#include "trajectory_planner/Robot.h"
+#include "/home/surena/DynCont/SurenaVWalkTest/src/trajectory_planner/include/trajectory_planner/Robot.h"
 
 using namespace std;
 
@@ -25,6 +26,7 @@ class WalkTest{
         incSub_ = n->subscribe("/surena/inc_joint_state",100, &WalkTest::incReader, this);
         jointCommand_ = n->advertiseService("joint_command", &WalkTest::sendCommand, this);
         trajectoryGenerator_ = n->serviceClient<trajectory_planner::Trajectory>("/traj_gen");
+        generalTrajectory_  = n->serviceClient<trajectory_planner::GeneralTraj>("/general_traj");
         jointAngles_ = n->serviceClient<trajectory_planner::JntAngs>("/jnt_angs");
         absPrinter_ = n->advertiseService("print_absolute", &WalkTest::absPrinter, this);
         walkService_ = n->advertiseService("walk_service", &WalkTest::walk, this);
@@ -39,9 +41,9 @@ class WalkTest{
 
         qcInitialBool_ = true;
         int temp_ratio[12] = {100, 100, 50, 80, 100, 100, 50, 80, 120, 120, 120, 120};
-        int temp_home_abs[12] = {122018, 135266, 135529, 15199, 125880, 129579, 140562, 131167, 126854, 16320, 138922, 141328};
-        int temp_abs_high[12] = {145354, 183778, 180841, 131615, 203256, 160491, 150225, 146143, 168562, 131334, 191978, 172752};
-        int temp_abs_low[12] = {108426, 119010, 89733, 15099, 71608, 102443, 119697, 82527, 71238, 16120, 61482, 111376};
+        int temp_home_abs[12] = {122378, 136098, 136489, 12703, 130744, 130475, 140369, 131615, 123334, 20224, 133546, 140560};
+        int temp_abs_high[12] = {108426, 119010, 89733, 131615, 71608, 102443, 119697, 82527, 168562, 131334, 191978, 111376};
+        int temp_abs_low[12] = {145354, 183778, 180841, 12700, 203256, 160491, 150225, 146143, 71238, 20220, 61482, 172752};
         int temp_abs2inc_dir[12] = {1, -1, -1, -1, -1, 1, 1, -1, -1, 1, 1, 1};
         int temp_abs_dir[12] = {-1, -1, -1, 1, -1, -1, -1, -1, 1, 1, 1, -1};
         int temp_motor_dir[12] = {1, 1, 1, -1, -1, 1, 1, 1, -1, 1, 1, -1};
@@ -64,6 +66,7 @@ class WalkTest{
         // this function is used for changing the position of all joint except ankle joints.
         // the value of dest is on the basis of absolute incs.
         ros::Rate rate_(200);
+        int temp_roll = jointID;
 
         while(abs(abs(absData_[jointID]) - dest) > 100){
             if (abs(absData_[jointID]) < 262144){
@@ -114,10 +117,10 @@ class WalkTest{
                 //qcOffset_[i]=int(0);
             }
             qcInitialBool_=false;
-            ROS_INFO("Offset=%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t\n",
-                     qcOffset_[0],qcOffset_[1],qcOffset_[2],qcOffset_[3],qcOffset_[4],
-                    qcOffset_[5],qcOffset_[6],qcOffset_[7],qcOffset_[8],qcOffset_[9],
-                    qcOffset_[10],qcOffset_[11],qcOffset_[12],qcOffset_[13],qcOffset_[14],qcOffset_[15],qcOffset_[20],qcOffset_[21],qcOffset_[22],qcOffset_[23]);
+            //ROS_INFO("Offset=%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t\n",
+            //         qcOffset_[0],qcOffset_[1],qcOffset_[2],qcOffset_[3],qcOffset_[4],
+            //        qcOffset_[5],qcOffset_[6],qcOffset_[7],qcOffset_[8],qcOffset_[9],
+            //        qcOffset_[10],qcOffset_[11],qcOffset_[12],qcOffset_[13],qcOffset_[14],qcOffset_[15],qcOffset_[20],qcOffset_[21],qcOffset_[22],qcOffset_[23]);
         
         }
         
@@ -142,7 +145,7 @@ class WalkTest{
 
     bool sendCommand(walk_test::command::Request &req, walk_test::command::Response &res){
 
-        ros::Rate rate_(10);
+        ros::Rate rate_(200);
         this->emptyCommand();
         if(req.motor_id == 4){
             
@@ -266,9 +269,11 @@ class WalkTest{
                 rate_.sleep();
             }           
         } else{
-            double inc = motorDir_[req.motor_id] * req.angle * 4096 * 4 * 160 / 2 / M_PI;
-            for (int i = 0; i < 100; i++){
-                motorCommand_.data[req.motor_id] += inc / 100;
+            //double inc = motorDir_[req.motor_id] * req.angle * 4096 * 4 * 160 / 2 / M_PI;
+            double inc = motorDir_[req.motor_id] * req.angle;
+            for (int i = 0; i < int(abs(inc)) / 2000; i++){
+                //motorCommand_.data[req.motor_id] += inc / 100;
+                motorCommand_.data[req.motor_id] += sgn(inc) * 2000;
                 motorDataPub_.publish(motorCommand_);
                 ros::spinOnce();
                 rate_.sleep();
@@ -279,19 +284,17 @@ class WalkTest{
     void absReader(const sensor_msgs::JointState &msg){
         for(int i=0; i<32; i++){
             absData_[i] = msg.position[i+1];
+
             //Lower body collision detection
             if(i < 12 && abs(absData_[i]) > 262144){
                 //cout << "Invalid Abs Data, id: " << i << endl;
                 continue;
             }
-            if(i < 12 && (absData_[i] >= (absHigh_[i] - 100) || absData_[i] <= (absLow_[i] + 100))){
+            if(i < 12 && (absData_[i] >= ((absHigh_[i] - homeAbs_[i])*absDir_[i] - 100) || absData_[i] <= ((absLow_[i] - homeAbs_[i])*absDir_[i] + 100))){
                 collision_ = true;
                 //cout << "Error: Collision detected!!, id: " << i << endl;
             }
         }
-        //cout << "pitch" << absData_[1] << endl;
-        //cout << "roll" << absData_[11] << endl;
-        //cout << "pitch" << absData_[10] << endl;
     }
 
     void incReader(const sensor_msgs::JointState &msg){
@@ -364,61 +367,123 @@ class WalkTest{
 
     bool walk(trajectory_planner::Trajectory::Request  &req,
             trajectory_planner::Trajectory::Response &res){
-        ros::Rate rate_(200);
+        this->emptyCommand();
+           int rate = 20;
+        ros::Rate rate_(rate);
+
+        
+        trajectory_planner::GeneralTraj general_traj;
+        general_traj.request.init_com_pos = {0, 0, 0.71};
+        general_traj.request.init_com_orient = {0, 0, 0};
+        general_traj.request.final_com_pos = {0, 0, req.COM_height};
+        general_traj.request.final_com_orient = {0, 0, 0};
+
+        general_traj.request.init_lankle_pos = {0, 0.1, 0};
+        general_traj.request.init_lankle_orient = {0, 0, 0};
+        general_traj.request.final_lankle_pos = {0, 0.1, 0};
+        general_traj.request.final_lankle_orient = {0, 0, 0};
+
+        general_traj.request.init_rankle_pos = {0, -0.1, 0};
+        general_traj.request.init_rankle_orient = {0, 0, 0};
+        general_traj.request.final_rankle_pos = {0, -0.1, 0};
+        general_traj.request.final_rankle_orient = {0, 0, 0};
+
+        general_traj.request.time = 2;
+        general_traj.request.dt = 0.05;
+        generalTrajectory_.call(general_traj);
+
+
         trajectory_planner::Trajectory traj_srv;
         traj_srv.request.alpha = req.alpha;
         traj_srv.request.t_double_support = req.t_double_support;
         traj_srv.request.t_step = req.t_step;
+        traj_srv.request.step_width = req.step_width;
         traj_srv.request.COM_height = req.COM_height;
         traj_srv.request.step_length = req.step_length;
         traj_srv.request.step_count = req.step_count;
+        traj_srv.request.dt = 1.0 / rate;
         traj_srv.request.ankle_height = req.ankle_height;
+        traj_srv.request.theta = req.theta;
         trajectoryGenerator_.call(traj_srv);
-
         if(traj_srv.response.result){
-
-            for (int i = 0; i < 32; i++){
-                motorCommand_.data.push_back(qcOffset_[i]);
-            }
+            
             int i = 0;
-            while(i < 2000){
+            while(i < 1599){
                 
                 trajectory_planner::JntAngs jnt_srv;
                 jnt_srv.request.iter = i;
                 jointAngles_.call(jnt_srv);
-                int amani[] = {5, 4, 3, 2, 10, 11, 9, 8, 0, 1, 7, 6};
-                //cout << i << ", ";
+                cout << jnt_srv.response.jnt_angs[0] << ',' << jnt_srv.response.jnt_angs[1] << ','<< jnt_srv.response.jnt_angs[2] << ','
+                << jnt_srv.response.jnt_angs[3] << ','<< jnt_srv.response.jnt_angs[4] << ','<< jnt_srv.response.jnt_angs[5] << ','
+                << jnt_srv.response.jnt_angs[6] << ','<< jnt_srv.response.jnt_angs[7] << ','<< jnt_srv.response.jnt_angs[8] << ','
+                << jnt_srv.response.jnt_angs[9] << ','<< jnt_srv.response.jnt_angs[10] << ','<< jnt_srv.response.jnt_angs[11] << endl;
                 for(int j=0; j < 12; j++){
-                    int modification = +1;
-                    if (j == 1 || j == 6 || j == 3 || j == 8 || j == 11)
-                        modification = -1;
-                    
-                    motorCommand_.data[j] = jnt_srv.response.jnt_angs[amani[j]]/2/M_PI*2304*harmonicRatio_[j] * modification + qcOffset_[j];
-                    //cout << jnt_srv.response.jnt_angs[j] << ", ";
-                    
-                    //cout << jnt_srv.response.jnt_angs[j] << endl;
-                    /*if (i==0 && j == 0){
-                        motorCommand_.data[j] += -0.15/2/M_PI*2304*harmonicRatio_[j] * modification;
-                        time_t now = time(0);
-                        char* dt = ctime(&now);
-                        cout << "iteration = " << i << ", motor id = " << j << ", time = " << dt << endl;
-                    }else if (i==1 && j == 1)
-                    {
-                        motorCommand_.data[j] += -0.15/2/M_PI*2304*harmonicRatio_[j] * modification;
-                        time_t now = time(0);
-                        char* dt = ctime(&now);
-                        cout << "iteration = " << i << ", motor id = " << j << ", time = " << dt << endl;
-                    }else if (i==2 && j == 2)
-                    {
-                        motorCommand_.data[j] += 0.15/2/M_PI*2304*harmonicRatio_[j] * modification;
-                        time_t now = time(0);
-                        char* dt = ctime(&now);
-                        cout << "iteration = " << i << ", motor id = " << j << ", time = " << dt << endl;
-                    }*/
-                        
-                }
-                //cout << endl;    
+                    double dif = 0;
+                    if(this->checkAngle(j, jnt_srv.response.jnt_angs[j], dif)){
+                        switch (j)
+                        {
+                            double theta;
+                            double theta_inner;
+                            double theta_outer;
+                            double desired_pitch;
+                            double desired_roll;
+                            double inner_inc;
+                            double outer_inc;
+                            
+                        case 0:
+                            this->yawMechanism(theta, jnt_srv.response.jnt_angs[j], 0.03435, 0.088, false);
+                            motorCommand_.data[j] =  motorDir_[j] * theta * 4096 * 4 * 100 / 2 / M_PI + qcOffset_[j];
+                            break;
+                        case 6:
+                            this->yawMechanism(theta, jnt_srv.response.jnt_angs[j], 0.03435, 0.088, true);
+                            motorCommand_.data[j] = motorDir_[j] * theta * 4096 * 4 * 100 / 2 / M_PI + qcOffset_[j];
+                            break;
+                        case 4:
+                            desired_roll = jnt_srv.response.jnt_angs[5];
+                            desired_pitch = jnt_srv.response.jnt_angs[4];
+                            this->ankleMechanism(theta_inner, theta_outer, desired_pitch, desired_roll, false);
+                            inner_inc = motorDir_[5] * theta_inner * 4096 * 4 * 100 * 1.5 / 2 / M_PI + qcOffset_[5];
+                            outer_inc = motorDir_[4] * theta_outer * 4096 * 4 * 100 * 1.5 / 2 / M_PI + qcOffset_[4];                            
+                            motorCommand_.data[4] = outer_inc;
+                            motorCommand_.data[5] = inner_inc;
+                            break;
+                        case 5:
+                            desired_roll = jnt_srv.response.jnt_angs[5];
+                            desired_pitch = jnt_srv.response.jnt_angs[4];
+                            this->ankleMechanism(theta_inner, theta_outer, desired_pitch, desired_roll, false);
+                            inner_inc = motorDir_[5] * theta_inner * 4096 * 4 * 100 * 1.5 / 2 / M_PI + qcOffset_[5];
+                            outer_inc = motorDir_[4] * theta_outer * 4096 * 4 * 100 * 1.5 / 2 / M_PI + qcOffset_[4];                            
+                            motorCommand_.data[4] = outer_inc;
+                            motorCommand_.data[5] = inner_inc;
+                            break;
+                        case 10:
+                            desired_roll = jnt_srv.response.jnt_angs[11];
+                            desired_pitch = jnt_srv.response.jnt_angs[10];
+                            this->ankleMechanism(theta_inner, theta_outer, desired_pitch, desired_roll, true);
+                            inner_inc = motorDir_[11] * theta_inner * 4096 * 4 * 100 * 1.5 / 2 / M_PI + qcOffset_[11];
+                            outer_inc = motorDir_[10] * theta_outer * 4096 * 4 * 100 * 1.5 / 2 / M_PI + qcOffset_[10];                            
+                            motorCommand_.data[10] = outer_inc;
+                            motorCommand_.data[11] = inner_inc;
+                            break;
+                        case 11:
+                            desired_roll = jnt_srv.response.jnt_angs[11];
+                            desired_pitch = jnt_srv.response.jnt_angs[10];
+                            this->ankleMechanism(theta_inner, theta_outer, desired_pitch, desired_roll, true);
+                            inner_inc = motorDir_[11] * theta_inner * 4096 * 4 * 100 * 1.5 / 2 / M_PI + qcOffset_[11];
+                            outer_inc = motorDir_[10] * theta_outer * 4096 * 4 * 100 * 1.5 / 2 / M_PI + qcOffset_[10];                            
+                            motorCommand_.data[10] = outer_inc;
+                            motorCommand_.data[11] = inner_inc;
+                            break;
+                        default:
+                            motorCommand_.data[j] = motorDir_[j] * jnt_srv.response.jnt_angs[j] * 4096 * 4 * 160 / 2 / M_PI + qcOffset_[j];
+                            break;
+                        }
+                    }else{
+                        cout<< "joint " << j << " out of workspace in iteration "<< i << ", angle difference: " << dif << endl ;
+                    }
+                }    
                 motorDataPub_.publish(motorCommand_);
+                ros::spinOnce();
                 rate_.sleep();
                 i++;
             }
@@ -430,6 +495,27 @@ class WalkTest{
             res.result = false;
             return false;
         }
+    }
+
+    int sgn(double v){
+        return ((v < 0) ? -1 : (v > 0));
+    }
+
+    double abs2rad(int abs){
+        double angle = abs/pow(2, 19)*2*M_PI;
+        return angle;
+    }
+
+    bool checkAngle(int joint_ID, double angle, double &ang_dif){
+        if (angle >= abs2rad(absHigh_[joint_ID] - homeAbs_[joint_ID])*absDir_[joint_ID]){
+            ang_dif = angle;
+
+            return false;
+        }else if(angle <= abs2rad(absLow_[joint_ID] - homeAbs_[joint_ID])*absDir_[joint_ID]){
+            ang_dif = angle;
+            return false;
+        }else
+            return true; 
     }
 
     void ankleMechanism(double &theta_inner, double &theta_outer, double teta_p, double teta_r, bool is_left){
@@ -478,6 +564,7 @@ class WalkTest{
         theta = atan2(tan(alpha) * (-(B * pow(tan(alpha), 0.2e1) - sqrt(-B * B * pow(tan(alpha), 0.2e1) + pow(tan(alpha), 0.2e1) * R * R + R * R)) / (pow(tan(alpha), 0.2e1) + 0.1e1) + B) / R, -(B * pow(tan(alpha), 0.2e1) - sqrt(-B * B * pow(tan(alpha), 0.2e1) + pow(tan(alpha), 0.2e1) * R * R + R * R)) / (pow(tan(alpha), 0.2e1) + 0.1e1) / R);
         theta = theta_home - theta;
     }
+
 private:
     ros::Publisher motorDataPub_;
     ros::Subscriber incSub_;
@@ -486,6 +573,7 @@ private:
     ros::ServiceServer jointCommand_;
     ros::ServiceServer absPrinter_;
     ros::ServiceClient trajectoryGenerator_;
+    ros::ServiceClient generalTrajectory_ ;
     ros::ServiceClient jointAngles_;
     ros::ServiceServer walkService_;
     ros::ServiceServer homeService_;

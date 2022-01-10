@@ -11,6 +11,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  std_srvs
   message_generation
 )
 
@@ -59,6 +60,7 @@ add_service_files(
   FILES
   JntAngs.srv
   Trajectory.srv
+  GeneralTraj.srv
 )
 
 ## Generate actions in the 'action' folder
@@ -72,6 +74,7 @@ add_service_files(
 generate_messages(
   DEPENDENCIES
   std_msgs
+  std_srvs
 )
 
 ################################################
@@ -104,7 +107,7 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-INCLUDE_DIRS include
+#  INCLUDE_DIRS include
 #  LIBRARIES trajectory_planner
 #  CATKIN_DEPENDS roscpp rospy std_msgs
 #  DEPENDS system_lib

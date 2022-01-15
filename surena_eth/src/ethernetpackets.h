@@ -59,7 +59,7 @@ class EthernetReceivedPacketType
 public:
    unsigned char Header[4];
    CanPacketType MotorData[16];
-   uint16_t FTsensor[12];
+float FTsensor[8];
 IMUReceivedPacketType IMU;
 };
 #pragma pack(pop)

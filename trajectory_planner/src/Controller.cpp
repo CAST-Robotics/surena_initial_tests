@@ -31,9 +31,9 @@ Vector3d Controller::comController(Vector3d xCOMRef, Vector3d xDotCOMRef, Vector
 }
 
 double Controller::footLenController(double delta_fz_d, double delta_fz, double kp, double kr){
-    double deltaZ_dot = kp * (delta_fz_d - delta_fz);
+    double deltaZ_dot = kp * (delta_fz_d - delta_fz) - kr*deltaZ_;
     deltaZ_ += deltaZ_dot * dt_;
-    return deltaZ_dot;
+    return deltaZ_;
 }
 
 void Controller::setDt(double dt){

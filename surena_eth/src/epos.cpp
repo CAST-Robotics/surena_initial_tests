@@ -645,47 +645,80 @@ inline bool Epos::IsValidRunPacket(QByteArray packet)
 //========================================================================
 inline void Epos::GetFTSensorDataFromPacket(EthernetReceivedPacketType*packet)
 {
-    ForceTorqSensorLeft.force.x=packet->FTsensor[0];
-    ForceTorqSensorLeft.force.y=packet->FTsensor[1];
-    ForceTorqSensorLeft.force.z=packet->FTsensor[2];
-    ForceTorqSensorLeft.torque.x=packet->FTsensor[3];
-    ForceTorqSensorLeft.torque.y=packet->FTsensor[4];
-    ForceTorqSensorLeft.torque.z=packet->FTsensor[5];
+     //21201145
+     float calibrationMatrix[3][4]=
+ {
+    {-1123.0445	,-1033.6627,	-1135.5674,	-1010.5035},
+     {29.848	,-0.19658	,-26.7485	,-0.49423},
+     { -1.0049	,-26.9313,	-1.0898	,28.8956}
 
-    ForceTorqSensorRight.force.x=packet->FTsensor[6];
-    ForceTorqSensorRight.force.y=packet->FTsensor[7];
-    ForceTorqSensorRight.force.z=packet->FTsensor[8];
-    ForceTorqSensorRight.torque.x=packet->FTsensor[9];
-    ForceTorqSensorRight.torque.y=packet->FTsensor[10];
-    ForceTorqSensorRight.torque.z=packet->FTsensor[11];
+ };
+ //21201144
+
+      float calibrationMatrix2[3][4]=
+ {
+    {-1214.0242,-1015.2706,	-1232.727,	-1009.9608},
+{28.3086	,-0.39355	-27.4125	-0.62844},
+{-0.14038,	-28.0865,	-0.35422,	28.0305}
+
+ };
+    float f1=packet->FTsensor[0]*calibrationMatrix[0][0]+packet->FTsensor[1]*calibrationMatrix[0][1]+packet->FTsensor[2]*calibrationMatrix[0][2]+packet->FTsensor[3]*calibrationMatrix[0][3];
+    float f2=packet->FTsensor[0]*calibrationMatrix[1][0]+packet->FTsensor[1]*calibrationMatrix[1][1]+packet->FTsensor[2]*calibrationMatrix[1][2]+packet->FTsensor[3]*calibrationMatrix[1][3];
+    float f3=packet->FTsensor[0]*calibrationMatrix[2][0]+packet->FTsensor[1]*calibrationMatrix[2][1]+packet->FTsensor[2]*calibrationMatrix[2][2]+packet->FTsensor[3]*calibrationMatrix[2][3];
+
+    float f4=packet->FTsensor[4]*calibrationMatrix2[0][0]+packet->FTsensor[5]*calibrationMatrix2[0][1]+packet->FTsensor[6]*calibrationMatrix2[0][2]+packet->FTsensor[7]*calibrationMatrix2[0][3];
+    float f5=packet->FTsensor[4]*calibrationMatrix2[1][0]+packet->FTsensor[5]*calibrationMatrix2[1][1]+packet->FTsensor[6]*calibrationMatrix2[1][2]+packet->FTsensor[7]*calibrationMatrix2[1][3];
+    float f6=packet->FTsensor[4]*calibrationMatrix2[2][0]+packet->FTsensor[5]*calibrationMatrix2[2][1]+packet->FTsensor[6]*calibrationMatrix2[2][2]+packet->FTsensor[7]*calibrationMatrix2[2][3];
+
+    ForceTorqSensorLeft.force.x=f1;
+    ForceTorqSensorLeft.force.y=f2;
+    ForceTorqSensorLeft.force.z=f3;
+
+
+
+
+   ForceTorqSensorRight.force.x=f4;
+   ForceTorqSensorRight.force.y=f5;
+   ForceTorqSensorRight.force.z=f6;
+   
+    // ForceTorqSensorLeft.torque.x=packet->FTsensor[3];
+    // ForceTorqSensorLeft.torque.y=packet->FTsensor[4];
+    // ForceTorqSensorLeft.torque.z=packet->FTsensor[5];
+
+    // ForceTorqSensorRight.force.x=packet->FTsensor[6];
+    // ForceTorqSensorRight.force.y=packet->FTsensor[7];
+    // ForceTorqSensorRight.force.z=packet->FTsensor[8];
+    // ForceTorqSensorRight.torque.x=packet->FTsensor[9];
+    // ForceTorqSensorRight.torque.y=packet->FTsensor[10];
+    // ForceTorqSensorRight.torque.z=packet->FTsensor[11];
     //5000 * (? / (((double)65535) * (gainFTnow) * (sensitivityFTnow) * (ExFTnow)));
-    ForceTorqSensorRight.force.x -=offsetFTRight[0];
-    ForceTorqSensorRight.force.y -=offsetFTRight[1];
-    ForceTorqSensorRight.force.z -=offsetFTRight[2];
-    ForceTorqSensorRight.torque.x-=offsetFTRight[3];
-    ForceTorqSensorRight.torque.y-=offsetFTRight[4];
-    ForceTorqSensorRight.torque.z-=offsetFTRight[5];
+    // ForceTorqSensorRight.force.x -=offsetFTRight[0];
+    // ForceTorqSensorRight.force.y -=offsetFTRight[1];
+    // ForceTorqSensorRight.force.z -=offsetFTRight[2];
+    // ForceTorqSensorRight.torque.x-=offsetFTRight[3];
+    // ForceTorqSensorRight.torque.y-=offsetFTRight[4];
+    // ForceTorqSensorRight.torque.z-=offsetFTRight[5];
 
-    ForceTorqSensorLeft.force.x -=offsetFTLeft[0];
-    ForceTorqSensorLeft.force.y -=offsetFTLeft[1];
-    ForceTorqSensorLeft.force.z -=offsetFTLeft[2];
-    ForceTorqSensorLeft.torque.x-=offsetFTLeft[3];
-    ForceTorqSensorLeft.torque.y-=offsetFTLeft[4];
-    ForceTorqSensorLeft.torque.z-=offsetFTLeft[5];
+    // ForceTorqSensorLeft.force.x -=offsetFTLeft[0];
+    // ForceTorqSensorLeft.force.y -=offsetFTLeft[1];
+    // ForceTorqSensorLeft.force.z -=offsetFTLeft[2];
+    // ForceTorqSensorLeft.torque.x-=offsetFTLeft[3];
+    // ForceTorqSensorLeft.torque.y-=offsetFTLeft[4];
+    // ForceTorqSensorLeft.torque.z-=offsetFTLeft[5];
 
-    ForceTorqSensorRight.force.x/=(65535*gainFTRight[0]*sensitivityFTRight[0]*ExFTRight[0])/5000;
-    ForceTorqSensorRight.force.y/=(65535*gainFTRight[1]*sensitivityFTRight[1]*ExFTRight[1])/5000;
-    ForceTorqSensorRight.force.z/=(65535*gainFTRight[2]*sensitivityFTRight[2]*ExFTRight[2])/5000;
-    ForceTorqSensorRight.torque.x/=(65535*gainFTRight[3]*sensitivityFTRight[3]*ExFTRight[3])/5000;
-    ForceTorqSensorRight.torque.y/=(65535*gainFTRight[4]*sensitivityFTRight[4]*ExFTRight[4])/5000;
-    ForceTorqSensorRight.torque.z/=(65535*gainFTRight[5]*sensitivityFTRight[5]*ExFTRight[5])/5000;
+    // ForceTorqSensorRight.force.x/=(65535*gainFTRight[0]*sensitivityFTRight[0]*ExFTRight[0])/5000;
+    // ForceTorqSensorRight.force.y/=(65535*gainFTRight[1]*sensitivityFTRight[1]*ExFTRight[1])/5000;
+    // ForceTorqSensorRight.force.z/=(65535*gainFTRight[2]*sensitivityFTRight[2]*ExFTRight[2])/5000;
+    // ForceTorqSensorRight.torque.x/=(65535*gainFTRight[3]*sensitivityFTRight[3]*ExFTRight[3])/5000;
+    // ForceTorqSensorRight.torque.y/=(65535*gainFTRight[4]*sensitivityFTRight[4]*ExFTRight[4])/5000;
+    // ForceTorqSensorRight.torque.z/=(65535*gainFTRight[5]*sensitivityFTRight[5]*ExFTRight[5])/5000;
 
-    ForceTorqSensorLeft.force.x/=(65535*gainFTLeft[0]*sensitivityFTLeft[0]*ExFTLeft[0])/5000;
-    ForceTorqSensorLeft.force.y/=(65535*gainFTLeft[1]*sensitivityFTLeft[1]*ExFTLeft[1])/5000;
-    ForceTorqSensorLeft.force.z/=(65535*gainFTLeft[2]*sensitivityFTLeft[2]*ExFTLeft[2])/5000;
-    ForceTorqSensorLeft.torque.x/=(65535*gainFTLeft[3]*sensitivityFTLeft[3]*ExFTLeft[3])/5000;
-    ForceTorqSensorLeft.torque.y/=(65535*gainFTLeft[4]*sensitivityFTLeft[4]*ExFTLeft[4])/5000;
-    ForceTorqSensorLeft.torque.z/=(65535*gainFTLeft[5]*sensitivityFTLeft[5]*ExFTLeft[5])/5000;
+    // ForceTorqSensorLeft.force.x/=(65535*gainFTLeft[0]*sensitivityFTLeft[0]*ExFTLeft[0])/5000;
+    // ForceTorqSensorLeft.force.y/=(65535*gainFTLeft[1]*sensitivityFTLeft[1]*ExFTLeft[1])/5000;
+    // ForceTorqSensorLeft.force.z/=(65535*gainFTLeft[2]*sensitivityFTLeft[2]*ExFTLeft[2])/5000;
+    // ForceTorqSensorLeft.torque.x/=(65535*gainFTLeft[3]*sensitivityFTLeft[3]*ExFTLeft[3])/5000;
+    // ForceTorqSensorLeft.torque.y/=(65535*gainFTLeft[4]*sensitivityFTLeft[4]*ExFTLeft[4])/5000;
+    // ForceTorqSensorLeft.torque.z/=(65535*gainFTLeft[5]*sensitivityFTLeft[5]*ExFTLeft[5])/5000;
 
 
 

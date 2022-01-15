@@ -389,6 +389,7 @@ void QNode::NewJointDataReady(const std_msgs::Int32MultiArray & msg)
 
     JointsData=msg;
     Q_EMIT NewjointDataReceived();
+
 }
 //================================================================================================================================================================
 void QNode::run() {

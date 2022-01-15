@@ -90,7 +90,7 @@ void DCMPlanner::updateSS(){
         time = dt_ * i;
         stepNum = floor(time / tStep_);
         xi_[i] = rVRP_[stepNum] + exp(sqrt(K_G/deltaZ_) * (fmod(time,tStep_) - tStep_)) * (xiEOS_[stepNum] - rVRP_[stepNum]);
-        xiDot_[i] = (xi_[i] - rVRP_[stepNum]) * sqrt(K_G/deltaZ_);
+        xiDot_[i] = sqrt(K_G/deltaZ_) * (xi_[i] - rVRP_[stepNum]);
     }
 }
 
@@ -105,8 +105,8 @@ void DCMPlanner::updateXiDSPositions(){
     Vector3d xi_dot_i, xi_dot_e;
     for(int step = 0 ; step < stepCount_; step ++){
         if (step == 0){
-            xi_dot_i = (xiDSI_[step] - xi_[0]) * sqrt(K_G / deltaZ_);
-            xi_dot_e = (xiDSE_[step] - rVRP_[0]) * sqrt(K_G / deltaZ_);
+            xi_dot_i = sqrt(K_G / deltaZ_) * (xiDSI_[step] - xi_[0]);
+            xi_dot_e = sqrt(K_G / deltaZ_) * (xiDSE_[step] - rVRP_[0]);
             Vector3d* coefs = this->minJerkInterpolate(xiDSI_[step],xiDSE_[step],xi_dot_i, xi_dot_e, tDS_);
             for (int i = 0; i < (1/dt_) * tDS_ * (1 - alpha_); ++i){
                 double time = dt_ * i;
@@ -116,8 +116,8 @@ void DCMPlanner::updateXiDSPositions(){
             delete[] coefs;     
         }
         else{
-            xi_dot_i = (xiDSI_[step] - rVRP_[step - 1]) * sqrt(K_G/deltaZ_);
-            xi_dot_e = (xiDSE_[step] - rVRP_[step]) * sqrt(K_G/deltaZ_);
+            xi_dot_i = sqrt(K_G/deltaZ_) * (xiDSI_[step] - rVRP_[step - 1]);
+            xi_dot_e = sqrt(K_G/deltaZ_) * (xiDSE_[step] - rVRP_[step]);
             Vector3d* coefs = this->minJerkInterpolate(xiDSI_[step],xiDSE_[step],xi_dot_i, xi_dot_e, tDS_);
             for (int i = (tStep_ * step)/dt_ - (tDS_ * alpha_ / dt_ ) + 1; i < ((tStep_ * step)/dt_) + (tDS_/dt_) * (1-alpha_); ++i){
                 double time = fmod(i * dt_, tStep_ * step - tDS_ * alpha_);

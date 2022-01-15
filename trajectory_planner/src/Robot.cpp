@@ -129,7 +129,15 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
         //cout << r_wrench(0) << "," << r_wrench(1) << "," << r_wrench(2) << ","
         //<< l_wrench(0) << "," << l_wrench(1) << "," << l_wrench(2) << endl;
         //double delta_z = onlineWalk_.footLenController(r_wrench(0) - l_wrench(0), f_r - f_l, 1, 0);
-        cout << r_wrench(0) << ',' << l_wrench(0) << ',' << f_r << ',' << f_l << endl;
+        double delta_z = onlineWalk_.footLenController(r_wrench(0) - l_wrench(0), f_r - f_l, 0.02, 1500);
+        //lfoot << lAnklePos_[iter](0), lAnklePos_[iter](1), lAnklePos_[iter](2) - 0.5 * delta_z;
+        //rfoot << rAnklePos_[iter](0), rAnklePos_[iter](1), rAnklePos_[iter](2) + 0.5 * delta_z;
+        //cout << lAnklePos_[iter](2) << ',' << rAnklePos_[iter](2) << endl;
+        //cout << r_wrench(0) << ',' << l_wrench(0) << ',' << f_r << ',' << f_l << endl;
+    }
+    else{
+        lfoot << lAnklePos_[iter](0), lAnklePos_[iter](1), lAnklePos_[iter](2);
+        rfoot << rAnklePos_[iter](0), rAnklePos_[iter](1), rAnklePos_[iter](2);
     }
 
     if(trajContFlags_[traj_index] == true){
@@ -545,7 +553,6 @@ bool Robot::trajGenCallback(trajectory_planner::Trajectory::Request  &req,
     //auto stop = high_resolution_clock::now();
     //auto duration = duration_cast<microseconds>(stop - start);
     //cout << duration.count()/1000000.0 << endl;
-    cout << "DCM trajectory Okay" << endl;
     return true;
 }
 
@@ -609,7 +616,6 @@ bool Robot::generalTrajCallback(trajectory_planner::GeneralTraj::Request  &req,
     realZMP_ = new Vector3d[dataSize_];
     rSoles_ = new Vector3d[dataSize_];
     lSoles_ = new Vector3d[dataSize_];
-    cout << "general trajectory Okay" << endl;
     return true;
 }
 
@@ -634,6 +640,14 @@ bool Robot::jntAngsCallback(trajectory_planner::JntAngs::Request  &req,
             config[i] = req.config[i-1];
             jnt_vel[i] = req.jnt_vel[i-1];  
         }
+        cout << req.right_ft[0] << "," << req.right_ft[1] << ","  << req.right_ft[2] << "," <<  
+        req.left_ft[0] << "," << req.left_ft[1] << ","  << req.left_ft[2] << "," << 
+        req.config[0] << "," << req.config[1] << "," << req.config[2] << ","  << req.config[3] << "," << 
+        req.config[4] << "," << req.config[5] << ","  << req.config[6] << "," << 
+        req.config[7] << "," << req.config[8] << ","  << req.config[9] << "," <<
+        req.config[10] << "," << req.config[11] << "," <<
+        req.accelerometer[0] << "," << req.accelerometer[1] << ","  << req.accelerometer[2] << "," <<
+        req.gyro[0] << "," << req.gyro[1] << ","  << req.gyro[2] << "," << endl;
         //cout << req.right_ft[0] << "," << req.right_ft[1] << "," << req.right_ft[2] << ","
         //<< req.left_ft[0] << "," << req.left_ft[1] << "," << req.left_ft[2] << "," << endl;
         this->spinOnline(req.iter, config, jnt_vel, right_torque, left_torque, req.right_ft[0], req.left_ft[0],

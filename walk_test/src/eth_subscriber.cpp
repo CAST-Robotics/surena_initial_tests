@@ -2,6 +2,7 @@
 #include <sensor_msgs/JointState.h>
 #include <std_msgs/Int32MultiArray.h>
 #include "geometry_msgs/Wrench.h"
+#include "sensor_msgs/Imu.h"
 #include <vector>
 #include "walk_test/command.h"
 #include <math.h>
@@ -35,6 +36,7 @@ class WalkTest{
         dummyCommand_ = n->advertiseService("get_data", &WalkTest::dummyCallback, this);
         lFT_ = n->subscribe("/surena/ft_l_state",100, &WalkTest::ftCallbackLeft, this);
         rFT_ = n->subscribe("/surena/ft_r_state",100, &WalkTest::ftCallbackRight, this);
+        IMUSub_ = n->subscribe("/surena/imu_state",100, &WalkTest::IMUCallback, this);
 
         b = 0.049;
         c = 0.35;
@@ -62,6 +64,7 @@ class WalkTest{
             abs2incDir_[i] = temp_abs2inc_dir[i];
             absDir_[i] = temp_abs_dir[i];
             motorDir_[i] = temp_motor_dir[i];
+            commandConfig_[i] = 0.0;
         }
         
         leftFTFile_.open("/home/surena/SurenaV/log/left_ft.csv");
@@ -72,6 +75,15 @@ class WalkTest{
             ROS_DEBUG("right FT log file not open!");
 
         FTOffsetPeriod_ = 60;
+        lFTOffset_ = Vector3d::Zero();
+        rFTOffset_ = Vector3d::Zero();
+
+        double temp[3] = {0.0, 0.0, 0.0};
+        for (int i = 0; i<3; i++){
+            currentLFT_[i] = temp[i];
+            currentRFT_[i] = temp[i];
+        }
+
     }   
 
     bool setPos(int jointID, int dest){
@@ -117,6 +129,7 @@ class WalkTest{
         setPos(8, homeAbs_[8]);
         setPos(7, homeAbs_[7]);
         qcInitialBool_ = true;
+        setFTZero();
         ros::spinOnce();
         return true;
     }
@@ -126,15 +139,14 @@ class WalkTest{
         if (qcInitialBool_){
 
             for (int i = 0; i <= 31; ++i) {
-                qcOffset_[i]=int(msg.position[i+1]);
-                motorCommand_.data.push_back(qcOffset_[i]);
-                //qcOffset_[i]=int(0);
+                homeOffset_[i]=int(msg.position[i+1]);
+                motorCommand_.data.push_back(homeOffset_[i]);
             }
             qcInitialBool_=false;
-            //ROS_INFO("Offset=%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t\n",
-            //         qcOffset_[0],qcOffset_[1],qcOffset_[2],qcOffset_[3],qcOffset_[4],
-            //        qcOffset_[5],qcOffset_[6],qcOffset_[7],qcOffset_[8],qcOffset_[9],
-            //        qcOffset_[10],qcOffset_[11],qcOffset_[12],qcOffset_[13],qcOffset_[14],qcOffset_[15],qcOffset_[20],qcOffset_[21],qcOffset_[22],qcOffset_[23]);
+            ROS_INFO("Offset=%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t\n",
+                    homeOffset_[0],homeOffset_[1],homeOffset_[2],homeOffset_[3],homeOffset_[4],
+                    homeOffset_[5],homeOffset_[6],homeOffset_[7],homeOffset_[8],homeOffset_[9],
+                    homeOffset_[10],homeOffset_[11],homeOffset_[12],homeOffset_[13],homeOffset_[14],homeOffset_[15],homeOffset_[20],homeOffset_[21],homeOffset_[22],homeOffset_[23]);
         
         }
         
@@ -142,7 +154,10 @@ class WalkTest{
 
 
     void ftCallbackLeft(const geometry_msgs::Wrench &msg){
-        leftFTFile_ << msg.force.x << "," << msg.force.y << "," << msg.force.z << endl;
+        leftFTFile_ << msg.force.x -lFTOffset_(0) << "," << msg.force.y - lFTOffset_(1) << "," << msg.force.z - lFTOffset_(2) << endl;
+        currentLFT_[0] = msg.force.x;
+        currentLFT_[1] = msg.force.y;
+        currentLFT_[2] = msg.force.z;
         if(recentLFT_.size() < FTOffsetPeriod_){
             recentLFT_.push_back(Vector3d(msg.force.x, msg.force.y, msg.force.z));
         }
@@ -150,17 +165,14 @@ class WalkTest{
             recentLFT_.erase (recentLFT_.begin());
             recentLFT_.push_back(Vector3d(msg.force.x, msg.force.y, msg.force.z));
         }
-        for (int i = 0; i < recentLFT_.size(); i++){
-            lFTOffset_ += recentLFT_[i];
-        }
-        lFTOffset_ = lFTOffset_ / recentLFT_.size();
-        //cout << "left ft offset: " << lFTOffset_ << endl;
     }
 
     void ftCallbackRight(const geometry_msgs::Wrench &msg){
 
-        rightFTFile_ << msg.force.x << "," << msg.force.y << "," << msg.force.z << endl;
-        rFTOffset_ = Vector3d::Zero();
+        rightFTFile_ << msg.force.x - rFTOffset_(0) << "," << msg.force.y - rFTOffset_(1) << "," << msg.force.z  - rFTOffset_(2) << endl;
+        currentRFT_[0] = msg.force.x;
+        currentRFT_[1] = msg.force.y;
+        currentRFT_[2] = msg.force.z;
         if(recentRFT_.size() < FTOffsetPeriod_){
             recentRFT_.push_back(Vector3d(msg.force.x, msg.force.y, msg.force.z));
         }
@@ -168,11 +180,32 @@ class WalkTest{
             recentRFT_.erase (recentRFT_.begin());
             recentRFT_.push_back(Vector3d(msg.force.x, msg.force.y, msg.force.z));
         }
+    }
+    void IMUCallback(const sensor_msgs::Imu &msg){
+        baseAcc_[0] = msg.linear_acceleration.x;
+        baseAcc_[1] = msg.linear_acceleration.y;
+        baseAcc_[2] = msg.linear_acceleration.z;
+
+        baseOrient_[0] = msg.orientation.x;
+        baseOrient_[1] = msg.orientation.y;
+        baseOrient_[2] = msg.orientation.z;
+        
+        baseAngVel_[0] = msg.angular_velocity.x;
+        baseAngVel_[1] = msg.angular_velocity.y;
+        baseAngVel_[2] = msg.angular_velocity.z;
+    }
+
+    bool setFTZero(){
+
         for (int i = 0; i < recentRFT_.size(); i++){
+            lFTOffset_ += recentLFT_[i];
             rFTOffset_ += recentRFT_[i];
         }
+        lFTOffset_ = lFTOffset_ / recentLFT_.size();
         rFTOffset_ = rFTOffset_ / recentRFT_.size();
-        //cout << "right ft offset: "<< rFTOffset_ << endl;
+        cout << "left ft offset: " << lFTOffset_ << "   " << rFTOffset_ << endl;
+        return true;
+
     }
 
     bool dummyCallback(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res){
@@ -187,15 +220,13 @@ class WalkTest{
         ros::Rate rate_(100);
         for(int i=0; i<32; i++)
             motorCommand_.data[i] = incData_[i];
-        for(int i = 0; i < 1; i++){
-            motorCommand_.data[0] += 1;
-            motorDataPub_.publish(motorCommand_);
-            rate_.sleep();
-            motorCommand_.data[0] -= 1;
-            motorDataPub_.publish(motorCommand_);
-            rate_.sleep();
-        }
-
+            
+        motorCommand_.data[0] += 1;
+        motorDataPub_.publish(motorCommand_);
+        rate_.sleep();
+        motorCommand_.data[0] -= 1;
+        motorDataPub_.publish(motorCommand_);
+        rate_.sleep();
         return true;
     }
 
@@ -212,8 +243,8 @@ class WalkTest{
 
             double desired_pitch = cur_pitch + req.angle;
             this->ankleMechanism(theta_inner, theta_outer, desired_pitch, cur_roll, false);
-            double inner_inc = motorDir_[5] * theta_inner * 4096 * 4 * 100 * 1.5 / 2 / M_PI + qcOffset_[5];
-            double outer_inc = motorDir_[4] * theta_outer * 4096 * 4 * 100 * 1.5 / 2 / M_PI + qcOffset_[4];
+            double inner_inc = motorDir_[5] * theta_inner * 4096 * 4 * 100 * 1.5 / 2 / M_PI + homeOffset_[5];
+            double outer_inc = motorDir_[4] * theta_outer * 4096 * 4 * 100 * 1.5 / 2 / M_PI + homeOffset_[4];
 
             double inner_delta_inc = inner_inc - incData_[5];
             double outer_delta_inc = outer_inc - incData_[4];
@@ -237,8 +268,8 @@ class WalkTest{
 
             double desired_roll = cur_roll + req.angle;
             this->ankleMechanism(theta_inner, theta_outer, cur_pitch, desired_roll, false);
-            double inner_inc = motorDir_[5] * theta_inner * 4096 * 4 * 100 * 1.5 / 2 / M_PI + qcOffset_[5];
-            double outer_inc = motorDir_[4] * theta_outer * 4096 * 4 * 100 * 1.5 / 2 / M_PI + qcOffset_[4];
+            double inner_inc = motorDir_[5] * theta_inner * 4096 * 4 * 100 * 1.5 / 2 / M_PI + homeOffset_[5];
+            double outer_inc = motorDir_[4] * theta_outer * 4096 * 4 * 100 * 1.5 / 2 / M_PI + homeOffset_[4];
 
             double inner_delta_inc = inner_inc - incData_[5];
             double outer_delta_inc = outer_inc - incData_[4];
@@ -262,8 +293,8 @@ class WalkTest{
 
             double desired_pitch = cur_pitch + req.angle;
             this->ankleMechanism(theta_inner, theta_outer, desired_pitch, cur_roll, true);
-            double inner_inc = motorDir_[11] * theta_inner * 4096 * 4 * 100 * 1.5 / 2 / M_PI + qcOffset_[11];
-            double outer_inc = motorDir_[10] * theta_outer * 4096 * 4 * 100 * 1.5 / 2 / M_PI + qcOffset_[10];
+            double inner_inc = motorDir_[11] * theta_inner * 4096 * 4 * 100 * 1.5 / 2 / M_PI + homeOffset_[11];
+            double outer_inc = motorDir_[10] * theta_outer * 4096 * 4 * 100 * 1.5 / 2 / M_PI + homeOffset_[10];
 
             double inner_delta_inc = inner_inc - incData_[11];
             double outer_delta_inc = outer_inc - incData_[10];
@@ -287,8 +318,8 @@ class WalkTest{
 
             double desired_roll = cur_roll + req.angle;
             this->ankleMechanism(theta_inner, theta_outer, cur_pitch, desired_roll, true);
-            double inner_inc = motorDir_[11] * theta_inner * 4096 * 4 * 100 * 1.5 / 2 / M_PI + qcOffset_[11];
-            double outer_inc = motorDir_[10] * theta_outer * 4096 * 4 * 100 * 1.5 / 2 / M_PI + qcOffset_[10];
+            double inner_inc = motorDir_[11] * theta_inner * 4096 * 4 * 100 * 1.5 / 2 / M_PI + homeOffset_[11];
+            double outer_inc = motorDir_[10] * theta_outer * 4096 * 4 * 100 * 1.5 / 2 / M_PI + homeOffset_[10];
 
             double inner_delta_inc = inner_inc - incData_[11];
             double outer_delta_inc = outer_inc - incData_[10];
@@ -431,7 +462,7 @@ class WalkTest{
         trajectory_planner::GeneralTraj general_traj;
         general_traj.request.init_com_pos = {0, 0, 0.71};
         general_traj.request.init_com_orient = {0, 0, 0};
-        general_traj.request.final_com_pos = {0, 0, 0.68};
+        general_traj.request.final_com_pos = {0, 0, req.COM_height};
         general_traj.request.final_com_orient = {0, 0, 0};
 
         general_traj.request.init_lankle_pos = {0, 0.1, 0};
@@ -445,7 +476,7 @@ class WalkTest{
         general_traj.request.final_rankle_orient = {0, 0, 0};
 
         general_traj.request.time = 2;
-        general_traj.request.dt = 0.05;
+        general_traj.request.dt = req.dt;
         generalTrajectory_.call(general_traj);
 
 
@@ -457,7 +488,7 @@ class WalkTest{
         traj_srv.request.COM_height = req.COM_height;
         traj_srv.request.step_length = req.step_length;
         traj_srv.request.step_count = req.step_count;
-        traj_srv.request.dt = 1.0 / rate;
+        traj_srv.request.dt = req.dt;
         traj_srv.request.ankle_height = req.ankle_height;
         traj_srv.request.theta = req.theta;
         trajectoryGenerator_.call(traj_srv);
@@ -466,10 +497,19 @@ class WalkTest{
         if(true){
             
             int i = 0;
-            while(i < 39){
+            while(i < 159){
                 
                 trajectory_planner::JntAngs jnt_srv;
                 jnt_srv.request.iter = i;
+                jnt_srv.request.left_ft = {currentLFT_[0], currentLFT_[1], currentLFT_[2]};
+                jnt_srv.request.right_ft = {currentRFT_[0], currentRFT_[1], currentRFT_[2]};
+                jnt_srv.request.accelerometer = {baseAcc_[0], baseAcc_[1], baseAcc_[2]};
+                jnt_srv.request.gyro = {baseAngVel_[0], baseAngVel_[1], baseAngVel_[2]};
+                for (int i=0; i<12; i++){
+                    jnt_srv.request.config[i] = commandConfig_[i];
+                }
+
+
                 jointAngles_.call(jnt_srv);
                 cout << jnt_srv.response.jnt_angs[0] << ',' << jnt_srv.response.jnt_angs[1] << ','<< jnt_srv.response.jnt_angs[2] << ','
                 << jnt_srv.response.jnt_angs[3] << ','<< jnt_srv.response.jnt_angs[4] << ','<< jnt_srv.response.jnt_angs[5] << ','
@@ -481,6 +521,7 @@ class WalkTest{
                         switch (j)
                         {
                             double theta;
+                            double alpha;
                             double theta_inner;
                             double theta_outer;
                             double desired_pitch;
@@ -490,53 +531,65 @@ class WalkTest{
                             
                         case 0:
                             //this->yawMechanism(theta, jnt_srv.response.jnt_angs[j], 0.03435, 0.088, false);
-                            //motorCommand_.data[j] =  motorDir_[j] * theta * 4096 * 4 * 100 / 2 / M_PI + qcOffset_[j];
-                            motorCommand_.data[j] =  motorDir_[1] * jnt_srv.response.jnt_angs[1] * 4096 * 4 * 100 / 2 / M_PI + qcOffset_[j];
+                            //motorCommand_.data[j] =  motorDir_[j] * theta * 4096 * 4 * 100 / 2 / M_PI + homeOffset_[j];
+                            motorCommand_.data[j] =  motorDir_[1] * jnt_srv.response.jnt_angs[1] * 4096 * 4 * 100 / 2 / M_PI + homeOffset_[j];
+                            
+                            //yawMechanismFK(alpha,inc2rad(incData_[0] - homeOffset_[0]) / 100, 0.03435, 0.088, false);
+                            commandConfig_[j] = inc2rad(motorDir_[j] * (incData_[j] - homeOffset_[j])) / 160;
                             break;
                         case 6:
                             this->yawMechanism(theta, jnt_srv.response.jnt_angs[j], 0.03435, 0.088, true);
-                            motorCommand_.data[j] = motorDir_[j] * theta * 4096 * 4 * 100 / 2 / M_PI + qcOffset_[j];
+                            motorCommand_.data[j] = motorDir_[j] * theta * 4096 * 4 * 100 / 2 / M_PI + homeOffset_[j];
+                            yawMechanismFK(alpha,inc2rad(motorDir_[j] * (incData_[j] - homeOffset_[j])) / 100, 0.03435, 0.088, true);
+                            commandConfig_[j] =  alpha;
                             break;
                         case 4:
                             desired_roll = jnt_srv.response.jnt_angs[5];
                             desired_pitch = jnt_srv.response.jnt_angs[4];
                             this->ankleMechanism(theta_inner, theta_outer, desired_pitch, desired_roll, false);
-                            inner_inc = motorDir_[5] * theta_inner * 4096 * 4 * 100 * 1.5 / 2 / M_PI + qcOffset_[5];
-                            outer_inc = motorDir_[4] * theta_outer * 4096 * 4 * 100 * 1.5 / 2 / M_PI + qcOffset_[4];                            
+                            inner_inc = motorDir_[5] * theta_inner * 4096 * 4 * 100 * 1.5 / 2 / M_PI + homeOffset_[5];
+                            outer_inc = motorDir_[4] * theta_outer * 4096 * 4 * 100 * 1.5 / 2 / M_PI + homeOffset_[4];                            
                             motorCommand_.data[4] = outer_inc;
                             motorCommand_.data[5] = inner_inc;
+                            commandConfig_[j] = jnt_srv.response.jnt_angs[4];
                             break;
                         case 5:
                             desired_roll = jnt_srv.response.jnt_angs[5];
                             desired_pitch = jnt_srv.response.jnt_angs[4];
                             this->ankleMechanism(theta_inner, theta_outer, desired_pitch, desired_roll, false);
-                            inner_inc = motorDir_[5] * theta_inner * 4096 * 4 * 100 * 1.5 / 2 / M_PI + qcOffset_[5];
-                            outer_inc = motorDir_[4] * theta_outer * 4096 * 4 * 100 * 1.5 / 2 / M_PI + qcOffset_[4];                            
+                            inner_inc = motorDir_[5] * theta_inner * 4096 * 4 * 100 * 1.5 / 2 / M_PI + homeOffset_[5];
+                            outer_inc = motorDir_[4] * theta_outer * 4096 * 4 * 100 * 1.5 / 2 / M_PI + homeOffset_[4];                            
                             motorCommand_.data[4] = outer_inc;
                             motorCommand_.data[5] = inner_inc;
+                            commandConfig_[j] = jnt_srv.response.jnt_angs[j];
+
                             break;
                         case 10:
                             desired_roll = jnt_srv.response.jnt_angs[11];
                             desired_pitch = jnt_srv.response.jnt_angs[10];
                             this->ankleMechanism(theta_inner, theta_outer, desired_pitch, desired_roll, true);
-                            inner_inc = motorDir_[11] * theta_inner * 4096 * 4 * 100 * 1.5 / 2 / M_PI + qcOffset_[11];
-                            outer_inc = motorDir_[10] * theta_outer * 4096 * 4 * 100 * 1.5 / 2 / M_PI + qcOffset_[10];                            
+                            inner_inc = motorDir_[11] * theta_inner * 4096 * 4 * 100 * 1.5 / 2 / M_PI + homeOffset_[11];
+                            outer_inc = motorDir_[10] * theta_outer * 4096 * 4 * 100 * 1.5 / 2 / M_PI + homeOffset_[10];                            
                             motorCommand_.data[10] = outer_inc;
                             motorCommand_.data[11] = inner_inc;
+                            commandConfig_[j] = jnt_srv.response.jnt_angs[j];
                             break;
                         case 11:
                             desired_roll = jnt_srv.response.jnt_angs[11];
                             desired_pitch = jnt_srv.response.jnt_angs[10];
                             this->ankleMechanism(theta_inner, theta_outer, desired_pitch, desired_roll, true);
-                            inner_inc = motorDir_[11] * theta_inner * 4096 * 4 * 100 * 1.5 / 2 / M_PI + qcOffset_[11];
-                            outer_inc = motorDir_[10] * theta_outer * 4096 * 4 * 100 * 1.5 / 2 / M_PI + qcOffset_[10];                            
+                            inner_inc = motorDir_[11] * theta_inner * 4096 * 4 * 100 * 1.5 / 2 / M_PI + homeOffset_[11];
+                            outer_inc = motorDir_[10] * theta_outer * 4096 * 4 * 100 * 1.5 / 2 / M_PI + homeOffset_[10];                            
                             motorCommand_.data[10] = outer_inc;
                             motorCommand_.data[11] = inner_inc;
+                            commandConfig_[j] = jnt_srv.response.jnt_angs[j];
                             break;
                         default:
-                            motorCommand_.data[j] = motorDir_[j] * jnt_srv.response.jnt_angs[j] * 4096 * 4 * 160 / 2 / M_PI + qcOffset_[j];
+                            motorCommand_.data[j] = motorDir_[j] * jnt_srv.response.jnt_angs[j] * 4096 * 4 * 160 / 2 / M_PI + homeOffset_[j];
+                            commandConfig_[j] = motorDir_[j] * inc2rad(incData_[j] - homeOffset_[j]) / 160;
                             break;
                         }
+                        
                     }else{
                         cout<< "joint " << j << " out of workspace in iteration "<< i << ", angle difference: " << dif << endl ;
                     }
@@ -564,6 +617,11 @@ class WalkTest{
         double angle = abs/pow(2, 19)*2*M_PI;
         return angle;
     }
+
+    double inc2rad(int inc){
+        double angle = inc/pow(2, 14)*2*M_PI;
+        return angle;
+    }    
 
     bool checkAngle(int joint_ID, double angle, double &ang_dif){
         if (angle >= abs2rad(absHigh_[joint_ID] - homeAbs_[joint_ID])*absDir_[joint_ID]){
@@ -624,6 +682,20 @@ class WalkTest{
         theta = theta_home - theta;
     }
 
+    void yawMechanismFK(double &alpha, double theta, double R, double B, bool is_left){
+        double theta_home, alpha_home;
+        if(is_left){
+            alpha_home = 0.0529;
+            theta_home = 0.1868;  
+        }else{
+            alpha_home = 0.0227;
+            theta_home = 0.0809;
+        }
+        theta -= theta_home;
+        alpha = atan(R * sin(theta) / (B + R * cos(theta)));
+        alpha += alpha_home;
+    }
+
 private:
     ros::Publisher motorDataPub_;
     ros::Subscriber incSub_;
@@ -631,6 +703,7 @@ private:
     ros::Subscriber absSub_;
     ros::Subscriber lFT_;
     ros::Subscriber rFT_;
+    ros::Subscriber IMUSub_;
     ros::ServiceServer jointCommand_;
     ros::ServiceServer absPrinter_;
     ros::ServiceClient trajectoryGenerator_;
@@ -640,7 +713,7 @@ private:
     ros::ServiceServer homeService_;
     ros::ServiceServer dummyCommand_;
     bool qcInitialBool_;
-    int qcOffset_[32];
+    int homeOffset_[32];
     std_msgs::Int32MultiArray motorCommand_;
     int harmonicRatio_[12];
     float absData_[32];
@@ -671,6 +744,14 @@ private:
     Vector3d lFTOffset_;
     vector<Vector3d> recentLFT_;
     vector<Vector3d> recentRFT_;
+
+    double currentLFT_[3];
+    double currentRFT_[3];
+    double baseAcc_[3];
+    double baseOrient_[3];
+    double baseAngVel_[3];
+    double commandConfig_[12];
+
     int FTOffsetPeriod_;
 };
 

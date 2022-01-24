@@ -29,9 +29,9 @@ Robot::Robot(ros::NodeHandle *nh, Controller robot_ctrl){
     
     thigh_ = 0.36;  // SR1: 0.3535, Surena4: 0.37, Surena5: 0.36
     shank_ = 0.35;     // SR1: 0.3, Surena4: 0.36, Surena5: 0.35
-    torso_ = 0.1;    // SR1: 0.09, Surena4: 0.115, Surena5: 0.1
+    torso_ = 0.0975;    // SR1: 0.09, Surena4: 0.115, Surena5: 0.1
 
-    mass_ = 48.3; // SR1: ?, Surena4: 48.3, Surena5: ?
+    mass_ = 55.3; // SR1: ?, Surena4: 48.3, Surena5: 55.3
 
     dataSize_ = 0;
     rSole_ << 0.0, -torso_, 0.0;
@@ -122,32 +122,35 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
 
     int traj_index = findTrajIndex(trajSizes_, trajSizes_.size(), iter);
 
-    if(iter > trajSizes_[0] && iter < trajSizes_[1]){
-        Vector3d r_wrench;
-        Vector3d l_wrench;
-        distributeFT(zmpd_[iter - trajSizes_[0]], rAnklePos_[iter], lAnklePos_[iter], r_wrench, l_wrench);
-        //cout << r_wrench(0) << "," << r_wrench(1) << "," << r_wrench(2) << ","
-        //<< l_wrench(0) << "," << l_wrench(1) << "," << l_wrench(2) << endl;
-        //double delta_z = onlineWalk_.footLenController(r_wrench(0) - l_wrench(0), f_r - f_l, 1, 0);
-        double delta_z = onlineWalk_.footLenController(r_wrench(0) - l_wrench(0), f_r - f_l, 0.02, 1500);
-        //lfoot << lAnklePos_[iter](0), lAnklePos_[iter](1), lAnklePos_[iter](2) - 0.5 * delta_z;
-        //rfoot << rAnklePos_[iter](0), rAnklePos_[iter](1), rAnklePos_[iter](2) + 0.5 * delta_z;
-        //cout << lAnklePos_[iter](2) << ',' << rAnklePos_[iter](2) << endl;
-        //cout << r_wrench(0) << ',' << l_wrench(0) << ',' << f_r << ',' << f_l << endl;
-    }
-    else{
-        lfoot << lAnklePos_[iter](0), lAnklePos_[iter](1), lAnklePos_[iter](2);
-        rfoot << rAnklePos_[iter](0), rAnklePos_[iter](1), rAnklePos_[iter](2);
-    }
+    //Vector3d r_wrench;
+    //Vector3d l_wrench;
+    //distributeFT(zmpd_[iter - trajSizes_[0]], rAnklePos_[iter], lAnklePos_[iter], r_wrench, l_wrench);
+
+    //Foot Length Controller
+    //double delta_z = onlineWalk_.footLenController(0, floor((f_r - f_l) * 10) / 10, 0.0001, 1);
+    //lfoot << lAnklePos_[iter](0), lAnklePos_[iter](1), lAnklePos_[iter](2) - 0.5 * delta_z;
+    //rfoot << rAnklePos_[iter](0), rAnklePos_[iter](1), rAnklePos_[iter](2) + 0.5 * delta_z;
+    //cout << delta_z << ',' << f_r << ',' << f_l << ',' << floor((f_r - f_l) * 10) / 10 << endl;
+        
+    //Foot Orientation Controller
+    //Vector3d delta_theta = onlineWalk_.footDampingController(Vector3d::Zero(), Vector3d(0, 0, f_r), torque_r, gain, true);
+    Vector3d delta_theta_r = onlineWalk_.footOrientController(Vector3d::Zero(), torque_r, 0, -0.05, 0, 1, true);
+    Vector3d delta_theta_l = onlineWalk_.footOrientController(Vector3d::Zero(), torque_l, 0, -0.05, 0, 1, false);
+    Matrix3d delta_rot_r;
+    Matrix3d delta_rot_l;
+    cout << delta_theta_r(0) << ',' << delta_theta_r(1) << ',' << delta_theta_r(2) << ',' << torque_r(0) << ',' << torque_r(1)
+            << delta_theta_l(0) << ',' << delta_theta_l(1) << ',' << delta_theta_l(2) << ',' << torque_l(0) << ',' << torque_l(1) << endl;
+    delta_rot_r = AngleAxisd(delta_theta_r(2), Vector3d::UnitZ()) * AngleAxisd(delta_theta_r(1), Vector3d::UnitY()) * AngleAxisd(delta_theta_r(0), Vector3d::UnitX());
+    delta_rot_l = AngleAxisd(delta_theta_l(2), Vector3d::UnitZ()) * AngleAxisd(delta_theta_l(1), Vector3d::UnitY()) * AngleAxisd(delta_theta_l(0), Vector3d::UnitX());
+    rAnkleRot_[iter] = rAnkleRot_[iter] * delta_rot_r;
+    lAnkleRot_[iter] = lAnkleRot_[iter] * delta_rot_l;
 
     if(trajContFlags_[traj_index] == true){
         Vector3d zmp_ref = onlineWalk_.dcmController(xiDesired_[iter+1], xiDot_[iter+1], realXi_[iter], COM_height_);
         Vector3d cont_out = onlineWalk_.comController(CoMPos_[iter], CoMDot_[iter+1], FKCoM_[iter], zmp_ref, realZMP_[iter]);
         pelvis = cont_out;
     }
-    //cout << CoMRot_[iter].eulerAngles(0, 1, 2)(0) << "," << CoMRot_[iter].eulerAngles(0, 1, 2)(1) << "," << CoMRot_[iter].eulerAngles(0, 1, 2)(2) << "," <<
-    //        lAnkleRot_[iter].eulerAngles(0, 1, 2)(0) << "," << lAnkleRot_[iter].eulerAngles(0, 1, 2)(1) << "," << lAnkleRot_[iter].eulerAngles(0, 1, 2)(2) << "," <<
-    //        rAnkleRot_[iter].eulerAngles(0, 1, 2)(0) << "," << rAnkleRot_[iter].eulerAngles(0, 1, 2)(1) << "," << rAnkleRot_[iter].eulerAngles(0, 1, 2)(2) << endl;
+
     doIK(pelvis, CoMRot_[iter], lfoot, lAnkleRot_[iter], rfoot, rAnkleRot_[iter]);
 
     for(int i = 0; i < 12; i++)
@@ -435,10 +438,12 @@ bool Robot::trajGenCallback(trajectory_planner::Trajectory::Request  &req,
         if (step_width == 0){sign = 1;}
         else{sign = (step_width/abs(step_width));}
 
-        ankle_rf[0] << 0.0, torso_ * sign, 0.0;
-        ankle_rf[1] << 0.0, torso_ * -sign, 0.0;
+        ankle_rf[0] << 0.0, (torso_ + 0.02) * sign, 0.0;
+        ankle_rf[1] << 0.0, (torso_ + 0.02) * -sign, 0.0;
         dcm_rf[0] << 0.0, 0.0, 0.0;
         dcm_rf[1] << 0.0, torso_ * -sign, 0.0;
+        //cout << dcm_rf[0](0) << ", " << dcm_rf[0](1) << ", " << dcm_rf[0](2) << ", " << ankle_rf[0](0) << ", " << ankle_rf[0](1) << ", " << ankle_rf[0](2) << endl;
+        //cout << dcm_rf[1](0) << ", " << dcm_rf[1](1) << ", " << dcm_rf[1](2) << ", " << ankle_rf[1](0) << ", " << ankle_rf[1](1) << ", " << ankle_rf[1](2) << endl;
         for(int i = 2; i <= num_step + 1; i ++){
             if (i == 2 || i == num_step + 1){
                 ankle_rf[i] = ankle_rf[i-2] + Vector3d(step_len, step_width, 0.0);
@@ -447,8 +452,11 @@ bool Robot::trajGenCallback(trajectory_planner::Trajectory::Request  &req,
                 ankle_rf[i] = ankle_rf[i-2] + Vector3d(2 * step_len, step_width, 0.0);
                 dcm_rf[i] << ankle_rf[i-2] + Vector3d(2 * step_len, step_width, 0.0);
             }
+            //cout << dcm_rf[i](0) << ", " << dcm_rf[i](1) << ", " << dcm_rf[i](2) << ", " << ankle_rf[i](0) << ", " << ankle_rf[i](1) << ", " << ankle_rf[i](2) << endl;
         }
         dcm_rf[num_step + 1] = 0.5 * (ankle_rf[num_step] + ankle_rf[num_step + 1]);
+        ankle_rf[0] << 0.0, torso_ * sign, 0.0;
+        ankle_rf[1] << 0.0, torso_ * -sign, 0.0;
     }  
 
     else{   //Turning Walk
@@ -575,7 +583,10 @@ bool Robot::generalTrajCallback(trajectory_planner::GeneralTraj::Request  &req,
                                   Vector3d(req.final_rankle_orient[0], req.final_rankle_orient[1], req.final_rankle_orient[2]),
                                   req.time);
     int trajectory_size = motion_planner->getLength();
-    
+
+    onlineWalk_.setDt(req.dt);
+    onlineWalk_.setInitCoM(Vector3d(0.0,0.0,COM_height_));
+
     if (dataSize_ != 0){
         dataSize_ += trajectory_size;
 
@@ -640,14 +651,14 @@ bool Robot::jntAngsCallback(trajectory_planner::JntAngs::Request  &req,
             config[i] = req.config[i-1];
             jnt_vel[i] = req.jnt_vel[i-1];  
         }
-        cout << req.right_ft[0] << "," << req.right_ft[1] << ","  << req.right_ft[2] << "," <<  
-        req.left_ft[0] << "," << req.left_ft[1] << ","  << req.left_ft[2] << "," << 
-        req.config[0] << "," << req.config[1] << "," << req.config[2] << ","  << req.config[3] << "," << 
-        req.config[4] << "," << req.config[5] << ","  << req.config[6] << "," << 
-        req.config[7] << "," << req.config[8] << ","  << req.config[9] << "," <<
-        req.config[10] << "," << req.config[11] << "," <<
-        req.accelerometer[0] << "," << req.accelerometer[1] << ","  << req.accelerometer[2] << "," <<
-        req.gyro[0] << "," << req.gyro[1] << ","  << req.gyro[2] << "," << endl;
+        //cout << req.right_ft[0] << "," << req.right_ft[1] << ","  << req.right_ft[2] << "," <<  
+        //req.left_ft[0] << "," << req.left_ft[1] << ","  << req.left_ft[2] << "," << 
+        //req.config[0] << "," << req.config[1] << "," << req.config[2] << ","  << req.config[3] << "," << 
+        //req.config[4] << "," << req.config[5] << ","  << req.config[6] << "," << 
+        //req.config[7] << "," << req.config[8] << ","  << req.config[9] << "," <<
+        //req.config[10] << "," << req.config[11] << "," <<
+        //req.accelerometer[0] << "," << req.accelerometer[1] << ","  << req.accelerometer[2] << "," <<
+        //req.gyro[0] << "," << req.gyro[1] << ","  << req.gyro[2] << "," << endl;
         //cout << req.right_ft[0] << "," << req.right_ft[1] << "," << req.right_ft[2] << ","
         //<< req.left_ft[0] << "," << req.left_ft[1] << "," << req.left_ft[2] << "," << endl;
         this->spinOnline(req.iter, config, jnt_vel, right_torque, left_torque, req.right_ft[0], req.left_ft[0],

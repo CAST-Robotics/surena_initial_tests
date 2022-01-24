@@ -13,7 +13,8 @@
 #include "trajectory_planner/GeneralTraj.h"
 #include <ctime>
 #include "/home/surena/DynCont/SurenaVWalkTest/src/trajectory_planner/include/trajectory_planner/Robot.h"
-
+#include <chrono>
+using namespace std::chrono;
 using namespace std;
 
 
@@ -154,10 +155,10 @@ class WalkTest{
 
 
     void ftCallbackLeft(const geometry_msgs::Wrench &msg){
-        leftFTFile_ << msg.force.x -lFTOffset_(0) << "," << msg.force.y - lFTOffset_(1) << "," << msg.force.z - lFTOffset_(2) << endl;
-        currentLFT_[0] = msg.force.x;
-        currentLFT_[1] = msg.force.y;
-        currentLFT_[2] = msg.force.z;
+        currentLFT_[0] = msg.force.x - lFTOffset_(0);
+        currentLFT_[1] = msg.force.y - lFTOffset_(1);
+        currentLFT_[2] = msg.force.z - lFTOffset_(2);
+        leftFTFile_ << currentLFT_[0] << "," << currentLFT_[1] << "," << currentLFT_[2] << endl;
         if(recentLFT_.size() < FTOffsetPeriod_){
             recentLFT_.push_back(Vector3d(msg.force.x, msg.force.y, msg.force.z));
         }
@@ -168,11 +169,10 @@ class WalkTest{
     }
 
     void ftCallbackRight(const geometry_msgs::Wrench &msg){
-
-        rightFTFile_ << msg.force.x - rFTOffset_(0) << "," << msg.force.y - rFTOffset_(1) << "," << msg.force.z  - rFTOffset_(2) << endl;
-        currentRFT_[0] = msg.force.x;
-        currentRFT_[1] = msg.force.y;
-        currentRFT_[2] = msg.force.z;
+        currentRFT_[0] = msg.force.x - rFTOffset_(0);
+        currentRFT_[1] = msg.force.y - rFTOffset_(1);
+        currentRFT_[2] = msg.force.z - rFTOffset_(2);
+        rightFTFile_ << currentRFT_[0] << "," << currentRFT_[1] << "," << currentRFT_[2] << endl;
         if(recentRFT_.size() < FTOffsetPeriod_){
             recentRFT_.push_back(Vector3d(msg.force.x, msg.force.y, msg.force.z));
         }
@@ -220,7 +220,7 @@ class WalkTest{
         ros::Rate rate_(100);
         for(int i=0; i<32; i++)
             motorCommand_.data[i] = incData_[i];
-            
+
         motorCommand_.data[0] += 1;
         motorDataPub_.publish(motorCommand_);
         rate_.sleep();
@@ -455,7 +455,7 @@ class WalkTest{
     bool walk(trajectory_planner::Trajectory::Request  &req,
             trajectory_planner::Trajectory::Response &res){
         this->emptyCommand();
-           int rate = 20;
+        int rate = 200;
         ros::Rate rate_(rate);
 
         
@@ -465,20 +465,23 @@ class WalkTest{
         general_traj.request.final_com_pos = {0, 0, req.COM_height};
         general_traj.request.final_com_orient = {0, 0, 0};
 
-        general_traj.request.init_lankle_pos = {0, 0.1, 0};
+        general_traj.request.init_lankle_pos = {0, 0.0975, 0};
         general_traj.request.init_lankle_orient = {0, 0, 0};
-        general_traj.request.final_lankle_pos = {0, 0.1, 0};
+        general_traj.request.final_lankle_pos = {0, 0.0975, 0};
         general_traj.request.final_lankle_orient = {0, 0, 0};
 
-        general_traj.request.init_rankle_pos = {0, -0.1, 0};
+        general_traj.request.init_rankle_pos = {0, -0.0975, 0};
         general_traj.request.init_rankle_orient = {0, 0, 0};
-        general_traj.request.final_rankle_pos = {0, -0.1, 0};
+        general_traj.request.final_rankle_pos = {0, -0.0975, 0};
         general_traj.request.final_rankle_orient = {0, 0, 0};
 
         general_traj.request.time = 2;
         general_traj.request.dt = req.dt;
         generalTrajectory_.call(general_traj);
 
+        general_traj.request.time = req.t_step;
+        general_traj.request.init_com_pos = {0, 0, req.COM_height};
+        generalTrajectory_.call(general_traj);
 
         trajectory_planner::Trajectory traj_srv;
         traj_srv.request.alpha = req.alpha;
@@ -491,18 +494,22 @@ class WalkTest{
         traj_srv.request.dt = req.dt;
         traj_srv.request.ankle_height = req.ankle_height;
         traj_srv.request.theta = req.theta;
-        trajectoryGenerator_.call(traj_srv);
+        //trajectoryGenerator_.call(traj_srv);
         //if(traj_srv.response.result){
            
         if(true){
+            auto start = high_resolution_clock::now();
+            auto stop = high_resolution_clock::now();
+            auto duration = duration_cast<microseconds>(stop - start);
             
             int i = 0;
-            while(i < 159){
+            ROS_INFO("walking started!");
+            while(i < 12399){
                 
                 trajectory_planner::JntAngs jnt_srv;
                 jnt_srv.request.iter = i;
-                jnt_srv.request.left_ft = {currentLFT_[0], currentLFT_[1], currentLFT_[2]};
-                jnt_srv.request.right_ft = {currentRFT_[0], currentRFT_[1], currentRFT_[2]};
+                jnt_srv.request.left_ft = {currentLFT_[0], -currentLFT_[2], -currentLFT_[1]};
+                jnt_srv.request.right_ft = {currentRFT_[0], -currentRFT_[2], -currentRFT_[1]};
                 jnt_srv.request.accelerometer = {baseAcc_[0], baseAcc_[1], baseAcc_[2]};
                 jnt_srv.request.gyro = {baseAngVel_[0], baseAngVel_[1], baseAngVel_[2]};
                 for (int i=0; i<12; i++){
@@ -594,9 +601,13 @@ class WalkTest{
                         cout<< "joint " << j << " out of workspace in iteration "<< i << ", angle difference: " << dif << endl ;
                     }
                 }    
+                stop = high_resolution_clock::now();
+                duration = duration_cast<microseconds>(stop - start);
+                //cout << duration.count()/1000000.0 << endl;
                 motorDataPub_.publish(motorCommand_);
                 ros::spinOnce();
                 rate_.sleep();
+                start = high_resolution_clock::now();
                 i++;
             }
             res.result = true;

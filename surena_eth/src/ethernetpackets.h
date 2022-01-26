@@ -13,8 +13,7 @@ int32_t Valu2;
 class BumpSensorPacket
 {
 public:
-int16_t ID;
-int16_t data[4];
+int8_t data[8];
 
 
 };

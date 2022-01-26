@@ -658,7 +658,7 @@ inline void Epos::GetFTSensorDataFromPacket(EthernetReceivedPacketType*packet)
       float calibrationMatrix2[3][4]=
  {
     {-1214.0242,-1015.2706,	-1232.727,	-1009.9608},
-{28.3086	,-0.39355	-27.4125	-0.62844},
+{28.3086,	-0.39355,	-27.4125,	-0.62844},
 {-0.14038,	-28.0865,	-0.35422,	28.0305}
 
  };
@@ -757,17 +757,12 @@ inline void Epos::GetIMUDataFromPacket(EthernetReceivedPacketType*packet)
 //========================================================================
 inline void Epos::GetBumpDataFromPacket(BumpSensorPacket *packet)
 {
-    if((packet->ID&0xffff)==0x0481){
-        for(int i=0;i<4;i++){
+
+        for(int i=0;i<8;i++){
             bump_sensor_list[i]=packet->data[i]&0xffff;
         }
-    }
+  
 
-    if((packet->ID&0xffff)==0x0482){
-        for(int i=0;i<4;i++){
-            bump_sensor_list[i+4]=packet->data[i]&0xffff;
-        }
-    }
 }
 //========================================================================
 void Epos::GetPositionDataFromPacket(EthernetReceivedPacketType*packet)
@@ -787,7 +782,7 @@ void Epos::DataReceived(QByteArray data)
     LastPacketreceived=data;
     if(!IsValidRunPacket(data))return;
     incommingPacket=(EthernetReceivedPacketType*)data.data();
-    QByteArray mid= data.mid(154,10);
+    QByteArray mid= data.mid(276,8);
     bumpPacket=(BumpSensorPacket*)mid.data();
     GetPositionDataFromPacket(incommingPacket);
     GetBumpDataFromPacket(bumpPacket);

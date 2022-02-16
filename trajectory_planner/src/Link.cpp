@@ -88,7 +88,7 @@ Matrix3d _Link::rodrigues(Vector3d w, double dt){
         w_wedge << 0.0, -wn(2), wn(1),
                    wn(2), 0.0, -wn(0),
                    -wn(1), wn(0), 0.0;
-        Matrix3d R = Matrix3d::Identity(3,3) + w_wedge * sin(th) + w_wedge * w_wedge * (1 - cos(th));
+        Matrix3d R = Matrix3d::Identity(3,3) + sin(th) * w_wedge + (1 - cos(th)) * w_wedge * w_wedge;
         return R;
     }
 }

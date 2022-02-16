@@ -24,6 +24,9 @@ Robot::Robot(ros::NodeHandle *nh, Controller robot_ctrl){
             &Robot::generalTrajCallback, this);
     resetTrajServer_ = nh->advertiseService("/reset_traj",
             &Robot::resetTrajCallback, this);
+    zmpDataPub_ = nh->advertise<geometry_msgs::Point>("/zmp_position", 100);
+    comDataPub_ = nh->advertise<geometry_msgs::Twist>("/com_data", 100);
+    xiDataPub_ = nh->advertise<geometry_msgs::Twist>("/xi_data", 100);
     
     // SURENA IV geometrical params
     
@@ -102,7 +105,7 @@ Robot::Robot(ros::NodeHandle *nh, Controller robot_ctrl){
     //cout << "Robot Object has been Created" << endl;
 }
 
-void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d torque_r, Vector3d torque_l, double f_r, double f_l, Vector3d gyro, Vector3d accelerometer, double* joint_angles){
+void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d torque_r, Vector3d torque_l, double f_r, double f_l, Vector3d gyro, Vector3d accelerometer, int bump_r[], int bump_l[], double* joint_angles){
     // update joint positions
     for (int i = 0; i < 13; i ++){
         links_[i]->update(config[i], jnt_vel[i], 0.0);
@@ -126,24 +129,39 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
     //Vector3d l_wrench;
     //distributeFT(zmpd_[iter - trajSizes_[0]], rAnklePos_[iter], lAnklePos_[iter], r_wrench, l_wrench);
 
-    //Foot Length Controller
-    //double delta_z = onlineWalk_.footLenController(0, floor((f_r - f_l) * 10) / 10, 0.0001, 1);
-    //lfoot << lAnklePos_[iter](0), lAnklePos_[iter](1), lAnklePos_[iter](2) - 0.5 * delta_z;
-    //rfoot << rAnklePos_[iter](0), rAnklePos_[iter](1), rAnklePos_[iter](2) + 0.5 * delta_z;
-    //cout << delta_z << ',' << f_r << ',' << f_l << ',' << floor((f_r - f_l) * 10) / 10 << endl;
-        
-    //Foot Orientation Controller
-    //Vector3d delta_theta = onlineWalk_.footDampingController(Vector3d::Zero(), Vector3d(0, 0, f_r), torque_r, gain, true);
-    Vector3d delta_theta_r = onlineWalk_.footOrientController(Vector3d::Zero(), torque_r, 0, -0.05, 0, 1, true);
-    Vector3d delta_theta_l = onlineWalk_.footOrientController(Vector3d::Zero(), torque_l, 0, -0.05, 0, 1, false);
-    Matrix3d delta_rot_r;
-    Matrix3d delta_rot_l;
-    cout << delta_theta_r(0) << ',' << delta_theta_r(1) << ',' << delta_theta_r(2) << ',' << torque_r(0) << ',' << torque_r(1)
-            << delta_theta_l(0) << ',' << delta_theta_l(1) << ',' << delta_theta_l(2) << ',' << torque_l(0) << ',' << torque_l(1) << endl;
-    delta_rot_r = AngleAxisd(delta_theta_r(2), Vector3d::UnitZ()) * AngleAxisd(delta_theta_r(1), Vector3d::UnitY()) * AngleAxisd(delta_theta_r(0), Vector3d::UnitX());
-    delta_rot_l = AngleAxisd(delta_theta_l(2), Vector3d::UnitZ()) * AngleAxisd(delta_theta_l(1), Vector3d::UnitY()) * AngleAxisd(delta_theta_l(0), Vector3d::UnitX());
-    rAnkleRot_[iter] = rAnkleRot_[iter] * delta_rot_r;
-    lAnkleRot_[iter] = lAnkleRot_[iter] * delta_rot_l;
+    if(iter > trajSizes_[0] && iter < trajSizes_[1]){
+        //Foot Length Controller
+        //double delta_z = onlineWalk_.footLenController(0, floor((f_l - f_r) * 10) / 10, 0.0001, 1);
+        //lfoot << lAnklePos_[iter](0), lAnklePos_[iter](1), lAnklePos_[iter](2) - 0.5 * delta_z;
+        //rfoot << rAnklePos_[iter](0), rAnklePos_[iter](1), rAnklePos_[iter](2) + 0.5 * delta_z;
+        //cout << delta_z << ',' << f_r << ',' << f_l << ',' << floor((f_r - f_l) * 10) / 10 << endl;
+            
+        //Foot Orientation Controller
+        //Vector3d delta_theta = onlineWalk_.footDampingController(Vector3d::Zero(), Vector3d(0, 0, f_r), torque_r, gain, true);
+        //Vector3d delta_theta_r = onlineWalk_.footOrientController(Vector3d(0, 0, 0), torque_r, 0.005, 0, 1, true);
+        //Vector3d delta_theta_l = onlineWalk_.footOrientController(Vector3d(0, 0, 0), torque_l, 0.005, 0, 1, false);
+        //Matrix3d delta_rot_r;
+        //Matrix3d delta_rot_l;
+        //cout << delta_theta_r(0) << ',' << delta_theta_r(1) << ',' << delta_theta_r(2) << ',' << torque_r(0) << ',' << torque_r(1) << ','
+        //     << delta_theta_l(0) << ',' << delta_theta_l(1) << ',' << delta_theta_l(2) << ',' << torque_l(0) << ',' << torque_l(1) << ','
+        //     << delta_z << ',' << f_r << ',' << f_l << ',' << floor((f_r - f_l) * 10) / 10 << endl;
+        //delta_rot_r = AngleAxisd(delta_theta_r(2), Vector3d::UnitZ()) * AngleAxisd(delta_theta_r(1), Vector3d::UnitY()) * AngleAxisd(delta_theta_r(0), Vector3d::UnitX());
+        //delta_rot_l = AngleAxisd(delta_theta_l(2), Vector3d::UnitZ()) * AngleAxisd(delta_theta_l(1), Vector3d::UnitY()) * AngleAxisd(delta_theta_l(0), Vector3d::UnitX());
+        //rAnkleRot_[iter] = rAnkleRot_[iter] * delta_rot_r;
+        //lAnkleRot_[iter] = lAnkleRot_[iter] * delta_rot_l;
+
+        //Bump Foot Orientation Controller
+        //Vector3d delta_theta_r = onlineWalk_.bumpFootOrientController(bump_r, Vector3d::Zero(), 120/200, 0.0, 120, true);
+        //Vector3d delta_theta_l = onlineWalk_.bumpFootOrientController(bump_l, Vector3d::Zero(), 6.0 / 300.0, 0.0, 6.0, false);
+        //cout << delta_theta_r(0) << ',' << delta_theta_r(1) << ',' << delta_theta_r(2) << ',' << bump_r[0] << ',' << bump_r[1] << ',' << bump_r[2] << ',' << bump_r[3] << ','
+        //cout << delta_theta_l(0) << ',' << delta_theta_l(1) << ',' << delta_theta_l(2) << ',' << bump_l[0] << ',' << bump_l[1] << ',' << bump_l[2] << ',' << bump_l[3] << ',' <<f_l << endl;
+        //Matrix3d delta_rot_r;
+        //Matrix3d delta_rot_l;
+        //delta_rot_r = AngleAxisd(delta_theta_r(2), Vector3d::UnitZ()) * AngleAxisd(delta_theta_r(1), Vector3d::UnitY()) * AngleAxisd(delta_theta_r(0), Vector3d::UnitX());
+        //delta_rot_l = AngleAxisd(delta_theta_l(2), Vector3d::UnitZ()) * AngleAxisd(delta_theta_l(1), Vector3d::UnitY()) * AngleAxisd(delta_theta_l(0), Vector3d::UnitX());
+        //rAnkleRot_[iter] = rAnkleRot_[iter] * delta_rot_r;
+        //lAnkleRot_[iter] = lAnkleRot_[iter] * delta_rot_l;
+    }
 
     if(trajContFlags_[traj_index] == true){
         Vector3d zmp_ref = onlineWalk_.dcmController(xiDesired_[iter+1], xiDot_[iter+1], realXi_[iter], COM_height_);
@@ -167,7 +185,6 @@ void Robot::updateState(double config[], Vector3d torque_r, Vector3d torque_l, d
     change_attitude[0] = gyro(0) + tan(base_attitude(1)) * (gyro(1) * sin(base_attitude(0)) + gyro(2) * cos(base_attitude(0)));
     change_attitude[1] = gyro(1) * cos(base_attitude(0)) - gyro(2) * sin(base_attitude(0));
     change_attitude[2] = 1/cos(base_attitude(1)) * (gyro(1) * sin(base_attitude(0)) + gyro(2) * cos(base_attitude(0)));
-
     base_attitude += this->dt_ * change_attitude;
     Matrix3d rot = (AngleAxisd(base_attitude[0], Vector3d::UnitX())
                   * AngleAxisd(base_attitude[1], Vector3d::UnitY())
@@ -194,13 +211,16 @@ void Robot::updateState(double config[], Vector3d torque_r, Vector3d torque_l, d
     Vector3d l_zmp = getZMPLocal(torque_l, f_l);
     Vector3d r_zmp = getZMPLocal(torque_r, f_r);
 
-    if (abs(f_l) < 5)
+    if (abs(f_l) < 20)
         f_l = 0;
-    if (abs(f_r) < 5)
+    if (abs(f_r) < 20)
         f_r = 0;
 
     realZMP_[index_] = ZMPGlobal(rSole_ + l_zmp, lSole_ + r_zmp, f_r, f_l);
-
+    zmpPosition_.x = realZMP_[index_](0);
+    zmpPosition_.y = realZMP_[index_](1);
+    zmpPosition_.z = realZMP_[index_](2);
+    zmpDataPub_.publish(zmpPosition_);
 }
 
 void Robot::updateSolePosition(){
@@ -209,7 +229,8 @@ void Robot::updateSolePosition(){
 
     if(leftSwings_ && (!rightSwings_)){
         lSole_ = rSole_ - links_[6]->getPose() + links_[12]->getPose();
-        FKCoM_[index_] = lSole_ - links_[0]->getRot() * links_[12]->getPose();
+        //FKCoM_[index_] = lSole_ - links_[0]->getRot() * links_[12]->getPose();
+        FKCoM_[index_] = lSole_ - links_[12]->getPose();
         //FKCoMDot_[index_] = - links_[6]->getVel().block<3,1>(0, 0);
         //FKCoMDot_[index_] = -links_[0]->getRot() * links_[6]->getVel().block<3,1>(0, 0) - r_dot * links_[6]->getPose();
         rSoles_[index_] = rSole_;
@@ -218,20 +239,22 @@ void Robot::updateSolePosition(){
     else if ((!leftSwings_) && rightSwings_){
         Matrix<double, 6, 1> q_dot;
         rSole_ = lSole_ - links_[12]->getPose() + links_[6]->getPose();
-        FKCoM_[index_] = rSole_ - links_[0]->getRot() * links_[6]->getPose();
+        //FKCoM_[index_] = rSole_ - links_[0]->getRot() * links_[6]->getPose();
+        FKCoM_[index_] = rSole_ - links_[6]->getPose();
         //FKCoMDot_[index_] = - links_[12]->getVel().block<3,1>(0, 0);
         //FKCoMDot_[index_] = -links_[0]->getRot() * links_[12]->getVel().block<3,1>(0, 0) - r_dot * links_[12]->getPose();
         rSoles_[index_] = rSole_;
         lSoles_[index_] = lSole_;
     }
     else{   // double support
-        FKCoM_[index_] = rSole_ - links_[0]->getRot() * links_[6]->getPose();
+        //FKCoM_[index_] = rSole_ - links_[0]->getRot() * links_[6]->getPose();
+        FKCoM_[index_] = rSole_ - links_[6]->getPose();
         //FKCoMDot_[index_] = - links_[6]->getVel().block<3,1>(0, 0);
         //FKCoMDot_[index_] = -links_[0]->getRot() * links_[6]->getVel().block<3,1>(0, 0) - r_dot * links_[6]->getPose();
         rSoles_[index_] = rSole_;
         lSoles_[index_] = lSole_;
     }
-
+    cout << FKCoM_[index_](0) << "," << FKCoM_[index_](1) << "," << FKCoM_[index_](2) << endl;
     // 3-point backward formula for numeraical differentiation: 
     // https://www3.nd.edu/~zxu2/acms40390F15/Lec-4.1.pdf
     Vector3d f1, f0;
@@ -438,8 +461,8 @@ bool Robot::trajGenCallback(trajectory_planner::Trajectory::Request  &req,
         if (step_width == 0){sign = 1;}
         else{sign = (step_width/abs(step_width));}
 
-        ankle_rf[0] << 0.0, (torso_ + 0.02) * sign, 0.0;
-        ankle_rf[1] << 0.0, (torso_ + 0.02) * -sign, 0.0;
+        ankle_rf[0] << 0.0, (torso_ + 0.0) * sign, 0.0;
+        ankle_rf[1] << 0.0, (torso_ + 0.0) * -sign, 0.0;
         dcm_rf[0] << 0.0, 0.0, 0.0;
         dcm_rf[1] << 0.0, torso_ * -sign, 0.0;
         //cout << dcm_rf[0](0) << ", " << dcm_rf[0](1) << ", " << dcm_rf[0](2) << ", " << ankle_rf[0](0) << ", " << ankle_rf[0](1) << ", " << ankle_rf[0](2) << endl;
@@ -645,11 +668,17 @@ bool Robot::jntAngsCallback(trajectory_planner::JntAngs::Request  &req,
         Vector3d left_torque(req.left_ft[1], req.left_ft[2], 0.0);
         double config[13];
         double jnt_vel[13];
+        int right_bump[4];
+        int left_bump[4];
         config[0] = 0;     //Pelvis joint angle
         jnt_vel[0] = 0;  //Pelvis joint velocity
         for(int i = 1; i < 13; i++){
             config[i] = req.config[i-1];
             jnt_vel[i] = req.jnt_vel[i-1];  
+            if(i < 5){
+                right_bump[i-1] = req.right_bump[i-1];
+                left_bump[i-1] = req.left_bump[i-1];
+            }
         }
         //cout << req.right_ft[0] << "," << req.right_ft[1] << ","  << req.right_ft[2] << "," <<  
         //req.left_ft[0] << "," << req.left_ft[1] << ","  << req.left_ft[2] << "," << 
@@ -663,7 +692,8 @@ bool Robot::jntAngsCallback(trajectory_planner::JntAngs::Request  &req,
         //<< req.left_ft[0] << "," << req.left_ft[1] << "," << req.left_ft[2] << "," << endl;
         this->spinOnline(req.iter, config, jnt_vel, right_torque, left_torque, req.right_ft[0], req.left_ft[0],
                          Vector3d(req.gyro[0], req.gyro[1], req.gyro[2]),
-                         Vector3d(req.accelerometer[0],req.accelerometer[1],req.accelerometer[2]), jnt_angs);
+                         Vector3d(req.accelerometer[0],req.accelerometer[1],req.accelerometer[2]),
+                         right_bump, left_bump, jnt_angs);
         //this->spinOffline(req.iter, jnt_angs);
         for(int i = 0; i < 12; i++)
             res.jnt_angs[i] = jnt_angs[i];

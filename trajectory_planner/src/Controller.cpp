@@ -45,11 +45,9 @@ double Controller::footLenController(double delta_fz_d, double delta_fz, double 
     return deltaZ_;
 }
 
-Vector3d Controller::footOrientController(Vector3d delta_zmp, Vector3d tau, double f_d, double k_p, double k_d, double k_r, bool is_right){
-    Vector3d tau_d, u_dot, diff, diff_d;
-    tau_d(1) = f_d * delta_zmp(0);
-    tau_d(0) = f_d * delta_zmp(1);
-    
+Vector3d Controller::footOrientController(Vector3d tau_d, Vector3d tau, double k_p, double k_d, double k_r, bool is_right){
+    Vector3d u_dot, diff, diff_d;
+
     int index = 0;
     if(!is_right)
         index = 1;
@@ -70,6 +68,35 @@ Vector3d Controller::footOrientController(Vector3d delta_zmp, Vector3d tau, doub
         return uOrientL_;
     }
 
+}
+
+Vector3d Controller::bumpFootOrientController(int* const bump_mesured, Vector3d mean_bump_d, double k_p, double k_d, double k_r, bool is_right){
+    Vector3d bump_mean(0.0, 0.0, 0.0);
+    Vector3d u_dot, diff, diff_d;;
+
+    bump_mean(0) =  bump_mesured[0] - bump_mesured[1] - bump_mesured[2] + bump_mesured[3];
+    bump_mean(1) = -bump_mesured[0] - bump_mesured[1] + bump_mesured[2] + bump_mesured[3];
+
+    int index = 0;
+    if(!is_right)
+        index = 1;
+
+    diff_d = 1/dt_ *(mean_bump_d - prevBump_d_[index]);
+    diff = 1/dt_ *(bump_mean - prevBumpMean_[index]);
+    
+    prevBumpMean_[index] = bump_mean;
+    prevBump_d_[index] = mean_bump_d;
+
+    if (is_right){
+        u_dot = k_p * (mean_bump_d - bump_mean) + k_d * (diff_d - diff) - k_r * (uBumpOrientR_);
+        uBumpOrientR_ += u_dot * dt_;
+        return uBumpOrientR_;
+    }
+    else{
+        u_dot = k_p * (mean_bump_d - bump_mean) + k_d * (diff_d - diff) - k_r * (uBumpOrientL_);
+        uBumpOrientL_ += u_dot * dt_;
+        return uBumpOrientL_;
+    }
 }
 
 Vector3d Controller::footDampingController(Vector3d zmp, Vector3d f_measured, Vector3d tau_measured, Matrix3d cop_gain, bool is_right){

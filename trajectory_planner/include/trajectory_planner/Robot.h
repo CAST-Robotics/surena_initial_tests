@@ -3,6 +3,8 @@
 #include <ros/ros.h>
 #include <ros/console.h>
 #include <std_srvs/Empty.h>
+#include <geometry_msgs/Point.h>
+#include <geometry_msgs/Twist.h>
 #include "trajectory_planner/JntAngs.h"
 #include "trajectory_planner/Trajectory.h"
 #include "trajectory_planner/GeneralTraj.h"
@@ -25,7 +27,7 @@ class Robot{
         Robot(ros::NodeHandle *nh, Controller robot_ctrl);
         ~Robot();
 
-        void spinOnline(int iter, double config[], double jnt_vel[], Vector3d torque_r, Vector3d torque_l, double f_r, double f_l, Vector3d gyro, Vector3d accelerometer, double* joint_angles);
+        void spinOnline(int iter, double config[], double jnt_vel[], Vector3d torque_r, Vector3d torque_l, double f_r, double f_l, Vector3d gyro, Vector3d accelerometer, int bump_r[], int bump_l[], double* joint_angles);
         void spinOffline(int iter, double* config);
         bool jntAngsCallback(trajectory_planner::JntAngs::Request  &req,
                             trajectory_planner::JntAngs::Response &res);
@@ -111,6 +113,10 @@ class Robot{
         ros::ServiceServer trajGenServer_;
         ros::ServiceServer generalTrajServer_;
         ros::ServiceServer resetTrajServer_;
+        ros::Publisher zmpDataPub_;
+        geometry_msgs::Point zmpPosition_;
+        ros::Publisher comDataPub_;
+        ros::Publisher xiDataPub_;
         bool isTrajAvailable_;
         bool useController_;
 

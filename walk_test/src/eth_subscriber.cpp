@@ -30,6 +30,7 @@ class WalkTest{
         jointCommand_ = n->advertiseService("joint_command", &WalkTest::sendCommand, this);
         trajectoryGenerator_ = n->serviceClient<trajectory_planner::Trajectory>("/traj_gen");
         generalTrajectory_  = n->serviceClient<trajectory_planner::GeneralTraj>("/general_traj");
+        resetTrajectory_  = n->serviceClient<std_srvs::Empty>("/reset_traj");
         jointAngles_ = n->serviceClient<trajectory_planner::JntAngs>("/jnt_angs");
         absPrinter_ = n->advertiseService("print_absolute", &WalkTest::absPrinter, this);
         walkService_ = n->advertiseService("walk_service", &WalkTest::walk, this);
@@ -38,6 +39,7 @@ class WalkTest{
         lFT_ = n->subscribe("/surena/ft_l_state",100, &WalkTest::ftCallbackLeft, this);
         rFT_ = n->subscribe("/surena/ft_r_state",100, &WalkTest::ftCallbackRight, this);
         IMUSub_ = n->subscribe("/surena/imu_state",100, &WalkTest::IMUCallback, this);
+        bumpSub_ = n->subscribe("/surena/bump_sensor_state",100, &WalkTest::bumpCallback, this);
 
         b = 0.049;
         c = 0.35;
@@ -54,6 +56,8 @@ class WalkTest{
         int temp_abs2inc_dir[12] = {1, -1, -1, -1, -1, 1, 1, -1, -1, 1, 1, 1};
         int temp_abs_dir[12] = {-1, -1, -1, 1, -1, -1, -1, -1, 1, 1, 1, -1};
         int temp_motor_dir[12] = {1, 1, 1, -1, -1, 1, 1, 1, -1, 1, 1, -1};
+        int temp_bump_order[8] = {3, 0, 1, 2, 6, 5, 4, 7};
+        int temp_initial_bump[4] = {0, 0, 0, 0};
 
         collision_ = false;
 
@@ -66,6 +70,13 @@ class WalkTest{
             absDir_[i] = temp_abs_dir[i];
             motorDir_[i] = temp_motor_dir[i];
             commandConfig_[i] = 0.0;
+            if (i<8){
+                bumpOrder_[i] = temp_bump_order[i];
+            }
+            if (i<4){
+                rBumpOffset_[i] = temp_initial_bump[i];
+                lBumpOffset_[i] = temp_initial_bump[i];
+            }
         }
         
         leftFTFile_.open("/home/surena/SurenaV/log/left_ft.csv");
@@ -131,6 +142,7 @@ class WalkTest{
         setPos(7, homeAbs_[7]);
         qcInitialBool_ = true;
         setFTZero();
+        setBumpZero();
         ros::spinOnce();
         return true;
     }
@@ -166,6 +178,23 @@ class WalkTest{
             recentLFT_.erase (recentLFT_.begin());
             recentLFT_.push_back(Vector3d(msg.force.x, msg.force.y, msg.force.z));
         }
+    }
+
+    void bumpCallback(const std_msgs::Int32MultiArray &msg){
+        for (int i = 0; i < 8; ++i){
+            if (i<4){
+                currentRBump_[bumpOrder_[i]] = msg.data[i] - rBumpOffset_[bumpOrder_[i]];
+                realRBump_[bumpOrder_[i]] = msg.data[i];
+            }
+            else{
+                currentLBump_[bumpOrder_[i] - 4] = msg.data[i] - lBumpOffset_[bumpOrder_[i] - 4]; 
+                realLBump_[bumpOrder_[i] - 4] = msg.data[i];
+            }
+        }
+        /*
+        cout<<currentLBump_[0]<< "," <<currentLBump_[1]<< "," <<currentLBump_[2]<< "," <<currentLBump_[3]<<endl;
+        cout<<currentRBump_[0]<< "," <<currentRBump_[1]<< "," <<currentRBump_[2]<< "," <<currentRBump_[3]<<endl; 
+        */  
     }
 
     void ftCallbackRight(const geometry_msgs::Wrench &msg){
@@ -208,6 +237,13 @@ class WalkTest{
 
     }
 
+    bool setBumpZero(){
+        for (int i = 0; i<4; i++){
+            rBumpOffset_[i] = realRBump_[i];
+            lBumpOffset_[i] = realLBump_[i];
+        }
+    }
+
     bool dummyCallback(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res){
         for(int i = 0; i < 30 * 100; i ++){
             emptyCommand();
@@ -232,7 +268,7 @@ class WalkTest{
 
     bool sendCommand(walk_test::command::Request &req, walk_test::command::Response &res){
 
-        ros::Rate rate_(200);
+        ros::Rate rate_(50);
         this->emptyCommand();
         if(req.motor_id == 4){
             
@@ -356,11 +392,12 @@ class WalkTest{
                 rate_.sleep();
             }           
         } else{
-            //double inc = motorDir_[req.motor_id] * req.angle * 4096 * 4 * 160 / 2 / M_PI;
-            double inc = motorDir_[req.motor_id] * req.angle;
-            for (int i = 0; i < int(abs(inc)) / 2000; i++){
-                //motorCommand_.data[req.motor_id] += inc / 100;
-                motorCommand_.data[req.motor_id] += sgn(inc) * 2000;
+            double inc = motorDir_[req.motor_id] * req.angle * 4096 * 4 * 160 / 2 / M_PI;
+            for (int i = 0; i < int(abs(inc)) / 100; i++){
+                if(req.motor_id == 1)
+                    motorCommand_.data[0] += sgn(inc) * 100;
+                else
+                    motorCommand_.data[req.motor_id] += sgn(inc) * 100;
                 motorDataPub_.publish(motorCommand_);
                 ros::spinOnce();
                 rate_.sleep();
@@ -481,7 +518,7 @@ class WalkTest{
 
         general_traj.request.time = req.t_step;
         general_traj.request.init_com_pos = {0, 0, req.COM_height};
-        generalTrajectory_.call(general_traj);
+        //generalTrajectory_.call(general_traj);
 
         trajectory_planner::Trajectory traj_srv;
         traj_srv.request.alpha = req.alpha;
@@ -494,7 +531,7 @@ class WalkTest{
         traj_srv.request.dt = req.dt;
         traj_srv.request.ankle_height = req.ankle_height;
         traj_srv.request.theta = req.theta;
-        //trajectoryGenerator_.call(traj_srv);
+        trajectoryGenerator_.call(traj_srv);
         //if(traj_srv.response.result){
            
         if(true){
@@ -504,12 +541,14 @@ class WalkTest{
             
             int i = 0;
             ROS_INFO("walking started!");
-            while(i < 12399){
+            while(i < 1599){
                 
                 trajectory_planner::JntAngs jnt_srv;
                 jnt_srv.request.iter = i;
-                jnt_srv.request.left_ft = {currentLFT_[0], -currentLFT_[2], -currentLFT_[1]};
-                jnt_srv.request.right_ft = {currentRFT_[0], -currentRFT_[2], -currentRFT_[1]};
+                jnt_srv.request.left_ft = {-currentLFT_[0], -currentLFT_[2], -currentLFT_[1]};
+                jnt_srv.request.right_ft = {-currentRFT_[0], -currentRFT_[2], -currentRFT_[1]};
+                jnt_srv.request.right_bump = {currentRBump_[0], currentRBump_[1], currentRBump_[2], currentRBump_[3]};
+                jnt_srv.request.left_bump = {currentLBump_[0], currentLBump_[1], currentLBump_[2], currentLBump_[3]};
                 jnt_srv.request.accelerometer = {baseAcc_[0], baseAcc_[1], baseAcc_[2]};
                 jnt_srv.request.gyro = {baseAngVel_[0], baseAngVel_[1], baseAngVel_[2]};
                 for (int i=0; i<12; i++){
@@ -539,7 +578,7 @@ class WalkTest{
                         case 0:
                             //this->yawMechanism(theta, jnt_srv.response.jnt_angs[j], 0.03435, 0.088, false);
                             //motorCommand_.data[j] =  motorDir_[j] * theta * 4096 * 4 * 100 / 2 / M_PI + homeOffset_[j];
-                            motorCommand_.data[j] =  motorDir_[1] * jnt_srv.response.jnt_angs[1] * 4096 * 4 * 100 / 2 / M_PI + homeOffset_[j];
+                            motorCommand_.data[j] =  motorDir_[1] * jnt_srv.response.jnt_angs[1] * 4096 * 4 * 160 / 2 / M_PI + homeOffset_[j];
                             
                             //yawMechanismFK(alpha,inc2rad(incData_[0] - homeOffset_[0]) / 100, 0.03435, 0.088, false);
                             commandConfig_[j] = inc2rad(motorDir_[j] * (incData_[j] - homeOffset_[j])) / 160;
@@ -610,6 +649,8 @@ class WalkTest{
                 start = high_resolution_clock::now();
                 i++;
             }
+            std_srvs::Empty reset_srv;
+            resetTrajectory_.call(reset_srv);
             res.result = true;
             return true;
         }
@@ -715,10 +756,12 @@ private:
     ros::Subscriber lFT_;
     ros::Subscriber rFT_;
     ros::Subscriber IMUSub_;
+    ros::Subscriber bumpSub_;
     ros::ServiceServer jointCommand_;
     ros::ServiceServer absPrinter_;
     ros::ServiceClient trajectoryGenerator_;
     ros::ServiceClient generalTrajectory_ ;
+    ros::ServiceClient resetTrajectory_;
     ros::ServiceClient jointAngles_;
     ros::ServiceServer walkService_;
     ros::ServiceServer homeService_;
@@ -736,6 +779,7 @@ private:
     int absDir_[12];
     int motorDir_[12];
     bool collision_;
+    int bumpOrder_[8];
 
     // Ankle Mechanism Parameters
 
@@ -753,11 +797,17 @@ private:
 
     Vector3d rFTOffset_;
     Vector3d lFTOffset_;
+    int rBumpOffset_[4];
+    int lBumpOffset_[4];
     vector<Vector3d> recentLFT_;
     vector<Vector3d> recentRFT_;
 
     double currentLFT_[3];
     double currentRFT_[3];
+    int currentLBump_[4];
+    int currentRBump_[4];
+    int realRBump_[4];
+    int realLBump_[4];
     double baseAcc_[3];
     double baseOrient_[3];
     double baseAngVel_[3];
@@ -770,15 +820,6 @@ int main(int argc, char **argv){
     ros::init(argc, argv, "eth_subscriber");
     ros::NodeHandle n;
     WalkTest wt(&n);
-
-    /*motorDataPub_ = n.advertise<std_msgs::Int32MultiArray>("jointdata/qc", 100);
-    ros::Subscriber incSub_ = n.subscribe("/surena/inc_joint_state",100, qcInitial);
-    
-    trajectoryGenerator_ = n.serviceClient<trajectory_planner::Trajectory>("/traj_gen");
-    jointAngles_ = n.serviceClient<trajectory_planner::JntAngs>("/jnt_angs");
-    ros::ServiceServer walkService_ = n.advertiseService("walk_service", walk);
-    
-    //WalkTest dcm_walk(&n);*/
     ros::spin();
 	return 0;
 }

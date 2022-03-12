@@ -90,7 +90,8 @@ class Robot{
 
         Vector3d rSole_;    // current position of right sole
         Vector3d lSole_;    // current position of left sole
-        Vector3d* FKCoM_;      // current CoM of robot
+        Vector3d* FKBase_;      // current CoM of robot
+        Vector3d* FKCoM_;
         Vector3d* FKCoMDot_;
         Vector3d* realXi_;
         Vector3d* realZMP_;      // current ZMP of robot
@@ -108,6 +109,7 @@ class Robot{
         void updateSolePosition();
         Vector3d getZMPLocal(Vector3d torque, double fz);
         Vector3d ZMPGlobal(Vector3d zmp_r, Vector3d zmp_l, double f_r, double f_l);
+        Vector3d CoM2Base();
 
         ros::ServiceServer jntAngsServer_;
         ros::ServiceServer trajGenServer_;

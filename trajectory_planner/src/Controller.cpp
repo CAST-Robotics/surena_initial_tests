@@ -21,6 +21,11 @@ Controller::Controller(Matrix3d K_p, Matrix3d K_i, Matrix3d K_zmp, Matrix3d K_co
     prevTau_d_[1] << 0, 0, 0;
     thetaAnkleR_ << 0, 0, 0;
     thetaAnkleL_ << 0, 0, 0;
+    prevEarlyContactMeanBump_ = 0; 
+    preDeltaU_ << 0.0, 0.0, 0.0;
+    firstContact_ = false;
+    desiredContactPos_ << 0.0, 0.0, 0.0;
+    deltaU_ << 0.0, 0.0, 0.0;
 }
 
 Vector3d Controller::dcmController(Vector3d xiRef, Vector3d xiDotRef, Vector3d xiReal, double deltaZVRP){
@@ -109,6 +114,49 @@ Vector3d Controller::footDampingController(Vector3d zmp, Vector3d f_measured, Ve
         return thetaAnkleL_;
     }
 }
+
+// Vector3d Controller::earlyContactController(int* const bump_measured, Vector3d designedTraj){
+//     Vector3d delta_u(0.0, 0.0, 0.0);
+//     //MatrixXd S(1, 3);
+//     double mean_bump = (bump_measured[0] + bump_measured[1] + bump_measured[2] + bump_measured[3])/4.0;
+//     //cout << bump_measured[0] << ", " << bump_measured[1] << ", " << bump_measured[2] << ", " << bump_measured[3] << ", " << mean_bump << ", ";
+//     if(mean_bump < -50 && mean_bump > -70){
+//         if(!firstContact_){
+//             desiredContactPos_ = designedTraj - Vector3d(0.0, 0.0, 0.0);
+//             firstContact_ = true;
+//         }
+//         delta_u = 0.9391 * preDeltaU_ + 0.0609*(desiredContactPos_ - designedTraj);
+//         delta_u(0) = 0.0;
+//         delta_u(1) = 0.0;
+//     }
+//     prevEarlyContactMeanBump_ = mean_bump;
+//     preDeltaU_ = delta_u;
+//     return delta_u;
+//     //&& ((prevEarlyContactMeanBump_ - mean_bump) > 0)
+// }
+
+Vector3d Controller::earlyContactController(int* const bump_measured, Vector3d designedTraj){
+    double K_p = 0.003;
+    double K_r = 0.0;
+    double desired_mean_bump = -55;
+    Vector3d delta_u_dot(0.0, 0.0, 0.0);
+    //MatrixXd S(1, 3);
+    double mean_bump = (bump_measured[0] + bump_measured[1] + bump_measured[2] + bump_measured[3])/4.0;
+    //cout << bump_measured[0] << ", " << bump_measured[1] << ", " << bump_measured[2] << ", " << bump_measured[3] << ", " << mean_bump << ", ";
+    if(mean_bump < -10 && mean_bump > -70){
+        // if(!firstContact_){
+        //     desiredContactPos_ = designedTraj - Vector3d(0.0, 0.0, 0.0);
+        //     firstContact_ = true;
+        // }
+        // Vector3d delta_u_dot = K_p * (desiredContactPos_ - designedTraj) + K_r * deltaU_;
+        // deltaU_ += delta_u_dot * dt_;
+        delta_u_dot(2) = K_p * (desired_mean_bump - mean_bump) + K_r * deltaU_(2);
+        deltaU_ += delta_u_dot * dt_;
+    }
+    return -deltaU_;
+}
+
+
 void Controller::setDt(double dt){
     this->dt_ = dt;
 }

@@ -64,4 +64,6 @@ void GeneralMotion::changeInPlace(Vector3d init_com_pos, Vector3d final_com_pos,
         temp_rankle_orient = rankle_orient_coefs[0] + rankle_orient_coefs[1] * t + rankle_orient_coefs[2] * pow(t,2) + rankle_orient_coefs[3] * pow(t,3);
         RAnkleOrient_[index] = AngleAxisd(temp_rankle_orient(2), Vector3d::UnitZ()) * AngleAxisd(temp_rankle_orient(1), Vector3d::UnitY()) * AngleAxisd(temp_rankle_orient(0), Vector3d::UnitX());
     }
+    MinJerk::write2File(LAnklePos_, length_, "lFoot");
+    MinJerk::write2File(RAnklePos_, length_, "rFoot");
 }

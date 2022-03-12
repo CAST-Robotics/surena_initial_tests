@@ -1,16 +1,19 @@
 #include "../include/trajectory_planner/Link.h"
 
-_Link::_Link(short int ID, Vector3d a, Vector3d b, double m, Matrix3d inertia, _Link* parent){
+_Link::_Link(short int ID, Vector3d a, Vector3d b, double m, Matrix3d inertia, Vector3d com_pose, _Link* parent){
     this->ID_ = ID;
     this->parent_ = parent;
     this->a_ = a;
     this->b_ = b;
     this->m_ = m;
     this->I_ = inertia;
+    this->c_ = com_pose;
 
     this->q_ = 0.0;
     this->dq_ = 0.0;
     this->ddq_ = 0.0;
+    this->v_ = Vector3d::Zero();
+    this->w_ = Vector3d::Zero();
 
  }
 
@@ -35,6 +38,10 @@ double _Link::q(){
     return this->q_;
 }
 
+double _Link::getMass(){
+    return this->m_;
+}
+
 double _Link::dq(){
     return this->dq_;
 }
@@ -43,10 +50,31 @@ void _Link::update(double q, double dq, double ddq){
     this->q_ = q;
     this->dq_ = dq;
     this->ddq_ = ddq;
+    if (parent_ == NULL){
+        this->w_ = Vector3d::Zero();
+        this->v_ = Vector3d::Zero();
+    }
+    else{
+        this->w_ = this->parent_->getOmega() + this->dq_ * this->getRot() * this->a_;
+        this->v_ = this->parent_->getLinkVel() + this->parent_->getOmega().cross(this->parent_->getRot() * this->b_);
+    }
+    
 }
+
+Vector3d _Link::getLinkVel(){
+    return this->v_;
+}
+Vector3d _Link::getOmega(){
+    return this->w_;
+}
+
 
 Vector3d _Link::getPose(){
     return this->p_;
+}
+
+Vector3d _Link::getLinkCoM(){
+    return this->c_;
 }
 
 Matrix3d _Link::getRot(){

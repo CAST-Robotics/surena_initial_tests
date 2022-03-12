@@ -103,9 +103,9 @@ class WalkTest{
         // the value of dest is on the basis of absolute incs.
         ros::Rate rate_(200);
         int temp_roll = jointID;
-        if(jointID == 1){
-            temp_roll = 0;   // For Fixing Right Hip Roll Problem
-        }
+        // if(jointID == 1){
+        //     temp_roll = 0;   // For Fixing Right Hip Roll Problem
+        // }
         while(abs(abs(absData_[temp_roll]) - dest) > 100){
             if (abs(absData_[temp_roll]) < 262144){
                     if (abs(absData_[temp_roll]) > dest){
@@ -129,8 +129,8 @@ class WalkTest{
         
         //ankleHome(false);
         setPos(6, homeAbs_[6]);
+        setPos(0, homeAbs_[0]);
         setPos(1, homeAbs_[1] + 20000);
-        //setPos(0, homeAbs_[0]);
         setPos(7, homeAbs_[7] - 20000);
         ankleHome(false, homeAbs_[5], homeAbs_[4]);
         setPos(3, homeAbs_[3]);
@@ -156,10 +156,10 @@ class WalkTest{
                 motorCommand_.data.push_back(homeOffset_[i]);
             }
             qcInitialBool_=false;
-            ROS_INFO("Offset=%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t\n",
-                    homeOffset_[0],homeOffset_[1],homeOffset_[2],homeOffset_[3],homeOffset_[4],
-                    homeOffset_[5],homeOffset_[6],homeOffset_[7],homeOffset_[8],homeOffset_[9],
-                    homeOffset_[10],homeOffset_[11],homeOffset_[12],homeOffset_[13],homeOffset_[14],homeOffset_[15],homeOffset_[20],homeOffset_[21],homeOffset_[22],homeOffset_[23]);
+            //ROS_INFO("Offset=%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t\n",
+            //        homeOffset_[0],homeOffset_[1],homeOffset_[2],homeOffset_[3],homeOffset_[4],
+            //        homeOffset_[5],homeOffset_[6],homeOffset_[7],homeOffset_[8],homeOffset_[9],
+            //        homeOffset_[10],homeOffset_[11],homeOffset_[12],homeOffset_[13],homeOffset_[14],homeOffset_[15],homeOffset_[20],homeOffset_[21],homeOffset_[22],homeOffset_[23]);
         
         }
         
@@ -232,7 +232,7 @@ class WalkTest{
         }
         lFTOffset_ = lFTOffset_ / recentLFT_.size();
         rFTOffset_ = rFTOffset_ / recentRFT_.size();
-        cout << "left ft offset: " << lFTOffset_ << "   " << rFTOffset_ << endl;
+        //cout << "left ft offset: " << lFTOffset_ << "   " << rFTOffset_ << endl;
         return true;
 
     }
@@ -394,10 +394,7 @@ class WalkTest{
         } else{
             double inc = motorDir_[req.motor_id] * req.angle * 4096 * 4 * 160 / 2 / M_PI;
             for (int i = 0; i < int(abs(inc)) / 100; i++){
-                if(req.motor_id == 1)
-                    motorCommand_.data[0] += sgn(inc) * 100;
-                else
-                    motorCommand_.data[req.motor_id] += sgn(inc) * 100;
+                motorCommand_.data[req.motor_id] += sgn(inc) * 100;
                 motorDataPub_.publish(motorCommand_);
                 ros::spinOnce();
                 rate_.sleep();
@@ -509,7 +506,7 @@ class WalkTest{
 
         general_traj.request.init_rankle_pos = {0, -0.0975, 0};
         general_traj.request.init_rankle_orient = {0, 0, 0};
-        general_traj.request.final_rankle_pos = {0, -0.0975, 0};
+        general_traj.request.final_rankle_pos = {0, -0.0975, 0.06};
         general_traj.request.final_rankle_orient = {0, 0, 0};
 
         general_traj.request.time = 2;
@@ -518,7 +515,12 @@ class WalkTest{
 
         general_traj.request.time = req.t_step;
         general_traj.request.init_com_pos = {0, 0, req.COM_height};
+        general_traj.request.final_com_pos = {0, 0, 0.71};
         //generalTrajectory_.call(general_traj);
+
+        general_traj.request.init_rankle_pos = {0, -0.0975, 0.06};
+        general_traj.request.final_rankle_pos = {0, -0.0975, 0.0};
+        generalTrajectory_.call(general_traj);
 
         trajectory_planner::Trajectory traj_srv;
         traj_srv.request.alpha = req.alpha;
@@ -531,7 +533,7 @@ class WalkTest{
         traj_srv.request.dt = req.dt;
         traj_srv.request.ankle_height = req.ankle_height;
         traj_srv.request.theta = req.theta;
-        trajectoryGenerator_.call(traj_srv);
+        //trajectoryGenerator_.call(traj_srv);
         //if(traj_srv.response.result){
            
         if(true){
@@ -541,7 +543,7 @@ class WalkTest{
             
             int i = 0;
             ROS_INFO("walking started!");
-            while(i < 1599){
+            while(i < 1199){
                 
                 trajectory_planner::JntAngs jnt_srv;
                 jnt_srv.request.iter = i;
@@ -576,11 +578,11 @@ class WalkTest{
                             double outer_inc;
                             
                         case 0:
-                            //this->yawMechanism(theta, jnt_srv.response.jnt_angs[j], 0.03435, 0.088, false);
-                            //motorCommand_.data[j] =  motorDir_[j] * theta * 4096 * 4 * 100 / 2 / M_PI + homeOffset_[j];
-                            motorCommand_.data[j] =  motorDir_[1] * jnt_srv.response.jnt_angs[1] * 4096 * 4 * 160 / 2 / M_PI + homeOffset_[j];
+                            this->yawMechanism(theta, jnt_srv.response.jnt_angs[j], 0.03435, 0.088, false);
+                            motorCommand_.data[j] =  motorDir_[j] * theta * 4096 * 4 * 100 / 2 / M_PI + homeOffset_[j];
+                            //motorCommand_.data[j] =  motorDir_[1] * jnt_srv.response.jnt_angs[1] * 4096 * 4 * 160 / 2 / M_PI + homeOffset_[j];
                             
-                            //yawMechanismFK(alpha,inc2rad(incData_[0] - homeOffset_[0]) / 100, 0.03435, 0.088, false);
+                            yawMechanismFK(alpha,inc2rad(incData_[0] - homeOffset_[0]) / 100, 0.03435, 0.088, false);
                             commandConfig_[j] = inc2rad(motorDir_[j] * (incData_[j] - homeOffset_[j])) / 160;
                             break;
                         case 6:
@@ -635,6 +637,16 @@ class WalkTest{
                             commandConfig_[j] = motorDir_[j] * inc2rad(incData_[j] - homeOffset_[j]) / 160;
                             break;
                         }
+                        
+                        // if(j == 0)
+                        //     commandConfig_[j] = 0;
+                        // else if(j == 1)
+                        //     commandConfig_[j] = absDir_[j] * abs2rad(absData_[0] - homeAbs_[1]);
+                        // else if (j == 10)
+                        //     continue;
+                        // else
+                        commandConfig_[j] = absDir_[j] * abs2rad(absData_[j] - homeAbs_[j]);
+
                         
                     }else{
                         cout<< "joint " << j << " out of workspace in iteration "<< i << ", angle difference: " << dif << endl ;

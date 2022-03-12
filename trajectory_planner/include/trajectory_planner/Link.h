@@ -17,7 +17,7 @@ using namespace std;
 class _Link{
     friend class Robot;
     public:
-        _Link(short int ID, Vector3d a, Vector3d b, double m, Matrix3d inertia, _Link* parent=NULL);
+        _Link(short int ID, Vector3d a, Vector3d b, double m, Matrix3d inertia, Vector3d com_pose, _Link* parent=NULL);
         _Link(){}
         _Link(const _Link& source);
         ~_Link();
@@ -30,6 +30,10 @@ class _Link{
         _Link* getParent();
         Vector3d getPose();
         Matrix3d getRot();
+        double getMass();
+        Vector3d getLinkCoM();
+        Vector3d getOmega();
+        Vector3d getLinkVel();
 
         MatrixXd FK();
         MatrixXd updateJacobian();
@@ -42,8 +46,8 @@ class _Link{
         _Link* parent_;
         Vector3d p_;            // Link position (WRT world frame)
         Matrix3d R_;            // Link rotation (WRT world frame)
-        Vector3d v_;            // Linear Velocity in world fram
-        Vector3d w_;            // Angular Velocity in world frame
+        Vector3d v_;            // Linear Velocity of link base in world fram
+        Vector3d w_;            // Angular Velocity of link in world frame
         double q_;              // joint angle
         double dq_;             // joint angular velocity
         double ddq_;            // joint angular acceleration
@@ -53,6 +57,7 @@ class _Link{
         
         double m_;              // mass
         Matrix3d I_;            // Inertia matrix
+        Vector3d c_;            // CoM position of link relative to its joint
 
 
         //////////////////// private methods /////////////////////

@@ -43,13 +43,18 @@ Matrix3d* Ankle::getRotTrajectoryL(){
     return lFootRot_;
 }
 
+int* Ankle::getRobotState(){
+    return stateIndicator_;
+}
+
 void Ankle::generateTrajectory(){
 
-    int length = int(((stepCount_ + 2) * tStep_) / dt_ + 100);
-    lFoot_ = new Vector3d[length];
-    rFoot_ = new Vector3d[length];
-    rFootRot_ = new Matrix3d[length];
-    lFootRot_ = new Matrix3d[length];
+    length_ = int(((stepCount_ + 2) * tStep_) / dt_ + 100);
+    lFoot_ = new Vector3d[length_];
+    rFoot_ = new Vector3d[length_];
+    rFootRot_ = new Matrix3d[length_];
+    lFootRot_ = new Matrix3d[length_];
+    stateIndicator_ = new int[length_];
 
     if(leftFirst_)
         updateTrajectory(true);
@@ -60,7 +65,6 @@ void Ankle::generateTrajectory(){
 
 void Ankle::updateTrajectory(bool left_first){
     int index = 0;
-    int length = int(((stepCount_ + 2) * tStep_) / dt_ + 100);
 
     for (int i = 0; i < (tStep_)/dt_; i++){
         double time = dt_ * i;
@@ -75,6 +79,7 @@ void Ankle::updateTrajectory(bool left_first){
             lFootRot_[index] = AngleAxisd(0, Vector3d::UnitZ());
             rFootRot_[index] = AngleAxisd(0, Vector3d::UnitZ());
         }
+        stateIndicator_[index] = 1;
         index ++;
     }
 
@@ -93,6 +98,7 @@ void Ankle::updateTrajectory(bool left_first){
                     lFootRot_[index] = lFootRot_[index - 1];
                     rFoot_[index] = footPose_[step - 1];
                     rFootRot_[index] = rFootRot_[index - 1];
+                    stateIndicator_[index] = 1;
                     index ++;
                 }
                 Vector3d* coefs = ankle5Poly(footPose_[step-1],footPose_[step+1], height_,tStep_-tDS_);
@@ -102,6 +108,7 @@ void Ankle::updateTrajectory(bool left_first){
                     lFootRot_[index] = lFootRot_[index - 1];
                     rFoot_[index] = coefs[0] + coefs[1] * time + coefs[2] * pow(time,2) + coefs[3] * pow(time,3) + coefs[4] * pow(time,4) + coefs[5] * pow(time,5);
                     rFootRot_[index] = AngleAxisd(theta_coefs[0] + theta_coefs[1] * time + theta_coefs[2]* pow(time,2) + theta_coefs[3] * pow(time,3), Vector3d::UnitZ());
+                    stateIndicator_[index] = 3;
                     index ++;
                 }
                 for (double time = 0; time < (alpha_) * tDS_; time += dt_){
@@ -109,6 +116,7 @@ void Ankle::updateTrajectory(bool left_first){
                     lFootRot_[index] = lFootRot_[index - 1];
                     rFoot_[index] = footPose_[step + 1];
                     rFootRot_[index] = rFootRot_[index - 1];
+                    stateIndicator_[index] = 1;
                     index ++;
                 }
             }
@@ -118,6 +126,7 @@ void Ankle::updateTrajectory(bool left_first){
                     lFootRot_[index] = lFootRot_[index - 1];
                     rFoot_[index] = footPose_[step];
                     rFootRot_[index] = rFootRot_[index - 1];
+                    stateIndicator_[index] = 1;
                     index ++;
                 }
                 Vector3d* coefs = ankle5Poly(footPose_[step-1],footPose_[step+1], height_,tStep_-tDS_);
@@ -127,6 +136,7 @@ void Ankle::updateTrajectory(bool left_first){
                     rFootRot_[index] = rFootRot_[index - 1];
                     lFoot_[index] = coefs[0] + coefs[1] * time + coefs[2] * pow(time,2) + coefs[3] * pow(time,3) + coefs[4] * pow(time,4) + coefs[5] * pow(time,5);
                     lFootRot_[index] = AngleAxisd(theta_coefs[0] + theta_coefs[1] * time + theta_coefs[2]* pow(time,2) + theta_coefs[3] * pow(time,3), Vector3d::UnitZ());
+                    stateIndicator_[index] = 2;
                     index ++;
                 }
                 for (double time = 0; time < (alpha_) * tDS_; time += dt_){
@@ -134,6 +144,7 @@ void Ankle::updateTrajectory(bool left_first){
                     lFootRot_[index] = lFootRot_[index - 1];
                     rFoot_[index] = footPose_[step];
                     rFootRot_[index] = rFootRot_[index - 1];
+                    stateIndicator_[index] = 1;
                     index ++;
                 }
             }
@@ -156,6 +167,7 @@ void Ankle::updateTrajectory(bool left_first){
                     lFootRot_[index] = lFootRot_[index - 1];
                     rFoot_[index] = footPose_[step - 1];
                     rFootRot_[index] = rFootRot_[index - 1];
+                    stateIndicator_[index] = 1;
                     index ++;
                 }
                 Vector3d* coefs = ankle5Poly(footPose_[step-1],footPose_[step+1], height_,tStep_-tDS_);
@@ -165,6 +177,7 @@ void Ankle::updateTrajectory(bool left_first){
                     lFootRot_[index] = lFootRot_[index - 1];
                     rFoot_[index] = coefs[0] + coefs[1] * time + coefs[2] * pow(time,2) + coefs[3] * pow(time,3) + coefs[4] * pow(time,4) + coefs[5] * pow(time,5);
                     rFootRot_[index] = AngleAxisd(theta_coefs[0] + theta_coefs[1] * time + theta_coefs[2]* pow(time,2) + theta_coefs[3] * pow(time,3), Vector3d::UnitZ());
+                    stateIndicator_[index] = 3;
                     index ++;
                 }
                 for (double time = 0; time < (alpha_) * tDS_; time += dt_){
@@ -172,6 +185,7 @@ void Ankle::updateTrajectory(bool left_first){
                     lFootRot_[index] = lFootRot_[index - 1];
                     rFoot_[index] = footPose_[step + 1];
                     rFootRot_[index] = rFootRot_[index - 1];
+                    stateIndicator_[index] = 1;
                     index ++;
                 }
             }
@@ -181,6 +195,7 @@ void Ankle::updateTrajectory(bool left_first){
                     lFootRot_[index] = lFootRot_[index - 1];
                     rFoot_[index] = footPose_[step];
                     rFootRot_[index] = rFootRot_[index - 1];
+                    stateIndicator_[index] = 1;
                     index ++;
                 }
                 Vector3d* coefs = ankle5Poly(footPose_[step-1],footPose_[step+1], height_,tStep_-tDS_);
@@ -190,6 +205,7 @@ void Ankle::updateTrajectory(bool left_first){
                     rFootRot_[index] = rFootRot_[index - 1];
                     lFoot_[index] = coefs[0] + coefs[1] * time + coefs[2] * pow(time,2) + coefs[3] * pow(time,3) + coefs[4] * pow(time,4) + coefs[5] * pow(time,5);
                     lFootRot_[index] = AngleAxisd(theta_coefs[0] + theta_coefs[1] * time + theta_coefs[2]* pow(time,2) + theta_coefs[3] * pow(time,3), Vector3d::UnitZ());
+                    stateIndicator_[index] = 2;
                     index ++;
                 }
                 for (double time = 0; time < (alpha_) * tDS_; time += dt_){
@@ -197,6 +213,7 @@ void Ankle::updateTrajectory(bool left_first){
                     lFootRot_[index] = lFootRot_[index - 1];
                     rFoot_[index] = footPose_[step];
                     rFootRot_[index] = rFootRot_[index - 1];
+                    stateIndicator_[index] = 1;
                     index ++;
                 }
             }
@@ -211,11 +228,12 @@ void Ankle::updateTrajectory(bool left_first){
         lFootRot_[index] = lFootRot_[index - 1]; 
         rFoot_[index] = temp_right;
         rFootRot_[index] = rFootRot_[index - 1];
+        stateIndicator_[index] = 1;
         index ++;
     }
     //cout << index << endl;
-    MinJerk::write2File(lFoot_, length, "lFoot");
-    MinJerk::write2File(rFoot_, length, "rFoot");
+    MinJerk::write2File(lFoot_, length_, "lFoot");
+    MinJerk::write2File(rFoot_, length_, "rFoot");
 }
 
 Ankle::~Ankle(){
@@ -224,4 +242,5 @@ Ankle::~Ankle(){
     delete[] rFoot_;
     delete[] rFootRot_;
     delete[] lFootRot_;
+    delete[] stateIndicator_;
 }

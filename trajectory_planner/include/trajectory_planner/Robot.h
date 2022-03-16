@@ -87,6 +87,7 @@ class Robot{
         Vector3d* lAnklePos_;
         Matrix3d* rAnkleRot_;
         Matrix3d* lAnkleRot_;
+        int* robotState_;
 
         Vector3d rSole_;    // current position of right sole
         Vector3d lSole_;    // current position of left sole

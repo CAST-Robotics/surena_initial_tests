@@ -14,6 +14,8 @@ Controller::Controller(Matrix3d K_p, Matrix3d K_i, Matrix3d K_zmp, Matrix3d K_co
     double deltaZ_ = 0.0;
     uOrientR_ << 0, 0, 0;
     uOrientL_ << 0, 0, 0;
+    uBumpOrientR_ << 0, 0, 0;
+    uBumpOrientL_ << 0, 0, 0;
     // Index 0 is for right foot
     prevTau_[0] << 0, 0, 0;
     prevTau_d_[1] << 0, 0, 0;
@@ -26,6 +28,8 @@ Controller::Controller(Matrix3d K_p, Matrix3d K_i, Matrix3d K_zmp, Matrix3d K_co
     firstContact_ = false;
     desiredContactPos_ << 0.0, 0.0, 0.0;
     deltaU_ << 0.0, 0.0, 0.0;
+    desired_mean_bump = 0;
+    prevForceError_ = 0;
 }
 
 Vector3d Controller::dcmController(Vector3d xiRef, Vector3d xiDotRef, Vector3d xiReal, double deltaZVRP){
@@ -44,8 +48,14 @@ Vector3d Controller::comController(Vector3d xCOMRef, Vector3d xDotCOMRef, Vector
     return CoM_;
 }
 
-double Controller::footLenController(double delta_fz_d, double delta_fz, double kp, double kr){
-    double deltaZ_dot = kp * (delta_fz_d - delta_fz) - kr * deltaZ_;
+double Controller::footLenController(double delta_fz_d, double delta_fz, double kp, double kd, double kr){
+    double diff_e;
+    double error = delta_fz_d - delta_fz;
+    diff_e = 1/dt_ *(error - prevForceError_);
+
+    prevForceError_ = error;
+
+    double deltaZ_dot = kp * (error) + kd * diff_e - kr * deltaZ_;
     deltaZ_ += deltaZ_dot * dt_;
     return deltaZ_;
 }
@@ -95,11 +105,13 @@ Vector3d Controller::bumpFootOrientController(int* const bump_mesured, Vector3d 
     if (is_right){
         u_dot = k_p * (mean_bump_d - bump_mean) + k_d * (diff_d - diff) - k_r * (uBumpOrientR_);
         uBumpOrientR_ += u_dot * dt_;
+        uBumpOrientR_(2) = 0;
         return uBumpOrientR_;
     }
     else{
         u_dot = k_p * (mean_bump_d - bump_mean) + k_d * (diff_d - diff) - k_r * (uBumpOrientL_);
         uBumpOrientL_ += u_dot * dt_;
+        uBumpOrientL_(2) = 0;
         return uBumpOrientL_;
     }
 }
@@ -136,24 +148,31 @@ Vector3d Controller::footDampingController(Vector3d zmp, Vector3d f_measured, Ve
 // }
 
 Vector3d Controller::earlyContactController(int* const bump_measured, Vector3d designedTraj){
-    double K_p = 0.003;
-    double K_r = 0.0;
-    double desired_mean_bump = -55;
+    double K_p = 0.005;
+    double K_r = 1;
     Vector3d delta_u_dot(0.0, 0.0, 0.0);
     //MatrixXd S(1, 3);
     double mean_bump = (bump_measured[0] + bump_measured[1] + bump_measured[2] + bump_measured[3])/4.0;
+    if(mean_bump - prevEarlyContactMeanBump_ < -1)
+        desired_mean_bump = -50;
+    else if(mean_bump - prevEarlyContactMeanBump_ > 1)
+        desired_mean_bump = 0;
+    cout << desired_mean_bump << ", ";
     //cout << bump_measured[0] << ", " << bump_measured[1] << ", " << bump_measured[2] << ", " << bump_measured[3] << ", " << mean_bump << ", ";
-    if(mean_bump < -10 && mean_bump > -70){
+    if(mean_bump < -49 && mean_bump > -70 && (!firstContact_))
+        firstContact_ = true;
+    if(firstContact_){
         // if(!firstContact_){
         //     desiredContactPos_ = designedTraj - Vector3d(0.0, 0.0, 0.0);
         //     firstContact_ = true;
         // }
         // Vector3d delta_u_dot = K_p * (desiredContactPos_ - designedTraj) + K_r * deltaU_;
         // deltaU_ += delta_u_dot * dt_;
-        delta_u_dot(2) = K_p * (desired_mean_bump - mean_bump) + K_r * deltaU_(2);
+        delta_u_dot(2) = K_p * (desired_mean_bump - mean_bump) - K_r * deltaU_(2);
         deltaU_ += delta_u_dot * dt_;
     }
-    return -deltaU_;
+    prevEarlyContactMeanBump_ = mean_bump;
+    return deltaU_;
 }
 
 

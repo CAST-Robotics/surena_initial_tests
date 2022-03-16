@@ -40,6 +40,7 @@ class WalkTest{
         rFT_ = n->subscribe("/surena/ft_r_state",100, &WalkTest::ftCallbackRight, this);
         IMUSub_ = n->subscribe("/surena/imu_state",100, &WalkTest::IMUCallback, this);
         bumpSub_ = n->subscribe("/surena/bump_sensor_state",100, &WalkTest::bumpCallback, this);
+        //bumpSub_ = n->subscribe("/SerialBump",100, &WalkTest::bumpCallback, this);
 
         b = 0.049;
         c = 0.35;
@@ -506,21 +507,21 @@ class WalkTest{
 
         general_traj.request.init_rankle_pos = {0, -0.0975, 0};
         general_traj.request.init_rankle_orient = {0, 0, 0};
-        general_traj.request.final_rankle_pos = {0, -0.0975, 0.06};
+        general_traj.request.final_rankle_pos = {0, -0.0975, 0};
         general_traj.request.final_rankle_orient = {0, 0, 0};
 
         general_traj.request.time = 2;
         general_traj.request.dt = req.dt;
         generalTrajectory_.call(general_traj);
 
-        general_traj.request.time = req.t_step;
-        general_traj.request.init_com_pos = {0, 0, req.COM_height};
-        general_traj.request.final_com_pos = {0, 0, 0.71};
+        //general_traj.request.time = req.t_step;
+        //general_traj.request.init_com_pos = {0, 0, req.COM_height};
+        //general_traj.request.final_com_pos = {0, 0, 0.71};
         //generalTrajectory_.call(general_traj);
 
-        general_traj.request.init_rankle_pos = {0, -0.0975, 0.06};
-        general_traj.request.final_rankle_pos = {0, -0.0975, 0.0};
-        generalTrajectory_.call(general_traj);
+        //general_traj.request.init_rankle_pos = {0, -0.0975, 0.05};
+        //general_traj.request.final_rankle_pos = {0, -0.0975, 0.0};
+        //generalTrajectory_.call(general_traj);
 
         trajectory_planner::Trajectory traj_srv;
         traj_srv.request.alpha = req.alpha;
@@ -533,7 +534,7 @@ class WalkTest{
         traj_srv.request.dt = req.dt;
         traj_srv.request.ankle_height = req.ankle_height;
         traj_srv.request.theta = req.theta;
-        //trajectoryGenerator_.call(traj_srv);
+        trajectoryGenerator_.call(traj_srv);
         //if(traj_srv.response.result){
            
         if(true){
@@ -543,7 +544,7 @@ class WalkTest{
             
             int i = 0;
             ROS_INFO("walking started!");
-            while(i < 1199){
+            while(i < 1999){
                 
                 trajectory_planner::JntAngs jnt_srv;
                 jnt_srv.request.iter = i;

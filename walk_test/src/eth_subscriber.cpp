@@ -514,10 +514,10 @@ class WalkTest{
         general_traj.request.dt = req.dt;
         generalTrajectory_.call(general_traj);
 
-        //general_traj.request.time = req.t_step;
-        //general_traj.request.init_com_pos = {0, 0, req.COM_height};
+        general_traj.request.time = req.t_step;
+        general_traj.request.init_com_pos = {0, 0, req.COM_height};
         //general_traj.request.final_com_pos = {0, 0, 0.71};
-        //generalTrajectory_.call(general_traj);
+        generalTrajectory_.call(general_traj);
 
         //general_traj.request.init_rankle_pos = {0, -0.0975, 0.05};
         //general_traj.request.final_rankle_pos = {0, -0.0975, 0.0};
@@ -534,7 +534,7 @@ class WalkTest{
         traj_srv.request.dt = req.dt;
         traj_srv.request.ankle_height = req.ankle_height;
         traj_srv.request.theta = req.theta;
-        trajectoryGenerator_.call(traj_srv);
+        //trajectoryGenerator_.call(traj_srv);
         //if(traj_srv.response.result){
            
         if(true){
@@ -560,6 +560,10 @@ class WalkTest{
 
 
                 jointAngles_.call(jnt_srv);
+                if(jnt_srv.response.status != 0){
+                    cout << "Node was shut down due to Ankle Collision!" << endl;
+                    return false;
+                }
                 cout << jnt_srv.response.jnt_angs[0] << ',' << jnt_srv.response.jnt_angs[1] << ','<< jnt_srv.response.jnt_angs[2] << ','
                 << jnt_srv.response.jnt_angs[3] << ','<< jnt_srv.response.jnt_angs[4] << ','<< jnt_srv.response.jnt_angs[5] << ','
                 << jnt_srv.response.jnt_angs[6] << ','<< jnt_srv.response.jnt_angs[7] << ','<< jnt_srv.response.jnt_angs[8] << ','
@@ -651,6 +655,7 @@ class WalkTest{
                         
                     }else{
                         cout<< "joint " << j << " out of workspace in iteration "<< i << ", angle difference: " << dif << endl ;
+                        return false;
                     }
                 }    
                 stop = high_resolution_clock::now();

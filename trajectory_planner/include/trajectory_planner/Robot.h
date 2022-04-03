@@ -16,6 +16,7 @@
 #include "Ankle.h"
 #include "MinJerk.h"
 #include "GeneralMotion.h"
+#include "Collision.h"
 
 #include "fstream"
 
@@ -27,7 +28,7 @@ class Robot{
         Robot(ros::NodeHandle *nh, Controller robot_ctrl);
         ~Robot();
 
-        void spinOnline(int iter, double config[], double jnt_vel[], Vector3d torque_r, Vector3d torque_l, double f_r, double f_l, Vector3d gyro, Vector3d accelerometer, int bump_r[], int bump_l[], double* joint_angles);
+        void spinOnline(int iter, double config[], double jnt_vel[], Vector3d torque_r, Vector3d torque_l, double f_r, double f_l, Vector3d gyro, Vector3d accelerometer, int bump_r[], int bump_l[], double* joint_angles, int& status);
         void spinOffline(int iter, double* config);
         bool jntAngsCallback(trajectory_planner::JntAngs::Request  &req,
                             trajectory_planner::JntAngs::Response &res);
@@ -129,4 +130,6 @@ class Robot{
         vector<int> trajSizes_;
         vector<bool> trajContFlags_;
         double COM_height_;
+
+        Collision* ankleColide_;
 };

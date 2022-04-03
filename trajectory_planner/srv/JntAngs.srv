@@ -9,3 +9,4 @@ int32[4] right_bump
 int32[4] left_bump
 ---
 float32[12] jnt_angs
+int8 status

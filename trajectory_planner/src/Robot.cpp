@@ -33,6 +33,10 @@ Robot::Robot(ros::NodeHandle *nh, Controller robot_ctrl){
     thigh_ = 0.36;  // SR1: 0.3535, Surena4: 0.37, Surena5: 0.36
     shank_ = 0.35;     // SR1: 0.3, Surena4: 0.36, Surena5: 0.35
     torso_ = 0.0975;    // SR1: 0.09, Surena4: 0.115, Surena5: 0.1
+    double sole_x_front = 0.16;     // Surena4: ??, Surena5: 0.16
+    double sole_y = 0.085;          // Surena4: ??, Surena5: 0.085
+    double sole_x_back = 0.09;      // Surena4: ??, Surena5: 0.09
+    double min_dist = 0.18;         // Surena4: ??, Surena5: 0.18
 
     mass_ = 55.3; // SR1: ?, Surena4: 48.3, Surena5: 55.3(Solid: 43.813)
 
@@ -102,10 +106,12 @@ Robot::Robot(ros::NodeHandle *nh, Controller robot_ctrl){
 
     onlineWalk_ = robot_ctrl;
 
+    ankleColide_ = new Collision(sole_x_front, sole_y, sole_x_back, min_dist);
+
     //cout << "Robot Object has been Created" << endl;
 }
 
-void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d torque_r, Vector3d torque_l, double f_r, double f_l, Vector3d gyro, Vector3d accelerometer, int bump_r[], int bump_l[], double* joint_angles){
+void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d torque_r, Vector3d torque_l, double f_r, double f_l, Vector3d gyro, Vector3d accelerometer, int bump_r[], int bump_l[], double* joint_angles, int& status){
     // update joint positions
     for (int i = 0; i < 13; i ++){
         links_[i]->update(config[i], jnt_vel[i], 0.0);
@@ -127,24 +133,24 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
 
     if(iter > trajSizes_[0] && iter < trajSizes_[1]){
         //Foot Length Controller
-        Vector3d r_wrench;
-        Vector3d l_wrench;
-        distributeFT(zmpd_[iter - trajSizes_[0]], rAnklePos_[iter], lAnklePos_[iter], r_wrench, l_wrench);
+        // Vector3d r_wrench;
+        // Vector3d l_wrench;
+        // distributeFT(zmpd_[iter - trajSizes_[0]], rAnklePos_[iter], lAnklePos_[iter], r_wrench, l_wrench);
         //cout << r_wrench(0) << ',' << r_wrench(1) << ',' << r_wrench(2) << ',' << l_wrench(0) << ',' << l_wrench(1) << ',' << l_wrench(2) << ',';
         //double delta_z = onlineWalk_.footLenController(0.0, floor((f_l - f_r) * 10) / 10, 0.0001, 1);
-        double delta_z = onlineWalk_.footLenController(floor((l_wrench(0) - r_wrench(0)) * 10) / 10, floor((f_l - f_r) * 10) / 10, 0.00011, 0.0, 1);
-        lfoot << lAnklePos_[iter](0), lAnklePos_[iter](1), lAnklePos_[iter](2) - 0.5 * delta_z;
-        rfoot << rAnklePos_[iter](0), rAnklePos_[iter](1), rAnklePos_[iter](2) + 0.5 * delta_z;
-        //cout << zmpd_[iter - trajSizes_[0]](0) << ',' << zmpd_[iter - trajSizes_[0]](1) << ',' << zmpd_[iter - trajSizes_[0]](2) << ',';
+        // double delta_z = onlineWalk_.footLenController(floor((l_wrench(0) - r_wrench(0)) * 10) / 10, floor((f_l - f_r) * 10) / 10, 0.00011, 0.0, 1);
+        // lfoot << lAnklePos_[iter](0), lAnklePos_[iter](1), lAnklePos_[iter](2) - 0.5 * delta_z;
+        // rfoot << rAnklePos_[iter](0), rAnklePos_[iter](1), rAnklePos_[iter](2) + 0.5 * delta_z;
+        // //cout << zmpd_[iter - trajSizes_[0]](0) << ',' << zmpd_[iter - trajSizes_[0]](1) << ',' << zmpd_[iter - trajSizes_[0]](2) << ',';
         //cout << CoMPos_[iter](0) << ',' << CoMPos_[iter](1) << ',' << CoMPos_[iter](2) << ',';
         //cout << xiDesired_[iter - trajSizes_[0]](0) << ',' << xiDesired_[iter - trajSizes_[0]](1) << ',' << xiDesired_[iter- trajSizes_[0]](2) << ',';
         //cout << xiDot_[iter - trajSizes_[0]](0) << ',' << xiDot_[iter - trajSizes_[0]](1) << ',' << xiDot_[iter- trajSizes_[0]](2) << ',';
-        cout << delta_z << ',' << f_r << ',' << f_l << ',' << floor((f_l - f_r) * 10) / 10 << ',';
+        //cout << delta_z << ',' << f_r << ',' << f_l << ',' << floor((f_l - f_r) * 10) / 10 << ',';
         
         //Foot Orientation Controller
         //Vector3d delta_theta = onlineWalk_.footDampingController(Vector3d::Zero(), Vector3d(0, 0, f_r), torque_r, gain, true);
-        Vector3d delta_theta_r(0, 0, 0);
-        Vector3d delta_theta_l(0, 0, 0);
+        // Vector3d delta_theta_r(0, 0, 0);
+        // Vector3d delta_theta_l(0, 0, 0);
         //if(robotState_[iter] == 1){
         //    delta_theta_r = onlineWalk_.footOrientController(Vector3d(r_wrench(1), r_wrench(2), 0), torque_r, 0.001, 0, 1, true);
         //    delta_theta_l = onlineWalk_.footOrientController(Vector3d(l_wrench(1), l_wrench(2), 0), torque_l, 0.001, 0, 1, false);
@@ -164,25 +170,25 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
         //lAnkleRot_[iter] = lAnkleRot_[iter] * delta_rot_l;
 
         //Bump Foot Orientation Controller
-        if (robotState_[iter] == 2)
-            delta_theta_l = onlineWalk_.bumpFootOrientController(bump_l, Vector3d::Zero(), 6.0 / 300.0, 0.0, 6.0, false);
-        else if(robotState_[iter] == 3)
-            delta_theta_r = onlineWalk_.bumpFootOrientController(bump_r, Vector3d::Zero(), 6.0 / 300.0, 0.0, 6.0, true);
+        // if (robotState_[iter] == 2)
+        //     delta_theta_l = onlineWalk_.bumpFootOrientController(bump_l, Vector3d::Zero(), 6.0 / 300.0, 0.0, 6.0, false);
+        // else if(robotState_[iter] == 3)
+        //     delta_theta_r = onlineWalk_.bumpFootOrientController(bump_r, Vector3d::Zero(), 6.0 / 300.0, 0.0, 6.0, true);
 
-        cout << delta_theta_r(0) << ',' << delta_theta_r(1) << ',' << delta_theta_r(2) << ',';
-        cout << delta_theta_l(0) << ',' << delta_theta_l(1) << ',' << delta_theta_l(2) << ',';
-        Matrix3d delta_rot_r;
-        Matrix3d delta_rot_l;
-        delta_rot_r = AngleAxisd(delta_theta_r(2), Vector3d::UnitZ()) * AngleAxisd(delta_theta_r(1), Vector3d::UnitY()) * AngleAxisd(delta_theta_r(0), Vector3d::UnitX());
-        delta_rot_l = AngleAxisd(delta_theta_l(2), Vector3d::UnitZ()) * AngleAxisd(delta_theta_l(1), Vector3d::UnitY()) * AngleAxisd(delta_theta_l(0), Vector3d::UnitX());
-        rAnkleRot_[iter] = rAnkleRot_[iter] * delta_rot_r;
-        lAnkleRot_[iter] = lAnkleRot_[iter] * delta_rot_l;
+        //cout << delta_theta_r(0) << ',' << delta_theta_r(1) << ',' << delta_theta_r(2) << ',';
+        //cout << delta_theta_l(0) << ',' << delta_theta_l(1) << ',' << delta_theta_l(2) << ',';
+        // Matrix3d delta_rot_r;
+        // Matrix3d delta_rot_l;
+        // delta_rot_r = AngleAxisd(delta_theta_r(2), Vector3d::UnitZ()) * AngleAxisd(delta_theta_r(1), Vector3d::UnitY()) * AngleAxisd(delta_theta_r(0), Vector3d::UnitX());
+        // delta_rot_l = AngleAxisd(delta_theta_l(2), Vector3d::UnitZ()) * AngleAxisd(delta_theta_l(1), Vector3d::UnitY()) * AngleAxisd(delta_theta_l(0), Vector3d::UnitX());
+        // rAnkleRot_[iter] = rAnkleRot_[iter] * delta_rot_r;
+        // lAnkleRot_[iter] = lAnkleRot_[iter] * delta_rot_l;
 
         //Early Contact Controller
         //Vector3d delta_r_foot = onlineWalk_.earlyContactController(bump_r, rAnklePos_[iter]);
         //rfoot = rAnklePos_[iter] + delta_r_foot;
-        cout << bump_r[0] << ", " << bump_r[1] << ", " << bump_r[2] << ", " << bump_r[3] << ", ";
-        cout << bump_l[0] << ", " << bump_l[1] << ", " << bump_l[2] << ", " << bump_l[3] << endl;
+        //cout << bump_r[0] << ", " << bump_r[1] << ", " << bump_r[2] << ", " << bump_r[3] << ", ";
+        //cout << bump_l[0] << ", " << bump_l[1] << ", " << bump_l[2] << ", " << bump_l[3] << endl;
         //cout << rAnklePos_[iter](0) << ", " << rAnklePos_[iter](1) << ", " << rAnklePos_[iter](2) << ", "; 
         //cout << delta_r_foot(0) << ", " << delta_r_foot(1) << ", " << delta_r_foot(2) << endl; 
  
@@ -194,6 +200,10 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
         pelvis = cont_out;
     }
 
+    if(ankleColide_->checkColission(lfoot, rfoot, lAnkleRot_[iter], rAnkleRot_[iter])){
+        status = 1;
+        cout << "Collision Detected in Ankles!" << endl;
+    }
     doIK(pelvis, CoMRot_[iter], lfoot, lAnkleRot_[iter], rfoot, rAnkleRot_[iter]);
 
     for(int i = 0; i < 12; i++)
@@ -738,10 +748,12 @@ bool Robot::jntAngsCallback(trajectory_planner::JntAngs::Request  &req,
         //req.gyro[0] << "," << req.gyro[1] << ","  << req.gyro[2] << ","<< req.left_ft[0]<< ",";
         //cout << req.right_ft[0] << "," << req.right_ft[1] << "," << req.right_ft[2] << ","
         //<< req.left_ft[0] << "," << req.left_ft[1] << "," << req.left_ft[2] << "," << endl;
+        int status = 0;     // 0: Okay, 1: Ankle Collision
         this->spinOnline(req.iter, config, jnt_vel, right_torque, left_torque, req.right_ft[0], req.left_ft[0],
                          Vector3d(req.gyro[0], req.gyro[1], req.gyro[2]),
                          Vector3d(req.accelerometer[0],req.accelerometer[1],req.accelerometer[2]),
-                         right_bump, left_bump, jnt_angs);
+                         right_bump, left_bump, jnt_angs, status);
+        res.status = status;
         //this->spinOffline(req.iter, jnt_angs);
         for(int i = 0; i < 12; i++)
             res.jnt_angs[i] = jnt_angs[i];
@@ -794,6 +806,7 @@ bool Robot::resetTrajCallback(std_srvs::Empty::Request  &req,
 }
 
 Robot::~Robot(){
+    delete ankleColide_;
     //delete[] links_;
     //delete[] FKBase_;
 }

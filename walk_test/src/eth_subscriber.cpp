@@ -5,6 +5,7 @@
 #include "sensor_msgs/Imu.h"
 #include <vector>
 #include "walk_test/command.h"
+#include "walk_test/getdata.h"
 #include <math.h>
 #include <std_srvs/Empty.h>
 #include <iostream>
@@ -245,8 +246,8 @@ class WalkTest{
         }
     }
 
-    bool dummyCallback(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res){
-        for(int i = 0; i < 30 * 100; i ++){
+    bool dummyCallback(walk_test::getdata::Request &req, walk_test::getdata::Response &res){
+        for(int i = 0; i < req.time * 100; i ++){
             emptyCommand();
         }
         return true;
@@ -254,7 +255,7 @@ class WalkTest{
 
     bool emptyCommand(){
         ros::spinOnce();
-        ros::Rate rate_(100);
+        ros::Rate rate_(200);
         for(int i=0; i<32; i++)
             motorCommand_.data[i] = incData_[i];
 

@@ -107,6 +107,7 @@ Robot::Robot(ros::NodeHandle *nh, Controller robot_ctrl){
     onlineWalk_ = robot_ctrl;
 
     ankleColide_ = new Collision(sole_x_front, sole_y, sole_x_back, min_dist);
+    estimator_ = new Estimator();
 
     //cout << "Robot Object has been Created" << endl;
 }
@@ -214,16 +215,25 @@ void Robot::updateState(double config[], Vector3d torque_r, Vector3d torque_l, d
     
     // Interpret IMU data
     Vector3d change_attitude;
-    Vector3d base_attitude = links_[0]->getRot().eulerAngles(0, 1, 2);
+    //Vector3d base_attitude = links_[0]->getRot().eulerAngles(2, 1, 0); // rot(x) * rot(y) * rot(z) , eulerAngles() outputs are in the ranges [0:pi] * [-pi:pi] * [-pi:pi]
+    Vector3d base_attitude = links_[0]->getEuler();
+    Vector3d base_vel = links_[0]->getLinkVel();
+    Vector3d base_pos = links_[0]->getPose();
     //cout << base_attitude(0) * 180/M_PI << ", " << base_attitude(1) * 180/M_PI << ", " << base_attitude(2) * 180/M_PI << endl;
-    
-    change_attitude[0] = gyro(0) + tan(base_attitude(1)) * (gyro(1) * sin(base_attitude(0)) + gyro(2) * cos(base_attitude(0)));
-    change_attitude[1] = gyro(1) * cos(base_attitude(0)) - gyro(2) * sin(base_attitude(0));
-    change_attitude[2] = 1/cos(base_attitude(1)) * (gyro(1) * sin(base_attitude(0)) + gyro(2) * cos(base_attitude(0)));
-    base_attitude += this->dt_ * change_attitude;
-    Matrix3d rot = (AngleAxisd(base_attitude[0], Vector3d::UnitX())
+    cout << base_pos(0) << ", " << base_pos(1) << ", " << base_pos(2) << ", " << base_vel(0) << ", " << base_vel(1) << ", " << base_vel(2) << endl;
+
+    estimator_->atitudeEulerEstimator(base_attitude, gyro);
+    Matrix3d rot = (AngleAxisd(base_attitude[2], Vector3d::UnitZ()) // roll, pitch, yaw
                   * AngleAxisd(base_attitude[1], Vector3d::UnitY())
-                  * AngleAxisd(base_attitude[2], Vector3d::UnitZ())).matrix();
+                  * AngleAxisd(base_attitude[0], Vector3d::UnitX())).matrix();
+    
+    links_[0]->setEuler(base_attitude);
+    links_[0]->setRot(rot);
+
+    Vector3d acc_g = rot * accelerometer;
+    estimator_->poseVelEstimator(base_vel, base_pos, acc_g);
+    links_[0]->setVel(base_vel);
+    links_[0]->setPos(base_pos);
     //links_[0]->initPose(Vector3d::Zero(3), rot);
 
     // Update swing/stance foot
@@ -587,6 +597,7 @@ bool Robot::trajGenCallback(trajectory_planner::Trajectory::Request  &req,
     anklePlanner->generateTrajectory();
     delete[] ankle_rf;
     onlineWalk_.setDt(req.dt);
+    estimator_->setDt(req.dt);
     onlineWalk_.setInitCoM(Vector3d(0.0,0.0,COM_height_));
 
     if (dataSize_ != 0){
@@ -662,6 +673,7 @@ bool Robot::generalTrajCallback(trajectory_planner::GeneralTraj::Request  &req,
     int trajectory_size = motion_planner->getLength();
 
     onlineWalk_.setDt(req.dt);
+    estimator_->setDt(req.dt);
     onlineWalk_.setInitCoM(Vector3d(0.0,0.0,COM_height_));
 
     if (dataSize_ != 0){

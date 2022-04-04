@@ -1,3 +1,5 @@
+#pragma once
+
 #include <iostream>
 #include <eigen3/Eigen/Eigen>
 #include <math.h>

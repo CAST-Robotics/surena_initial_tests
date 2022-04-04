@@ -28,6 +28,8 @@ _Link::_Link(short int ID, Vector3d a, Vector3d b, double m, Matrix3d inertia, V
     q_ = 0.0;
     dq_ = 0.0;
     ddq_ = 0.0;
+    eulerAtitude_ << 0.0, 0.0, 0.0;
+    p_ << 0.0, 0.0, 0.0;  // might produce problem because puts each link position at (0, 0, 0). it should be checked.
 }
 
  short int _Link::getID(){
@@ -52,7 +54,7 @@ void _Link::update(double q, double dq, double ddq){
     this->ddq_ = ddq;
     if (parent_ == NULL){
         this->w_ = Vector3d::Zero();
-        this->v_ = Vector3d::Zero();
+        //this->v_ = Vector3d::Zero();
     }
     else{
         this->w_ = this->parent_->getOmega() + this->dq_ * this->getRot() * this->a_;

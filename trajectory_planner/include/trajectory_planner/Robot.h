@@ -17,6 +17,7 @@
 #include "MinJerk.h"
 #include "GeneralMotion.h"
 #include "Collision.h"
+#include "Estimator.h"
 
 #include "fstream"
 
@@ -132,4 +133,5 @@ class Robot{
         double COM_height_;
 
         Collision* ankleColide_;
+        Estimator* estimator_;
 };

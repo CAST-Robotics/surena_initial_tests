@@ -121,7 +121,6 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
     links_[12]->FK();
     links_[6]->FK();    // update all raw values of sensors and link states
     updateState(config, torque_r, torque_l, f_r, f_l, gyro, accelerometer);
-
     MatrixXd lfoot(3,1);
     MatrixXd rfoot(3,1);
     Matrix3d attitude = MatrixXd::Identity(3,3);
@@ -219,23 +218,24 @@ void Robot::updateState(double config[], Vector3d torque_r, Vector3d torque_l, d
     Vector3d base_attitude = links_[0]->getEuler();
     Vector3d base_vel = links_[0]->getLinkVel();
     Vector3d base_pos = links_[0]->getPose();
-    //cout << base_attitude(0) * 180/M_PI << ", " << base_attitude(1) * 180/M_PI << ", " << base_attitude(2) * 180/M_PI << endl;
-    cout << base_pos(0) << ", " << base_pos(1) << ", " << base_pos(2) << ", " << base_vel(0) << ", " << base_vel(1) << ", " << base_vel(2) << endl;
+    // cout << base_attitude(0) * 180/M_PI << ", " << base_attitude(1) * 180/M_PI << ", " << base_attitude(2) * 180/M_PI << endl;
+    // cout << base_pos(0) << ", " << base_pos(1) << ", " << base_pos(2) << ", " << base_vel(0) << ", " << base_vel(1) << ", " << base_vel(2) << endl;
 
     estimator_->atitudeEulerEstimator(base_attitude, gyro);
     Matrix3d rot = (AngleAxisd(base_attitude[2], Vector3d::UnitZ()) // roll, pitch, yaw
                   * AngleAxisd(base_attitude[1], Vector3d::UnitY())
                   * AngleAxisd(base_attitude[0], Vector3d::UnitX())).matrix();
     
-    links_[0]->setEuler(base_attitude);
+    //links_[0]->setEuler(base_attitude);
     links_[0]->setRot(rot);
-
+    links_[0]->setOmega(gyro);
+    /*
     Vector3d acc_g = rot * accelerometer;
     estimator_->poseVelEstimator(base_vel, base_pos, acc_g);
     links_[0]->setVel(base_vel);
     links_[0]->setPos(base_pos);
     //links_[0]->initPose(Vector3d::Zero(3), rot);
-
+    */
     // Update swing/stance foot
     if (links_[12]->getPose()(2) < links_[6]->getPose()(2)){
         rightSwings_ = true;
@@ -277,7 +277,7 @@ void Robot::updateSolePosition(){
         lSole_ = rSole_ - links_[6]->getPose() + links_[12]->getPose();
         //FKBase_[index_] = lSole_ - links_[0]->getRot() * links_[12]->getPose();
         FKBase_[index_] = lSole_ - links_[12]->getPose();
-        //FKCoMDot_[index_] = - links_[6]->getVel().block<3,1>(0, 0);
+        FKCoMDot_[index_] = links_[6]->getVel().block(0, 0, 3, 1);
         //FKCoMDot_[index_] = -links_[0]->getRot() * links_[6]->getVel().block<3,1>(0, 0) - r_dot * links_[6]->getPose();
         rSoles_[index_] = rSole_;
         lSoles_[index_] = lSole_;
@@ -287,7 +287,7 @@ void Robot::updateSolePosition(){
         rSole_ = lSole_ - links_[12]->getPose() + links_[6]->getPose();
         //FKBase_[index_] = rSole_ - links_[0]->getRot() * links_[6]->getPose();
         FKBase_[index_] = rSole_ - links_[6]->getPose();
-        //FKCoMDot_[index_] = - links_[12]->getVel().block<3,1>(0, 0);
+        FKCoMDot_[index_] = links_[12]->getVel().block(0, 0, 3, 1);
         //FKCoMDot_[index_] = -links_[0]->getRot() * links_[12]->getVel().block<3,1>(0, 0) - r_dot * links_[12]->getPose();
         rSoles_[index_] = rSole_;
         lSoles_[index_] = lSole_;
@@ -295,24 +295,39 @@ void Robot::updateSolePosition(){
     else{   // double support
         //FKBase_[index_] = rSole_ - links_[0]->getRot() * links_[6]->getPose();
         FKBase_[index_] = rSole_ - links_[6]->getPose();
-        //FKCoMDot_[index_] = - links_[6]->getVel().block<3,1>(0, 0);
+        FKCoMDot_[index_] = links_[6]->getVel().block(0, 0, 3, 1);
         //FKCoMDot_[index_] = -links_[0]->getRot() * links_[6]->getVel().block<3,1>(0, 0) - r_dot * links_[6]->getPose();
         rSoles_[index_] = rSole_;
         lSoles_[index_] = lSole_;
     }
     FKCoM_[index_] = FKBase_ [index_] + CoM2Base();
-    //cout << FKBase_[index_](0) << "," << FKBase_[index_](1) << "," << FKBase_[index_](2) << "," <<
-    //FKCoM_[index_](0) << "," << FKCoM_[index_](1) << "," << FKCoM_[index_](2) << ",";
+    FKCoMDot_[index_] = FKCoMDot_[index_] + CoM2BaseVel();
     // 3-point backward formula for numeraical differentiation: 
     // https://www3.nd.edu/~zxu2/acms40390F15/Lec-4.1.pdf
-    Vector3d f1, f0;
-    if (index_ == 0) {f1 = Vector3d::Zero(3); f0 = Vector3d::Zero(3);}
-    else if (index_ == 1) {f1 = FKCoM_[index_-1]; f0 = Vector3d::Zero(3);}
-    else {f1 = FKCoM_[index_-1]; f0 = FKCoM_[index_-2];} 
-    FKCoMDot_[index_] = (f0 - 4 * f1 + 3 * FKCoM_[index_])/(2 * this->dt_);
+    Vector3d f1, f0, f3, f2;
+    if (index_ == 0) {
+        f1 = Vector3d::Zero(3); //com vel
+        f0 = Vector3d::Zero(3); //com vel
+        f2 = Vector3d::Zero(3); //base vel
+        f3 = Vector3d::Zero(3); //base vel
+        }
+    else if (index_ == 1) {
+        f1 = FKCoM_[index_-1]; f0 = Vector3d::Zero(3);
+        f3 = FKBase_[index_-1]; f2 = Vector3d::Zero(3);
+        }
+    else {
+        f1 = FKCoM_[index_-1]; f0 = FKCoM_[index_-2];
+        f3 = FKBase_[index_-1]; f2 = FKBase_[index_-2];
+        } 
+    FKBaseDot_[index_] = (f2 - 4 * f3 + 3 * FKBase_[index_])/(2 * this->dt_);
+    //FKCoMDot_[index_] = (f0 - 4 * f1 + 3 * FKCoM_[index_])/(2 * this->dt_);
+    //realXi_[index_] = FKBase_[index_] + FKBaseDot_[index_] / sqrt(K_G/COM_height_);
+    //realXi_[index_] = FKCoM_[index_] + FKCoMDot_[index_] / sqrt(K_G/COM_height_);
     realXi_[index_] = FKCoM_[index_] + FKCoMDot_[index_] / sqrt(K_G/COM_height_);
-    //cout << FKCoMDot_[index_](0) << "," << FKCoMDot_[index_](1) << "," << FKCoMDot_[index_](2) << "," <<
-    //realXi_[index_](0) << "," << realXi_[index_](1) << "," << realXi_[index_](2) << ",";
+    cout << FKBase_[index_](0) << "," << FKBase_[index_](1) << "," << FKBase_[index_](2) << "," <<
+    FKCoM_[index_](0) << "," << FKCoM_[index_](1) << "," << FKCoM_[index_](2) << "," <<
+    FKCoMDot_[index_](0) << "," << FKCoMDot_[index_](1) << "," << FKCoMDot_[index_](2) << "," <<
+    realXi_[index_](0) << "," << realXi_[index_](1) << "," << realXi_[index_](2) << endl;
 }
 
 Vector3d Robot::getZMPLocal(Vector3d torque, double fz){
@@ -348,6 +363,16 @@ Vector3d Robot::CoM2Base(){
     }
     com = mc / mass_;
     return(com);
+}
+
+Vector3d Robot::CoM2BaseVel(){
+    Vector3d m_p(0,0,0);
+    Vector3d com_vel;
+    for(int i = 0; i < 12; i ++){
+        m_p += links_[i]->getMass() * (links_[0]->getOmega().cross(links_[0]->getRot() * links_[i]->getLinkCoM()) + 
+                    links_[0]->getRot() * links_[i]->getLinkVel());
+    }
+    return m_p/ mass_;
 }
 
 void Robot::spinOffline(int iter, double* config){
@@ -615,6 +640,7 @@ bool Robot::trajGenCallback(trajectory_planner::Trajectory::Request  &req,
         delete[] FKBase_;
         delete[] FKCoM_;
         delete[] FKCoMDot_;
+        delete[] FKBaseDot_;
         delete[] realXi_;
         delete[] realZMP_;
         delete[] rSoles_;
@@ -642,6 +668,7 @@ bool Robot::trajGenCallback(trajectory_planner::Trajectory::Request  &req,
     FKBase_ = new Vector3d[dataSize_];
     FKCoM_ = new Vector3d[dataSize_];
     FKCoMDot_ = new Vector3d[dataSize_];
+    FKBaseDot_ = new Vector3d[dataSize_];
     realXi_ = new Vector3d[dataSize_];
     realZMP_ = new Vector3d[dataSize_];
     rSoles_ = new Vector3d[dataSize_];
@@ -691,6 +718,7 @@ bool Robot::generalTrajCallback(trajectory_planner::GeneralTraj::Request  &req,
         delete[] FKBase_;
         delete[] FKCoM_;
         delete[] FKCoMDot_;
+        delete[] FKBaseDot_;
         delete[] realXi_;
         delete[] realZMP_;
         delete[] rSoles_;
@@ -716,6 +744,7 @@ bool Robot::generalTrajCallback(trajectory_planner::GeneralTraj::Request  &req,
     FKBase_ = new Vector3d[dataSize_];
     FKCoM_ = new Vector3d[dataSize_];
     FKCoMDot_ = new Vector3d[dataSize_];
+    FKBaseDot_ = new Vector3d[dataSize_];
     realXi_ = new Vector3d[dataSize_];
     realZMP_ = new Vector3d[dataSize_];
     rSoles_ = new Vector3d[dataSize_];
@@ -801,6 +830,7 @@ bool Robot::resetTrajCallback(std_srvs::Empty::Request  &req,
     delete[] FKBase_;
     delete[] FKCoM_;
     delete[] FKCoMDot_;
+    delete[] FKBaseDot_;
     delete[] realXi_;
     delete[] realZMP_;
     delete[] rSoles_;

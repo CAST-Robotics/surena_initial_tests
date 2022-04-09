@@ -29,6 +29,7 @@ class _Link{
         inline void setRot(Matrix3d rot){R_ = rot;}
         inline void setPos(Vector3d pos){p_ = pos;}
         inline void setVel(Vector3d vel){v_ = vel;}
+        inline void setOmega(Vector3d omega){w_ = omega;}
         inline void setEuler(Vector3d euler){eulerAtitude_ = euler;}
 
         short int getID();

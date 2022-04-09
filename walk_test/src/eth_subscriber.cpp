@@ -71,7 +71,9 @@ class WalkTest{
             abs2incDir_[i] = temp_abs2inc_dir[i];
             absDir_[i] = temp_abs_dir[i];
             motorDir_[i] = temp_motor_dir[i];
-            commandConfig_[i] = 0.0;
+            commandConfig_[0][i] = 0.0;
+            commandConfig_[1][i] = 0.0;
+            commandConfig_[2][i] = 0.0;
             if (i<8){
                 bumpOrder_[i] = temp_bump_order[i];
             }
@@ -515,10 +517,10 @@ class WalkTest{
         general_traj.request.dt = req.dt;
         generalTrajectory_.call(general_traj);
 
-        general_traj.request.time = req.t_step;
-        general_traj.request.init_com_pos = {0, 0, req.COM_height};
+        //general_traj.request.time = req.t_step;
+        //general_traj.request.init_com_pos = {0, 0, req.COM_height};
         //general_traj.request.final_com_pos = {0, 0, 0.71};
-        generalTrajectory_.call(general_traj);
+        //generalTrajectory_.call(general_traj);
 
         //general_traj.request.init_rankle_pos = {0, -0.0975, 0.05};
         //general_traj.request.final_rankle_pos = {0, -0.0975, 0.0};
@@ -535,7 +537,7 @@ class WalkTest{
         traj_srv.request.dt = req.dt;
         traj_srv.request.ankle_height = req.ankle_height;
         traj_srv.request.theta = req.theta;
-        //trajectoryGenerator_.call(traj_srv);
+        trajectoryGenerator_.call(traj_srv);
         //if(traj_srv.response.result){
            
         if(true){
@@ -545,7 +547,7 @@ class WalkTest{
             
             int i = 0;
             ROS_INFO("walking started!");
-            while(i < 1999){
+            while(i < 1599){
                 
                 trajectory_planner::JntAngs jnt_srv;
                 jnt_srv.request.iter = i;
@@ -556,7 +558,8 @@ class WalkTest{
                 jnt_srv.request.accelerometer = {baseAcc_[0], baseAcc_[1], baseAcc_[2]};
                 jnt_srv.request.gyro = {baseAngVel_[0], baseAngVel_[1], baseAngVel_[2]};
                 for (int i=0; i<12; i++){
-                    jnt_srv.request.config[i] = commandConfig_[i];
+                    jnt_srv.request.config[i] = commandConfig_[2][i];
+                    jnt_srv.request.jnt_vel[i] = (commandConfig_[0][i] - 4 * commandConfig_[1][i] + 3 * commandConfig_[2][i])/(2 * req.dt);
                 }
 
 
@@ -589,13 +592,13 @@ class WalkTest{
                             //motorCommand_.data[j] =  motorDir_[1] * jnt_srv.response.jnt_angs[1] * 4096 * 4 * 160 / 2 / M_PI + homeOffset_[j];
                             
                             yawMechanismFK(alpha,inc2rad(incData_[0] - homeOffset_[0]) / 100, 0.03435, 0.088, false);
-                            commandConfig_[j] = inc2rad(motorDir_[j] * (incData_[j] - homeOffset_[j])) / 160;
+                            commandConfig_[2][j] = alpha;
                             break;
                         case 6:
                             this->yawMechanism(theta, jnt_srv.response.jnt_angs[j], 0.03435, 0.088, true);
                             motorCommand_.data[j] = motorDir_[j] * theta * 4096 * 4 * 100 / 2 / M_PI + homeOffset_[j];
                             yawMechanismFK(alpha,inc2rad(motorDir_[j] * (incData_[j] - homeOffset_[j])) / 100, 0.03435, 0.088, true);
-                            commandConfig_[j] =  alpha;
+                            commandConfig_[2][j] =  alpha;
                             break;
                         case 4:
                             desired_roll = jnt_srv.response.jnt_angs[5];
@@ -605,7 +608,8 @@ class WalkTest{
                             outer_inc = motorDir_[4] * theta_outer * 4096 * 4 * 100 * 1.5 / 2 / M_PI + homeOffset_[4];                            
                             motorCommand_.data[4] = outer_inc;
                             motorCommand_.data[5] = inner_inc;
-                            commandConfig_[j] = jnt_srv.response.jnt_angs[4];
+                            //commandConfig_[2][j] = jnt_srv.response.jnt_angs[4];
+                            commandConfig_[2][j] = absDir_[j] * abs2rad(absData_[j] - homeAbs_[j]);
                             break;
                         case 5:
                             desired_roll = jnt_srv.response.jnt_angs[5];
@@ -615,8 +619,8 @@ class WalkTest{
                             outer_inc = motorDir_[4] * theta_outer * 4096 * 4 * 100 * 1.5 / 2 / M_PI + homeOffset_[4];                            
                             motorCommand_.data[4] = outer_inc;
                             motorCommand_.data[5] = inner_inc;
-                            commandConfig_[j] = jnt_srv.response.jnt_angs[j];
-
+                            //commandConfig_[2][j] = jnt_srv.response.jnt_angs[j];
+                            commandConfig_[2][j] = absDir_[j] * abs2rad(absData_[j] - homeAbs_[j]);
                             break;
                         case 10:
                             desired_roll = jnt_srv.response.jnt_angs[11];
@@ -626,7 +630,8 @@ class WalkTest{
                             outer_inc = motorDir_[10] * theta_outer * 4096 * 4 * 100 * 1.5 / 2 / M_PI + homeOffset_[10];                            
                             motorCommand_.data[10] = outer_inc;
                             motorCommand_.data[11] = inner_inc;
-                            commandConfig_[j] = jnt_srv.response.jnt_angs[j];
+                            //commandConfig_[2][j] = jnt_srv.response.jnt_angs[j];
+                            commandConfig_[2][j] = absDir_[j] * abs2rad(absData_[j] - homeAbs_[j]);
                             break;
                         case 11:
                             desired_roll = jnt_srv.response.jnt_angs[11];
@@ -636,11 +641,12 @@ class WalkTest{
                             outer_inc = motorDir_[10] * theta_outer * 4096 * 4 * 100 * 1.5 / 2 / M_PI + homeOffset_[10];                            
                             motorCommand_.data[10] = outer_inc;
                             motorCommand_.data[11] = inner_inc;
-                            commandConfig_[j] = jnt_srv.response.jnt_angs[j];
+                            //commandConfig_[2][j] = jnt_srv.response.jnt_angs[j];
+                            commandConfig_[2][j] = absDir_[j] * abs2rad(absData_[j] - homeAbs_[j]);
                             break;
                         default:
                             motorCommand_.data[j] = motorDir_[j] * jnt_srv.response.jnt_angs[j] * 4096 * 4 * 160 / 2 / M_PI + homeOffset_[j];
-                            commandConfig_[j] = motorDir_[j] * inc2rad(incData_[j] - homeOffset_[j]) / 160;
+                            commandConfig_[2][j] = motorDir_[j] * inc2rad(incData_[j] - homeOffset_[j]) / 160;
                             break;
                         }
                         
@@ -651,7 +657,20 @@ class WalkTest{
                         // else if (j == 10)
                         //     continue;
                         // else
-                        commandConfig_[j] = absDir_[j] * abs2rad(absData_[j] - homeAbs_[j]);
+                        if(i == 0){
+                            commandConfig_[0][j] = 0;
+                            commandConfig_[1][j] = 0;
+                        }else if(i == 1){
+                            commandConfig_[0][j] = 0;
+                            commandConfig_[1][j] = commandConfig_[2][j];
+                        }else{
+                            commandConfig_[0][j] = commandConfig_[1][j];
+                            commandConfig_[1][j] = commandConfig_[2][j];
+                        }
+
+                        //commandConfig_[2][j] = absDir_[j] * abs2rad(absData_[j] - homeAbs_[j]);
+                        
+
 
                         
                     }else{
@@ -830,7 +849,7 @@ private:
     double baseAcc_[3];
     double baseOrient_[3];
     double baseAngVel_[3];
-    double commandConfig_[12];
+    double commandConfig_[3][12];
 
     int FTOffsetPeriod_;
 };

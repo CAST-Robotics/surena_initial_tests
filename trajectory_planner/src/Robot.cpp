@@ -32,13 +32,13 @@ Robot::Robot(ros::NodeHandle *nh, Controller robot_ctrl){
     
     thigh_ = 0.36;  // SR1: 0.3535, Surena4: 0.37, Surena5: 0.36
     shank_ = 0.35;     // SR1: 0.3, Surena4: 0.36, Surena5: 0.35
-    torso_ = 0.0975;    // SR1: 0.09, Surena4: 0.115, Surena5: 0.1
+    torso_ = 0.0975;    // SR1: 0.09, Surena4: 0.115, Surena5: 0.0975
     double sole_x_front = 0.16;     // Surena4: ??, Surena5: 0.16
     double sole_y = 0.085;          // Surena4: ??, Surena5: 0.085
     double sole_x_back = 0.09;      // Surena4: ??, Surena5: 0.09
     double min_dist = 0.18;         // Surena4: ??, Surena5: 0.18
 
-    mass_ = 55.3; // SR1: ?, Surena4: 48.3, Surena5: 55.3(Solid: 43.813)
+    mass_ = 43.813; // SR1: ?, Surena4: 48.3, Surena5: 55.3(Solid: 43.813)
 
     dataSize_ = 0;
     rSole_ << 0.0, -torso_, 0.0;
@@ -118,6 +118,9 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
         links_[i]->update(config[i], jnt_vel[i], 0.0);
     }
     // Do the Forward Kinematics for Lower Limb
+    for(int i=0; i<12; i++){
+        cout << config[i+1] << ',';
+    }
     links_[12]->FK();
     links_[6]->FK();    // update all raw values of sensors and link states
     updateState(config, torque_r, torque_l, f_r, f_l, gyro, accelerometer);
@@ -277,7 +280,7 @@ void Robot::updateSolePosition(){
         lSole_ = rSole_ - links_[6]->getPose() + links_[12]->getPose();
         //FKBase_[index_] = lSole_ - links_[0]->getRot() * links_[12]->getPose();
         FKBase_[index_] = lSole_ - links_[12]->getPose();
-        FKCoMDot_[index_] = links_[6]->getVel().block(0, 0, 3, 1);
+        FKBaseDot_[index_] = links_[6]->getVel().block(0, 0, 3, 1);
         //FKCoMDot_[index_] = -links_[0]->getRot() * links_[6]->getVel().block<3,1>(0, 0) - r_dot * links_[6]->getPose();
         rSoles_[index_] = rSole_;
         lSoles_[index_] = lSole_;
@@ -287,7 +290,7 @@ void Robot::updateSolePosition(){
         rSole_ = lSole_ - links_[12]->getPose() + links_[6]->getPose();
         //FKBase_[index_] = rSole_ - links_[0]->getRot() * links_[6]->getPose();
         FKBase_[index_] = rSole_ - links_[6]->getPose();
-        FKCoMDot_[index_] = links_[12]->getVel().block(0, 0, 3, 1);
+        FKBaseDot_[index_] = links_[12]->getVel().block(0, 0, 3, 1);
         //FKCoMDot_[index_] = -links_[0]->getRot() * links_[12]->getVel().block<3,1>(0, 0) - r_dot * links_[12]->getPose();
         rSoles_[index_] = rSole_;
         lSoles_[index_] = lSole_;
@@ -295,21 +298,22 @@ void Robot::updateSolePosition(){
     else{   // double support
         //FKBase_[index_] = rSole_ - links_[0]->getRot() * links_[6]->getPose();
         FKBase_[index_] = rSole_ - links_[6]->getPose();
-        FKCoMDot_[index_] = links_[6]->getVel().block(0, 0, 3, 1);
+        FKBaseDot_[index_] = links_[6]->getVel().block(0, 0, 3, 1);
         //FKCoMDot_[index_] = -links_[0]->getRot() * links_[6]->getVel().block<3,1>(0, 0) - r_dot * links_[6]->getPose();
         rSoles_[index_] = rSole_;
         lSoles_[index_] = lSole_;
     }
     FKCoM_[index_] = FKBase_ [index_] + CoM2Base();
-    FKCoMDot_[index_] = FKCoMDot_[index_] + CoM2BaseVel();
+    FKCoMDot_[index_] = FKBaseDot_[index_] + CoM2BaseVel();
     // 3-point backward formula for numeraical differentiation: 
     // https://www3.nd.edu/~zxu2/acms40390F15/Lec-4.1.pdf
     Vector3d f1, f0, f3, f2;
     if (index_ == 0) {
-        f1 = Vector3d::Zero(3); //com vel
-        f0 = Vector3d::Zero(3); //com vel
+        f1 = FKCoM_[index_]; //com vel
+        f0 = FKCoM_[index_]; //com vel
         f2 = Vector3d::Zero(3); //base vel
         f3 = Vector3d::Zero(3); //base vel
+        
         }
     else if (index_ == 1) {
         f1 = FKCoM_[index_-1]; f0 = Vector3d::Zero(3);
@@ -320,12 +324,12 @@ void Robot::updateSolePosition(){
         f3 = FKBase_[index_-1]; f2 = FKBase_[index_-2];
         } 
     FKBaseDot_[index_] = (f2 - 4 * f3 + 3 * FKBase_[index_])/(2 * this->dt_);
-    //FKCoMDot_[index_] = (f0 - 4 * f1 + 3 * FKCoM_[index_])/(2 * this->dt_);
+    FKCoMDot_[index_] = (f0 - 4 * f1 + 3 * FKCoM_[index_])/(2 * this->dt_);
     //realXi_[index_] = FKBase_[index_] + FKBaseDot_[index_] / sqrt(K_G/COM_height_);
-    //realXi_[index_] = FKCoM_[index_] + FKCoMDot_[index_] / sqrt(K_G/COM_height_);
     realXi_[index_] = FKCoM_[index_] + FKCoMDot_[index_] / sqrt(K_G/COM_height_);
     cout << FKBase_[index_](0) << "," << FKBase_[index_](1) << "," << FKBase_[index_](2) << "," <<
     FKCoM_[index_](0) << "," << FKCoM_[index_](1) << "," << FKCoM_[index_](2) << "," <<
+    FKBaseDot_[index_](0) << "," << FKBaseDot_[index_](1) << "," << FKBaseDot_[index_](2) << "," <<
     FKCoMDot_[index_](0) << "," << FKCoMDot_[index_](1) << "," << FKCoMDot_[index_](2) << "," <<
     realXi_[index_](0) << "," << realXi_[index_](1) << "," << realXi_[index_](2) << endl;
 }

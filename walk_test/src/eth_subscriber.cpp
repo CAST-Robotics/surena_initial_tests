@@ -148,6 +148,11 @@ class WalkTest{
         setFTZero();
         setBumpZero();
         ros::spinOnce();
+        for (int i=0; i<12; i++){
+            commandConfig_[0][i] = 0.0;
+            commandConfig_[1][i] = 0.0;
+            commandConfig_[2][i] = 0.0;
+        }
         return true;
     }
 
@@ -493,7 +498,7 @@ class WalkTest{
     bool walk(trajectory_planner::Trajectory::Request  &req,
             trajectory_planner::Trajectory::Response &res){
         this->emptyCommand();
-        int rate = 200;
+        int rate = 100;
         ros::Rate rate_(rate);
 
         
@@ -547,7 +552,7 @@ class WalkTest{
             
             int i = 0;
             ROS_INFO("walking started!");
-            while(i < 1599){
+            while(i < 799){
                 
                 trajectory_planner::JntAngs jnt_srv;
                 jnt_srv.request.iter = i;

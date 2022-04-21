@@ -43,6 +43,7 @@ class Robot{
         int findTrajIndex(vector<int> arr, int n, int K);
 
         void distributeFT(Vector3d zmp_y, Vector3d r_foot_y,Vector3d l_foot_y, Vector3d &r_wrench, Vector3d &l_wrench);
+        void distributeBump(double r_foot_z, double l_foot_z, double &r_bump, double &l_bump);
     private:
 
         double thigh_;
@@ -97,6 +98,7 @@ class Robot{
         Vector3d* FKBaseDot_;
         Vector3d* FKCoM_;
         Vector3d* FKCoMDot_;
+        double* FKCoMDotP_;
         Vector3d* realXi_;
         Vector3d* realZMP_;      // current ZMP of robot
         Vector3d* rSoles_;

@@ -460,12 +460,12 @@ class WalkTest{
                 if (abs(absData_[inner]) > roll_dest){
                     motorCommand_.data[outer] -= (4096*4*0.01); //
                     motorCommand_.data[inner] -= (4096*4*0.01);//
-                    cout << "roll-if:" << abs(absData_[inner]) - roll_dest << endl;
+                    //cout << "roll-if:" << abs(absData_[inner]) - roll_dest << endl;
                 }
                 else{
                     motorCommand_.data[outer] += (4096*4*0.01);//
                     motorCommand_.data[inner] += (4096*4*0.01);//
-                    cout << "roll-else:" << abs(absData_[inner]) - roll_dest << endl;
+                    //cout << "roll-else:" << abs(absData_[inner]) - roll_dest << endl;
 
                 }
             }
@@ -480,12 +480,12 @@ class WalkTest{
                 if (abs(absData_[outer]) > pitch_dest){
                     motorCommand_.data[outer] -= (4096*4*0.01);//+
                     motorCommand_.data[inner] += (4096*4*0.01);//-
-                    cout << "pitch-if:" << abs(absData_[outer]) - pitch_dest << endl;
+                    //cout << "pitch-if:" << abs(absData_[outer]) - pitch_dest << endl;
                 }
                 else{
                     motorCommand_.data[outer] += (4096*4*0.01);
                     motorCommand_.data[inner] -= (4096*4*0.01);
-                    cout << "pitch-else:" << abs(absData_[outer]) - pitch_dest << endl;
+                    //cout << "pitch-else:" << abs(absData_[outer]) - pitch_dest << endl;
                 } 
             }
             motorDataPub_.publish(motorCommand_);
@@ -498,7 +498,7 @@ class WalkTest{
     bool walk(trajectory_planner::Trajectory::Request  &req,
             trajectory_planner::Trajectory::Response &res){
         this->emptyCommand();
-        int rate = 100;
+        int rate = 200;
         ros::Rate rate_(rate);
 
         
@@ -523,13 +523,17 @@ class WalkTest{
         generalTrajectory_.call(general_traj);
 
         //general_traj.request.time = req.t_step;
-        //general_traj.request.init_com_pos = {0, 0, req.COM_height};
-        //general_traj.request.final_com_pos = {0, 0, 0.71};
-        //generalTrajectory_.call(general_traj);
+        // general_traj.request.init_com_pos = {0, 0, req.COM_height};
+        // general_traj.request.final_com_pos = {0, 0, 0.71};
+        // generalTrajectory_.call(general_traj);
 
-        //general_traj.request.init_rankle_pos = {0, -0.0975, 0.05};
-        //general_traj.request.final_rankle_pos = {0, -0.0975, 0.0};
-        //generalTrajectory_.call(general_traj);
+        // general_traj.request.init_rankle_pos = {0, -0.0975, 0.05};
+        // general_traj.request.final_rankle_pos = {0, -0.0975, 0.0};
+        // generalTrajectory_.call(general_traj);
+
+        // general_traj.request.init_rankle_pos = {0, -0.0975, 0.0};
+        // general_traj.request.final_rankle_pos = {0, -0.0975, 0.05};
+        // generalTrajectory_.call(general_traj);
 
         trajectory_planner::Trajectory traj_srv;
         traj_srv.request.alpha = req.alpha;
@@ -551,8 +555,8 @@ class WalkTest{
             auto duration = duration_cast<microseconds>(stop - start);
             
             int i = 0;
-            ROS_INFO("walking started!");
-            while(i < 799){
+            // ROS_INFO("walking started!");
+            while(i < rate * (req.t_step * (req.step_count + 2) + 2)){
                 
                 trajectory_planner::JntAngs jnt_srv;
                 jnt_srv.request.iter = i;

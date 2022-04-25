@@ -31,6 +31,8 @@ Controller::Controller(Matrix3d K_p, Matrix3d K_i, Matrix3d K_zmp, Matrix3d K_co
     deltaUBumpL_ << 0.0, 0.0, 0.0;
     desired_mean_bump = 0;
     prevForceError_ = 0;
+    baseHeight_ = 0.71;     // Surena 5 = 0.71
+    baseIdle_ = 0.71;     // Surena 5 = 0.71
 }
 
 Vector3d Controller::dcmController(Vector3d xiRef, Vector3d xiDotRef, Vector3d xiReal, double deltaZVRP){
@@ -177,10 +179,12 @@ Vector3d Controller::earlyContactController(int* const bump_measured, double des
         if(is_right){
             delta_u_dot(2) = K_p * (desired_mean_bump - mean_bump) - K_r * deltaUBumpR_(2);
             deltaUBumpR_ += delta_u_dot * dt_;
+            //deltaUBumpR_(2) = saturate<double>(baseHeight_ - baseLowHeight_, baseHeight_-baseIdle_ ,deltaUBumpR_(2));
             return deltaUBumpR_;
         }else{
             delta_u_dot(2) = K_p * (desired_mean_bump - mean_bump) - K_r * deltaUBumpL_(2);
             deltaUBumpL_ += delta_u_dot * dt_;
+            //deltaUBumpL_(2) = saturate<double>(baseHeight_ - baseLowHeight_, baseHeight_ - baseIdle_ ,deltaUBumpL_(2));
             return deltaUBumpL_;
         }
     }
@@ -210,3 +214,14 @@ void Controller::setK_com_(Matrix3d K_com){
     this->K_com_ = K_com;
 }
 
+void Controller::setBaseHeight(double h){
+    this->baseHeight_ = h;
+}
+
+void Controller::setBaseIdle(double h){
+    this->baseIdle_ = h;
+}
+
+void Controller::setBaseLowHeight(double h){
+    this->baseLowHeight_ = h;
+}

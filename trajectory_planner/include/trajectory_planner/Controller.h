@@ -8,8 +8,18 @@
 using namespace std;
 using namespace Eigen;
 
-class Controller {
+class Controller{
     public:
+        template <typename T>
+        T saturate(T high, T low, T value){
+            if(value <= high && value >= low)
+                return value;
+            else if(value > high)
+                return high;
+            else
+                return low;
+
+        }
         Controller(Matrix3d K_p_ = Matrix3d::Zero(3,3), Matrix3d K_i_ = Matrix3d::Zero(3,3), Matrix3d K_zmp_ = Matrix3d::Zero(3,3), Matrix3d K_com_ = Matrix3d::Zero(3,3));
         Vector3d dcmController(Vector3d xiRef, Vector3d xiDotRef, Vector3d xiReal, double deltaZVRP);
         Vector3d comController(Vector3d xCOMRef, Vector3d xDotCOMRef, Vector3d xCOMReal, Vector3d rZMPRef, Vector3d rZMPReal);
@@ -18,12 +28,16 @@ class Controller {
         void setK_zmp_(Matrix3d K_zmp);
         void setK_com_(Matrix3d K_com);
         void setDt(double dt);
+        void setBaseHeight(double h);
+        void setBaseIdle(double h);
+        void setBaseLowHeight(double h);
         void setInitCoM(Vector3d init_com);
         double footLenController(double fz_d, double fz, double kp, double kd, double kr);
         Vector3d footOrientController(Vector3d tau_d, Vector3d tau, double k_p, double k_d, double k_r, bool is_right);
         Vector3d footDampingController(Vector3d zmp, Vector3d f_measured, Vector3d tau_measured, Matrix3d cop_gain, bool is_right);
         Vector3d bumpFootOrientController(int* const bump_mesured, Vector3d mean_bump_d, double k_p, double k_d, double k_r, bool is_right);
         Vector3d earlyContactController(int* const bump_measured, double desired_mean_bump, double k_p, double k_r, bool is_right);
+
     private:
         Matrix3d K_p_;
         Matrix3d K_i_;
@@ -53,4 +67,7 @@ class Controller {
         Vector3d deltaUBumpR_;
         Vector3d deltaUBumpL_;
         double desired_mean_bump;
+        double baseHeight_;
+        double baseIdle_;
+        double baseLowHeight_;
 };

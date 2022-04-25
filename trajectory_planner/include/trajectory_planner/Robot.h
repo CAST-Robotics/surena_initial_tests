@@ -91,6 +91,9 @@ class Robot{
         Matrix3d* rAnkleRot_;
         Matrix3d* lAnkleRot_;
         int* robotState_;
+        double bumpBiasR_;
+        double bumpBiasL_;
+        bool bumpBiasSet_;
 
         Vector3d rSole_;    // current position of right sole
         Vector3d lSole_;    // current position of left sole

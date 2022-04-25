@@ -109,6 +109,10 @@ Robot::Robot(ros::NodeHandle *nh, Controller robot_ctrl){
     ankleColide_ = new Collision(sole_x_front, sole_y, sole_x_back, min_dist);
     estimator_ = new Estimator();
 
+    bumpBiasSet_ = false;
+    bumpBiasR_ = -56.0;
+    bumpBiasL_ = -57.75;
+
     //cout << "Robot Object has been Created" << endl;
 }
 
@@ -134,21 +138,26 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
 
     int traj_index = findTrajIndex(trajSizes_, trajSizes_.size(), iter);
 
+    if(!bumpBiasSet_ && robotState_[iter] == 0){
+        bumpBiasR_ = 0.25 * (bump_r[0] + bump_r[1] + bump_r[2] + bump_r[3]);
+        bumpBiasL_ = 0.25 * (bump_l[0] + bump_l[1] + bump_l[2] + bump_l[3]);
+    }
     if(iter > trajSizes_[0]){
+        bumpBiasSet_ = true;
         //Foot Length Controller
         Vector3d r_wrench;
         Vector3d l_wrench;
         distributeFT(zmpd_[iter - trajSizes_[0]], rAnklePos_[iter], lAnklePos_[iter], r_wrench, l_wrench);
-        // cout << r_wrench(0) << ',' << r_wrench(1) << ',' << r_wrench(2) << ',' << l_wrench(0) << ',' << l_wrench(1) << ',' << l_wrench(2) << ',';
+        cout << r_wrench(0) << ',' << r_wrench(1) << ',' << r_wrench(2) << ',' << l_wrench(0) << ',' << l_wrench(1) << ',' << l_wrench(2) << ',';
         // double delta_z = onlineWalk_.footLenController(0.0, floor((f_l - f_r) * 10) / 10, 0.0001, 1);
         double delta_z = onlineWalk_.footLenController(floor((l_wrench(0) - r_wrench(0)) * 10) / 10, floor((f_l - f_r) * 10) / 10, 0.00011, 0.0, 1.0);
-        // lfoot << lAnklePos_[iter](0), lAnklePos_[iter](1), lAnklePos_[iter](2) - 0.5 * delta_z;
-        // rfoot << rAnklePos_[iter](0), rAnklePos_[iter](1), rAnklePos_[iter](2) + 0.5 * delta_z;
-        // cout << zmpd_[iter - trajSizes_[0]](0) << ',' << zmpd_[iter - trajSizes_[0]](1) << ',' << zmpd_[iter - trajSizes_[0]](2) << ',';
-        // cout << CoMPos_[iter](0) << ',' << CoMPos_[iter](1) << ',' << CoMPos_[iter](2) << ',';
-        // cout << xiDesired_[iter - trajSizes_[0]](0) << ',' << xiDesired_[iter - trajSizes_[0]](1) << ',' << xiDesired_[iter- trajSizes_[0]](2) << ',';
-        // cout << xiDot_[iter - trajSizes_[0]](0) << ',' << xiDot_[iter - trajSizes_[0]](1) << ',' << xiDot_[iter- trajSizes_[0]](2) << ',';
-        // cout << delta_z << ',' << f_r << ',' << f_l << ',' << floor((f_l - f_r) * 10) / 10 << endl;
+        lfoot << lAnklePos_[iter](0), lAnklePos_[iter](1), lAnklePos_[iter](2) - 0.5 * delta_z;
+        rfoot << rAnklePos_[iter](0), rAnklePos_[iter](1), rAnklePos_[iter](2) + 0.5 * delta_z;
+        cout << zmpd_[iter - trajSizes_[0]](0) << ',' << zmpd_[iter - trajSizes_[0]](1) << ',' << zmpd_[iter - trajSizes_[0]](2) << ',';
+        cout << CoMPos_[iter](0) << ',' << CoMPos_[iter](1) << ',' << CoMPos_[iter](2) << ',';
+        cout << xiDesired_[iter - trajSizes_[0]](0) << ',' << xiDesired_[iter - trajSizes_[0]](1) << ',' << xiDesired_[iter- trajSizes_[0]](2) << ',';
+        cout << xiDot_[iter - trajSizes_[0]](0) << ',' << xiDot_[iter - trajSizes_[0]](1) << ',' << xiDot_[iter- trajSizes_[0]](2) << ',';
+        cout << delta_z << ',' << f_r << ',' << f_l << ',' << floor((f_l - f_r) * 10) / 10 << ',';
         
         //Foot Orientation Controller
         //Vector3d delta_theta = onlineWalk_.footDampingController(Vector3d::Zero(), Vector3d(0, 0, f_r), torque_r, gain, true);
@@ -190,10 +199,10 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
         //Early Contact Controller
         double r_bump_d, l_bump_d;
         distributeBump(rAnklePos_[iter](2), lAnklePos_[iter](2), r_bump_d, l_bump_d);
-        Vector3d delta_r_foot = onlineWalk_.earlyContactController(bump_r, r_bump_d, 0.004, 2, true);
-        Vector3d delta_l_foot = onlineWalk_.earlyContactController(bump_l, l_bump_d, 0.004, 2, false);
-        // rfoot = rfoot + delta_r_foot;
-        // lfoot = lfoot + delta_l_foot;
+        Vector3d delta_r_foot = onlineWalk_.earlyContactController(bump_r, r_bump_d, 0.008, 1, true);
+        Vector3d delta_l_foot = onlineWalk_.earlyContactController(bump_l, l_bump_d, 0.008, 1, false);
+        //rfoot = rfoot + delta_r_foot;
+        //lfoot = lfoot + delta_l_foot;
         cout << r_bump_d << ", " << l_bump_d << ", ";
         cout << bump_r[0] << ", " << bump_r[1] << ", " << bump_r[2] << ", " << bump_r[3] << ", ";
         cout << bump_l[0] << ", " << bump_l[1] << ", " << bump_l[2] << ", " << bump_l[3] << ", ";
@@ -203,6 +212,9 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
         cout << lAnklePos_[iter](0) << ", " << lAnklePos_[iter](1) << ", " << lAnklePos_[iter](2) << ", ";
         cout << delta_r_foot(0) << ", " << delta_r_foot(1) << ", " << delta_r_foot(2) << ", "; 
         cout << delta_l_foot(0) << ", " << delta_l_foot(1) << ", " << delta_l_foot(2) << endl;
+
+        rfoot(2) = onlineWalk_.saturate<double>(COM_height_ - 0.65,COM_height_ - (thigh_ + shank_),rfoot(2));
+        lfoot(2) = onlineWalk_.saturate<double>(COM_height_ - 0.65,COM_height_ - (thigh_ + shank_),lfoot(2));
     }
 
     if(trajContFlags_[traj_index] == true){
@@ -536,8 +548,8 @@ void Robot::distributeFT(Vector3d zmp, Vector3d r_foot,Vector3d l_foot, Vector3d
 }
 
 void Robot::distributeBump(double r_foot_z, double l_foot_z, double &r_bump, double &l_bump){
-    r_bump = max(-56.0, min(0.0, (-55.75 / 0.02) * (0.02 - r_foot_z)));
-    l_bump = max(-57.75, min(0.0, (-57.75 / 0.02) * (0.02 - l_foot_z)));
+    r_bump = max(bumpBiasR_, min(0.0, (bumpBiasR_ / 0.02) * (0.02 - r_foot_z)));
+    l_bump = max(bumpBiasL_, min(0.0, (bumpBiasL_ / 0.02) * (0.02 - l_foot_z)));
 }
 
 bool Robot::trajGenCallback(trajectory_planner::Trajectory::Request  &req,
@@ -648,6 +660,9 @@ bool Robot::trajGenCallback(trajectory_planner::Trajectory::Request  &req,
     delete[] ankle_rf;
     onlineWalk_.setDt(req.dt);
     estimator_->setDt(req.dt);
+    onlineWalk_.setBaseHeight(req.COM_height);
+    onlineWalk_.setBaseIdle(shank_ + thigh_);
+    onlineWalk_.setBaseLowHeight(0.65);
     onlineWalk_.setInitCoM(Vector3d(0.0,0.0,COM_height_));
 
     if (dataSize_ != 0){
@@ -729,6 +744,8 @@ bool Robot::generalTrajCallback(trajectory_planner::GeneralTraj::Request  &req,
 
     onlineWalk_.setDt(req.dt);
     estimator_->setDt(req.dt);
+    onlineWalk_.setBaseIdle(shank_ + thigh_);
+    onlineWalk_.setBaseLowHeight(0.65);
     onlineWalk_.setInitCoM(Vector3d(0.0,0.0,COM_height_));
 
     if (dataSize_ != 0){

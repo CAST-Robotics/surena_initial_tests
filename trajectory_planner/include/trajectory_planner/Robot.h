@@ -141,4 +141,7 @@ class Robot{
 
         Collision* ankleColide_;
         Estimator* estimator_;
+
+        Vector3d lZMP_;
+        Vector3d rZMP_;
 };

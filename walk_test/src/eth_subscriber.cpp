@@ -52,9 +52,9 @@ class WalkTest{
 
         qcInitialBool_ = true;
         int temp_ratio[12] = {100, 100, 50, 80, 100, 100, 50, 80, 120, 120, 120, 120};
-        int temp_home_abs[12] = {122378, 136098, 136489, 12703, 130744, 130475, 140369, 131615, 123334, 20224, 133546, 140560};
+        int temp_home_abs[12] = {122378, 136098, 136489, 10000, 130744, 130475, 140369, 131615, 123334, 20224, 133546, 140560};
         int temp_abs_high[12] = {108426, 119010, 89733, 131615, 71608, 102443, 119697, 82527, 168562, 131334, 191978, 111376};
-        int temp_abs_low[12] = {145354, 183778, 180841, 12700, 203256, 160491, 150225, 146143, 71238, 20220, 61482, 172752};
+        int temp_abs_low[12] = {145354, 183778, 180841, 9560, 203256, 160491, 150225, 146143, 71238, 20220, 61482, 172752};
         int temp_abs2inc_dir[12] = {1, -1, -1, -1, -1, 1, 1, -1, -1, 1, 1, 1};
         int temp_abs_dir[12] = {-1, -1, -1, 1, -1, -1, -1, -1, 1, 1, 1, -1};
         int temp_motor_dir[12] = {1, 1, 1, -1, -1, 1, 1, 1, -1, 1, 1, -1};
@@ -522,9 +522,9 @@ class WalkTest{
         general_traj.request.dt = req.dt;
         generalTrajectory_.call(general_traj);
 
-        //general_traj.request.time = req.t_step;
+        // general_traj.request.time = req.t_step;
         // general_traj.request.init_com_pos = {0, 0, req.COM_height};
-        // general_traj.request.final_com_pos = {0, 0, 0.71};
+        // general_traj.request.final_com_pos = {0, 0, req.COM_height};
         // generalTrajectory_.call(general_traj);
 
         // general_traj.request.init_rankle_pos = {0, -0.0975, 0.05};
@@ -549,6 +549,11 @@ class WalkTest{
         trajectoryGenerator_.call(traj_srv);
         //if(traj_srv.response.result){
            
+        general_traj.request.init_com_pos = {0, 0, req.COM_height};
+        general_traj.request.final_com_pos = {0, 0, 0.71};
+        general_traj.request.time = 2;
+        generalTrajectory_.call(general_traj);
+
         if(true){
             auto start = high_resolution_clock::now();
             auto stop = high_resolution_clock::now();
@@ -556,7 +561,9 @@ class WalkTest{
             
             int i = 0;
             // ROS_INFO("walking started!");
-            while(i < rate * (req.t_step * (req.step_count + 2) + 2)){
+            int final_iter = req.t_step * (req.step_count + 2) + 4;
+            //int final_iter = req.t_step + 2;
+            while(i < rate * (final_iter)){
                 
                 trajectory_planner::JntAngs jnt_srv;
                 jnt_srv.request.iter = i;
@@ -577,10 +584,10 @@ class WalkTest{
                     cout << "Node was shut down due to Ankle Collision!" << endl;
                     return false;
                 }
-                cout << jnt_srv.response.jnt_angs[0] << ',' << jnt_srv.response.jnt_angs[1] << ','<< jnt_srv.response.jnt_angs[2] << ','
-                << jnt_srv.response.jnt_angs[3] << ','<< jnt_srv.response.jnt_angs[4] << ','<< jnt_srv.response.jnt_angs[5] << ','
-                << jnt_srv.response.jnt_angs[6] << ','<< jnt_srv.response.jnt_angs[7] << ','<< jnt_srv.response.jnt_angs[8] << ','
-                << jnt_srv.response.jnt_angs[9] << ','<< jnt_srv.response.jnt_angs[10] << ','<< jnt_srv.response.jnt_angs[11] << endl;
+                // cout << jnt_srv.response.jnt_angs[0] << ',' << jnt_srv.response.jnt_angs[1] << ','<< jnt_srv.response.jnt_angs[2] << ','
+                // << jnt_srv.response.jnt_angs[3] << ','<< jnt_srv.response.jnt_angs[4] << ','<< jnt_srv.response.jnt_angs[5] << ','
+                // << jnt_srv.response.jnt_angs[6] << ','<< jnt_srv.response.jnt_angs[7] << ','<< jnt_srv.response.jnt_angs[8] << ','
+                // << jnt_srv.response.jnt_angs[9] << ','<< jnt_srv.response.jnt_angs[10] << ','<< jnt_srv.response.jnt_angs[11] << endl;
                 for(int j=0; j < 12; j++){
                     double dif = 0;
                     if(this->checkAngle(j, jnt_srv.response.jnt_angs[j], dif)){

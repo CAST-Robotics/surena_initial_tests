@@ -36,7 +36,8 @@ class Controller{
         Vector3d footOrientController(Vector3d tau_d, Vector3d tau, double k_p, double k_d, double k_r, bool is_right);
         Vector3d footDampingController(Vector3d zmp, Vector3d f_measured, Vector3d tau_measured, Matrix3d cop_gain, bool is_right);
         Vector3d bumpFootOrientController(int* const bump_mesured, Vector3d mean_bump_d, double k_p, double k_d, double k_r, bool is_right);
-        Vector3d earlyContactController(int* const bump_measured, double desired_mean_bump, double k_p, double k_r, bool is_right);
+        Vector3d earlyContactController(int* const bump_measured, double desired_mean_bump, double K_p, double K_r, bool is_right);
+        Vector3d ZMPAdmitanceComtroller_(Vector3d com_d, Vector3d com, Vector3d zmp_m, Vector3d zmp_qp, Matrix3d kp, Matrix3d kc);
 
     private:
         Matrix3d K_p_;
@@ -60,7 +61,8 @@ class Controller{
         double prevForceError_;
         Vector3d prevBumpMean_[2];
         Vector3d prevBump_d_[2];
-        double prevEarlyContactMeanBump_;
+        double prevEarlyContactMeanBump_[2];
+        Vector3d prevAnkleTraj_[2];
         Vector3d preDeltaU_;
         bool firstContact_;
         Vector3d desiredContactPos_;
@@ -70,4 +72,7 @@ class Controller{
         double baseHeight_;
         double baseIdle_;
         double baseLowHeight_;
+
+        Vector3d CoMAdmitance_;
+        Matrix3d ACoM_;
 };

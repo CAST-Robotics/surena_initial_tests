@@ -40,7 +40,7 @@ int main(int argc, char *argv[])
   srand(time(0));
 
   //Sets the loop to publish at a rate of 10Hz
-  ros::Rate  rate(100);
+  ros::Rate  rate(200);
 
   std_msgs::Int32MultiArray msg;
   std_msgs::MultiArrayDimension msg_dim;
@@ -61,7 +61,8 @@ myCustomMsg.score=20;
 
 int pos=0;
 bool dir=false;
-  while(ros::ok()) {
+  while(ros::ok()) 
+  {
 
     msg.data.clear();
     _dataReader.GetData(_motorPosition,_dataIndex++);

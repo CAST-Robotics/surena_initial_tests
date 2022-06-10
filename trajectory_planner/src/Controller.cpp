@@ -16,14 +16,15 @@ Controller::Controller(Matrix3d K_p, Matrix3d K_i, Matrix3d K_zmp, Matrix3d K_co
     uOrientL_ << 0, 0, 0;
     uBumpOrientR_ << 0, 0, 0;
     uBumpOrientL_ << 0, 0, 0;
-    // Index 0 is for right foot
-    prevTau_[0] << 0, 0, 0;
-    prevTau_d_[1] << 0, 0, 0;
-    prevTau_[0] << 0, 0, 0;
-    prevTau_d_[1] << 0, 0, 0;
     thetaAnkleR_ << 0, 0, 0;
     thetaAnkleL_ << 0, 0, 0;
-    prevEarlyContactMeanBump_ = 0; 
+    // Index 0 is for right foot
+    for(int i; i < 2; i++){
+        prevTau_[i] << 0, 0, 0;
+        prevTau_d_[i] << 0, 0, 0;
+        prevEarlyContactMeanBump_[i] = 0;
+        prevAnkleTraj_[i] << 0, 0, 0;
+    }
     preDeltaU_ << 0.0, 0.0, 0.0;
     firstContact_ = false;
     desiredContactPos_ << 0.0, 0.0, 0.0;
@@ -33,6 +34,10 @@ Controller::Controller(Matrix3d K_p, Matrix3d K_i, Matrix3d K_zmp, Matrix3d K_co
     prevForceError_ = 0;
     baseHeight_ = 0.71;     // Surena 5 = 0.71
     baseIdle_ = 0.71;     // Surena 5 = 0.71
+
+    //ZMP Admitance Controller Gain
+    ACoM_ = Matrix3d::Zero(3, 3);
+    CoMAdmitance_ = Vector3d::Zero(3);
 }
 
 Vector3d Controller::dcmController(Vector3d xiRef, Vector3d xiDotRef, Vector3d xiReal, double deltaZVRP){
@@ -49,6 +54,14 @@ Vector3d Controller::comController(Vector3d xCOMRef, Vector3d xDotCOMRef, Vector
     xDotStar = xDotCOMRef - K_zmp_*(rZMPRef - rZMPReal) + K_com_*(xCOMRef - xCOMReal);
     CoM_ += xDotStar * dt_;
     return CoM_;
+}
+
+Vector3d Controller::ZMPAdmitanceComtroller_(Vector3d com_d, Vector3d com, Vector3d zmp_m, Vector3d zmp_qp, Matrix3d kp, Matrix3d kc){
+    Vector3d u =  (-kp * (zmp_qp - zmp_m) + kc * (com_d - com));
+    CoMAdmitance_ += dt_ * u;
+    CoMAdmitance_(0) = saturate<double>(0.09, -0.07, CoMAdmitance_(0));
+    CoMAdmitance_(1) = saturate<double>(0.05, -0.05, CoMAdmitance_(1));
+    return CoMAdmitance_;
 }
 
 double Controller::footLenController(double delta_fz_d, double delta_fz, double kp, double kd, double kr){
@@ -79,10 +92,16 @@ Vector3d Controller::footOrientController(Vector3d tau_d, Vector3d tau, double k
     if(is_right){
         u_dot = k_p * (tau_d - tau) + k_d * (diff_d - diff) - k_r * (uOrientR_);
         uOrientR_ += u_dot * dt_;
+        uOrientR_(0) = 0;
+        uOrientR_(1) = saturate<double>(0.5, -0.7, uOrientR_(1));
+        uOrientR_(2) = 0;
         return uOrientR_;
     }else{
         u_dot = k_p * (tau_d - tau) + k_d * (diff_d - diff) - k_r * (uOrientL_);
         uOrientL_ += u_dot * dt_;
+        uOrientL_(0) = 0;
+        uOrientL_(1) = saturate<double>(0.5, -0.7, uOrientL_(1));
+        uOrientL_(2) = 0;
         return uOrientL_;
     }
 
@@ -99,6 +118,11 @@ Vector3d Controller::bumpFootOrientController(int* const bump_mesured, Vector3d 
     if(!is_right)
         index = 1;
 
+    for(int i = 0; i < 4; i++){
+        if(bump_mesured[i] > 100)
+            bump_mean = prevBumpMean_[index];
+    }
+    
     diff_d = 1/dt_ *(mean_bump_d - prevBump_d_[index]);
     diff = 1/dt_ *(bump_mean - prevBumpMean_[index]);
     
@@ -152,12 +176,22 @@ Vector3d Controller::footDampingController(Vector3d zmp, Vector3d f_measured, Ve
 
 Vector3d Controller::earlyContactController(int* const bump_measured, double desired_mean_bump, double K_p, double K_r, bool is_right){
     Vector3d delta_u_dot(0.0, 0.0, 0.0);
+    // double K_p = 0.0;
+    // double K_r = 0.0;
     //MatrixXd S(1, 3);
     double mean_bump = (bump_measured[0] + bump_measured[1] + bump_measured[2] + bump_measured[3])/4.0;
-    cout << mean_bump << ", ";
-    if(abs(mean_bump) > 70)
-        mean_bump = prevEarlyContactMeanBump_;
     
+    if(abs(mean_bump) > 70){
+         mean_bump = prevEarlyContactMeanBump_[!is_right];
+    }
+
+    // if(mean_bump > -57 && mean_bump < -20 && ankle_traj(2) < prevAnkleTraj_[!is_right](2)){
+    //     K_p = 0.008;
+    //     K_r = 1;
+    // }else{
+    //     K_p = 0.008;
+    //     K_r = 1;
+    // }
     // if(mean_bump - prevEarlyContactMeanBump_ < -1 && iter < 1400)
     //     desired_mean_bump = -50;
     // else if(mean_bump - prevEarlyContactMeanBump_ > 1)
@@ -179,17 +213,19 @@ Vector3d Controller::earlyContactController(int* const bump_measured, double des
         if(is_right){
             delta_u_dot(2) = K_p * (desired_mean_bump - mean_bump) - K_r * deltaUBumpR_(2);
             deltaUBumpR_ += delta_u_dot * dt_;
+            prevEarlyContactMeanBump_[0] = mean_bump;
+            //prevAnkleTraj_[0] = ankle_traj;
             //deltaUBumpR_(2) = saturate<double>(baseHeight_ - baseLowHeight_, baseHeight_-baseIdle_ ,deltaUBumpR_(2));
             return deltaUBumpR_;
         }else{
             delta_u_dot(2) = K_p * (desired_mean_bump - mean_bump) - K_r * deltaUBumpL_(2);
             deltaUBumpL_ += delta_u_dot * dt_;
+            prevEarlyContactMeanBump_[1] = mean_bump;
+            //prevAnkleTraj_[1] = ankle_traj;
             //deltaUBumpL_(2) = saturate<double>(baseHeight_ - baseLowHeight_, baseHeight_ - baseIdle_ ,deltaUBumpL_(2));
             return deltaUBumpL_;
         }
     }
-    // if(abs(mean_bump - prevEarlyContactMeanBump_) > 1)
-    //     prevEarlyContactMeanBump_ = mean_bump;
 }
 
 

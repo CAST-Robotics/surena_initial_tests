@@ -17,7 +17,7 @@ Vector3d* MinJerk::poly6Interpolate(Vector3d x_ini, Vector3d x_mid, Vector3d x_f
     return a;
 }
 
-Vector3d* MinJerk::ankle5Poly(Vector3d x0, Vector3d xf, double z_max, double tf){
+Vector3d* MinJerk::ankle5Poly(Vector3d x0, Vector3d xf, double z_max, double tf, double final_height){
     Vector3d* ans = new Vector3d[6];
     // XY trajectory 5th order with Vel. and accl. B.C.
     ans[0] = x0;
@@ -27,12 +27,12 @@ Vector3d* MinJerk::ankle5Poly(Vector3d x0, Vector3d xf, double z_max, double tf)
     ans[4] = -15/pow(tf,4) * (xf - x0);
     ans[5] = 6/pow(tf,5) * (xf - x0);
     // Z trajectory also 5th order with velocity B.C.
-    ans[0](2) = 0.0;
+    ans[0](2) = x0(2);
     ans[1](2) = 0.0;
-    ans[2](2) = 16 * z_max / pow(tf,2);
-    ans[3](2) = -32* z_max / pow(tf,3);
-    ans[4](2) = 16 * z_max /pow(tf,4);
-    ans[5](2) = 0.0;
+    ans[2](2) = 7 * final_height / pow(tf,2) + 16 * z_max / pow(tf,2);
+    ans[3](2) = -34* final_height / pow(tf,3) - 32* z_max / pow(tf,3);
+    ans[4](2) = 52 * final_height /pow(tf,4) + 16 * z_max /pow(tf,4);
+    ans[5](2) = -24 * final_height / pow(tf,5);
 
     return ans;
 }

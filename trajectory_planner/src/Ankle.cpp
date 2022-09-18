@@ -101,7 +101,7 @@ void Ankle::updateTrajectory(bool left_first){
                     stateIndicator_[index] = 1;
                     index ++;
                 }
-                Vector3d* coefs = ankle5Poly(footPose_[step-1],footPose_[step+1], height_,tStep_-tDS_);
+                Vector3d* coefs = ankle5Poly(footPose_[step-1],footPose_[step+1], height_,tStep_-tDS_, footPose_[step+1](2));
                 double* theta_coefs = cubicInterpolate<double>(theta_ini, theta_end, 0, 0, tStep_ - tDS_);
                 for(double time = 0.0; time < tStep_ - tDS_; time += dt_){
                     lFoot_[index] = footPose_[step];
@@ -129,7 +129,7 @@ void Ankle::updateTrajectory(bool left_first){
                     stateIndicator_[index] = 1;
                     index ++;
                 }
-                Vector3d* coefs = ankle5Poly(footPose_[step-1],footPose_[step+1], height_,tStep_-tDS_);
+                Vector3d* coefs = ankle5Poly(footPose_[step-1],footPose_[step+1], height_,tStep_-tDS_, footPose_[step+1](2));
                 double* theta_coefs = cubicInterpolate<double>(theta_ini, theta_end, 0, 0, tStep_ - tDS_);
                 for(double time = 0.0; time < tStep_ - tDS_; time += dt_){
                     rFoot_[index] = footPose_[step];
@@ -170,7 +170,7 @@ void Ankle::updateTrajectory(bool left_first){
                     stateIndicator_[index] = 1;
                     index ++;
                 }
-                Vector3d* coefs = ankle5Poly(footPose_[step-1],footPose_[step+1], height_,tStep_-tDS_);
+                Vector3d* coefs = ankle5Poly(footPose_[step-1],footPose_[step+1], height_,tStep_-tDS_, footPose_[step+1](2));
                 double* theta_coefs = cubicInterpolate<double>(theta_ini, theta_end, 0, 0, tStep_ - tDS_);
                 for(double time = 0.0; time < tStep_ - tDS_; time += dt_){
                     lFoot_[index] = footPose_[step];
@@ -198,7 +198,7 @@ void Ankle::updateTrajectory(bool left_first){
                     stateIndicator_[index] = 1;
                     index ++;
                 }
-                Vector3d* coefs = ankle5Poly(footPose_[step-1],footPose_[step+1], height_,tStep_-tDS_);
+                Vector3d* coefs = ankle5Poly(footPose_[step-1],footPose_[step+1], height_,tStep_-tDS_, footPose_[step+1](2));
                 double* theta_coefs = cubicInterpolate<double>(theta_ini, theta_end, 0, 0, tStep_ - tDS_);
                 for(double time = 0.0; time < tStep_ - tDS_; time += dt_){
                     rFoot_[index] = footPose_[step];

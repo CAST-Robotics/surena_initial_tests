@@ -92,14 +92,14 @@ Vector3d Controller::footOrientController(Vector3d tau_d, Vector3d tau, double k
     if(is_right){
         u_dot = k_p * (tau_d - tau) + k_d * (diff_d - diff) - k_r * (uOrientR_);
         uOrientR_ += u_dot * dt_;
-        uOrientR_(0) = 0;
+        uOrientR_(0) = saturate<double>(0.2, -0.2, uOrientR_(0));
         uOrientR_(1) = saturate<double>(0.5, -0.7, uOrientR_(1));
         uOrientR_(2) = 0;
         return uOrientR_;
     }else{
         u_dot = k_p * (tau_d - tau) + k_d * (diff_d - diff) - k_r * (uOrientL_);
         uOrientL_ += u_dot * dt_;
-        uOrientL_(0) = 0;
+        uOrientL_(0) = saturate<double>(0.2, -0.2, uOrientL_(0));
         uOrientL_(1) = saturate<double>(0.5, -0.7, uOrientL_(1));
         uOrientL_(2) = 0;
         return uOrientL_;

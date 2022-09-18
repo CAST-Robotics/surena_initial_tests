@@ -2,6 +2,7 @@
 #include <sensor_msgs/JointState.h>
 #include <std_msgs/Int32MultiArray.h>
 #include "geometry_msgs/Wrench.h"
+#include "geometry_msgs/Vector3Stamped.h"
 #include "sensor_msgs/Imu.h"
 #include <vector>
 #include "walk_test/command.h"
@@ -40,6 +41,8 @@ class WalkTest{
         lFT_ = n->subscribe("/surena/ft_l_state",100, &WalkTest::ftCallbackLeft, this);
         rFT_ = n->subscribe("/surena/ft_r_state",100, &WalkTest::ftCallbackRight, this);
         IMUSub_ = n->subscribe("/surena/imu_state",100, &WalkTest::IMUCallback, this);
+        AccSub_ = n->subscribe("/imu/acceleration",100, &WalkTest::AccCallback, this);
+        GyroSub_ = n->subscribe("/imu/angular_velocity",100, &WalkTest::GyroCallback, this);
         bumpSub_ = n->subscribe("/surena/bump_sensor_state",100, &WalkTest::bumpCallback, this);
         //bumpSub_ = n->subscribe("/SerialBump",100, &WalkTest::bumpCallback, this);
 
@@ -52,9 +55,9 @@ class WalkTest{
 
         qcInitialBool_ = true;
         int temp_ratio[12] = {100, 100, 50, 80, 100, 100, 50, 80, 120, 120, 120, 120};
-        int temp_home_abs[12] = {122378, 136098, 136489, 10000, 130744, 130475, 140369, 131615, 123334, 20224, 133546, 140560};
-        int temp_abs_high[12] = {108426, 119010, 89733, 131615, 71608, 102443, 119697, 82527, 168562, 131334, 191978, 111376};
-        int temp_abs_low[12] = {145354, 183778, 180841, 9560, 203256, 160491, 150225, 146143, 71238, 20220, 61482, 172752};
+        int temp_home_abs[12] = {120282, 135842, 135145, 13215, 132888, 130219, 138833, 131103, 125030, 21440, 130746, 140944};
+        int temp_abs_high[12] = {108426, 119010, 89733, 136440, 71608, 102443, 119697, 82527, 168562, 131334, 191978, 111376};
+        int temp_abs_low[12] = {145354, 183778, 194153, 13200, 203256, 160491, 150225, 146143, 61510, 21400, 61482, 172752};
         int temp_abs2inc_dir[12] = {1, -1, -1, -1, -1, 1, 1, -1, -1, 1, 1, 1};
         int temp_abs_dir[12] = {-1, -1, -1, 1, -1, -1, -1, -1, 1, 1, 1, -1};
         int temp_motor_dir[12] = {1, 1, 1, -1, -1, 1, 1, 1, -1, 1, 1, -1};
@@ -132,18 +135,18 @@ class WalkTest{
     bool home(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res){
         
         //ankleHome(false);
-        setPos(6, homeAbs_[6]);
+        //setPos(6, homeAbs_[6]);
         setPos(0, homeAbs_[0]);
-        setPos(1, homeAbs_[1] + 20000);
-        setPos(7, homeAbs_[7] - 20000);
+        //setPos(1, homeAbs_[1] + 20000);
+        //setPos(7, homeAbs_[7] - 20000);
         ankleHome(false, homeAbs_[5], homeAbs_[4]);
         setPos(3, homeAbs_[3]);
         setPos(2, homeAbs_[2]);
-        setPos(1, homeAbs_[1]);
+        //setPos(1, homeAbs_[1]);
         ankleHome(true, homeAbs_[11], homeAbs_[10]);
         setPos(9, homeAbs_[9]);
         setPos(8, homeAbs_[8]);
-        setPos(7, homeAbs_[7]);
+        //setPos(7, homeAbs_[7]);
         qcInitialBool_ = true;
         setFTZero();
         setBumpZero();
@@ -220,17 +223,29 @@ class WalkTest{
         }
     }
     void IMUCallback(const sensor_msgs::Imu &msg){
-        baseAcc_[0] = msg.linear_acceleration.x;
-        baseAcc_[1] = msg.linear_acceleration.y;
-        baseAcc_[2] = msg.linear_acceleration.z;
+        // baseAcc_[0] = msg.linear_acceleration.x;
+        // baseAcc_[1] = msg.linear_acceleration.y;
+        // baseAcc_[2] = msg.linear_acceleration.z;
 
         baseOrient_[0] = msg.orientation.x;
         baseOrient_[1] = msg.orientation.y;
         baseOrient_[2] = msg.orientation.z;
         
-        baseAngVel_[0] = msg.angular_velocity.x;
-        baseAngVel_[1] = msg.angular_velocity.y;
-        baseAngVel_[2] = msg.angular_velocity.z;
+        // baseAngVel_[0] = msg.angular_velocity.x;
+        // baseAngVel_[1] = msg.angular_velocity.y;
+        // baseAngVel_[2] = msg.angular_velocity.z;
+    }
+
+    void AccCallback(const geometry_msgs::Vector3Stamped &msg){
+        baseAcc_[0] = msg.vector.x;
+        baseAcc_[1] = msg.vector.y;
+        baseAcc_[2] = msg.vector.z;
+    }
+
+    void GyroCallback(const geometry_msgs::Vector3Stamped &msg){
+        baseAngVel_[0] = msg.vector.x;
+        baseAngVel_[1] = msg.vector.y;
+        baseAngVel_[2] = msg.vector.z;
     }
 
     bool setFTZero(){
@@ -522,10 +537,10 @@ class WalkTest{
         general_traj.request.dt = req.dt;
         generalTrajectory_.call(general_traj);
 
-        // general_traj.request.time = req.t_step;
-        // general_traj.request.init_com_pos = {0, 0, req.COM_height};
-        // general_traj.request.final_com_pos = {0, 0, req.COM_height};
-        // generalTrajectory_.call(general_traj);
+        general_traj.request.time = req.t_step;
+        general_traj.request.init_com_pos = {0, 0, req.COM_height};
+        general_traj.request.final_com_pos = {0, 0, req.COM_height};
+        generalTrajectory_.call(general_traj);
 
         // general_traj.request.init_rankle_pos = {0, -0.0975, 0.05};
         // general_traj.request.final_rankle_pos = {0, -0.0975, 0.0};
@@ -546,7 +561,8 @@ class WalkTest{
         traj_srv.request.dt = req.dt;
         traj_srv.request.ankle_height = req.ankle_height;
         traj_srv.request.theta = req.theta;
-        trajectoryGenerator_.call(traj_srv);
+        traj_srv.request.step_height = req.step_height;
+        // trajectoryGenerator_.call(traj_srv);
         //if(traj_srv.response.result){
            
         general_traj.request.init_com_pos = {0, 0, req.COM_height};
@@ -561,8 +577,8 @@ class WalkTest{
             
             int i = 0;
             // ROS_INFO("walking started!");
-            int final_iter = req.t_step * (req.step_count + 2) + 4;
-            //int final_iter = req.t_step + 2;
+            // int final_iter = req.t_step * (req.step_count + 2) + 4;
+            int final_iter = req.t_step + 4;
             while(i < rate * (final_iter)){
                 
                 trajectory_planner::JntAngs jnt_srv;
@@ -584,10 +600,10 @@ class WalkTest{
                     cout << "Node was shut down due to Ankle Collision!" << endl;
                     return false;
                 }
-                // cout << jnt_srv.response.jnt_angs[0] << ',' << jnt_srv.response.jnt_angs[1] << ','<< jnt_srv.response.jnt_angs[2] << ','
-                // << jnt_srv.response.jnt_angs[3] << ','<< jnt_srv.response.jnt_angs[4] << ','<< jnt_srv.response.jnt_angs[5] << ','
-                // << jnt_srv.response.jnt_angs[6] << ','<< jnt_srv.response.jnt_angs[7] << ','<< jnt_srv.response.jnt_angs[8] << ','
-                // << jnt_srv.response.jnt_angs[9] << ','<< jnt_srv.response.jnt_angs[10] << ','<< jnt_srv.response.jnt_angs[11] << endl;
+                cout << jnt_srv.response.jnt_angs[0] << ',' << jnt_srv.response.jnt_angs[1] << ','<< jnt_srv.response.jnt_angs[2] << ','
+                << jnt_srv.response.jnt_angs[3] << ','<< jnt_srv.response.jnt_angs[4] << ','<< jnt_srv.response.jnt_angs[5] << ','
+                << jnt_srv.response.jnt_angs[6] << ','<< jnt_srv.response.jnt_angs[7] << ','<< jnt_srv.response.jnt_angs[8] << ','
+                << jnt_srv.response.jnt_angs[9] << ','<< jnt_srv.response.jnt_angs[10] << ','<< jnt_srv.response.jnt_angs[11] << endl;
                 for(int j=0; j < 12; j++){
                     double dif = 0;
                     if(this->checkAngle(j, jnt_srv.response.jnt_angs[j], dif)){
@@ -810,6 +826,8 @@ private:
     ros::Subscriber lFT_;
     ros::Subscriber rFT_;
     ros::Subscriber IMUSub_;
+    ros::Subscriber AccSub_;
+    ros::Subscriber GyroSub_;
     ros::Subscriber bumpSub_;
     ros::ServiceServer jointCommand_;
     ros::ServiceServer absPrinter_;

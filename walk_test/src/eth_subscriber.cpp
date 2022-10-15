@@ -55,10 +55,10 @@ class WalkTest{
 
         qcInitialBool_ = true;
         int temp_ratio[12] = {100, 100, 50, 80, 100, 100, 50, 80, 120, 120, 120, 120};
-        int temp_home_abs[12] = {120282, 135842, 135145, 13215, 132888, 130219, 138833, 131103, 125030, 21440, 130746, 140944};
+        int temp_home_abs[12] = {120330, 141154, 134889, 7199, 131576, 130731, 138796, 120735, 125126, 16000, 132202, 141584};
         int temp_abs_high[12] = {108426, 119010, 89733, 136440, 71608, 102443, 119697, 82527, 168562, 131334, 191978, 111376};
-        int temp_abs_low[12] = {145354, 183778, 194153, 13200, 203256, 160491, 150225, 146143, 61510, 21400, 61482, 172752};
-        int temp_abs2inc_dir[12] = {1, -1, -1, -1, -1, 1, 1, -1, -1, 1, 1, 1};
+        int temp_abs_low[12] = {145354, 183778, 194153, 7190, 203256, 160491, 150225, 146143, 61510, 15950, 61482, 172752};
+        int temp_abs2inc_dir[12] = {1, 1, -1, -1, -1, 1, 1, 1, -1, 1, 1, 1};
         int temp_abs_dir[12] = {-1, -1, -1, 1, -1, -1, -1, -1, 1, 1, 1, -1};
         int temp_motor_dir[12] = {1, 1, 1, -1, -1, 1, 1, 1, -1, 1, 1, -1};
         int temp_bump_order[8] = {3, 0, 1, 2, 6, 5, 4, 7};
@@ -137,16 +137,16 @@ class WalkTest{
         //ankleHome(false);
         //setPos(6, homeAbs_[6]);
         setPos(0, homeAbs_[0]);
-        //setPos(1, homeAbs_[1] + 20000);
-        //setPos(7, homeAbs_[7] - 20000);
+        setPos(1, homeAbs_[1] - 20000);
+        setPos(7, homeAbs_[7] + 20000);
         ankleHome(false, homeAbs_[5], homeAbs_[4]);
         setPos(3, homeAbs_[3]);
         setPos(2, homeAbs_[2]);
-        //setPos(1, homeAbs_[1]);
+        setPos(1, homeAbs_[1]);
         ankleHome(true, homeAbs_[11], homeAbs_[10]);
         setPos(9, homeAbs_[9]);
         setPos(8, homeAbs_[8]);
-        //setPos(7, homeAbs_[7]);
+        setPos(7, homeAbs_[7]);
         qcInitialBool_ = true;
         setFTZero();
         setBumpZero();
@@ -430,6 +430,11 @@ class WalkTest{
         for(int i=0; i<32; i++){
             absData_[i] = msg.position[i+1];
 
+            if(i == 10)
+                absData_[10] = msg.position[12];
+            else if(i == 11)
+                absData_[11] = msg.position[11];
+
             //Lower body collision detection
             if(i < 12 && abs(absData_[i]) > 262144){
                 //cout << "Invalid Abs Data, id: " << i << endl;
@@ -537,10 +542,10 @@ class WalkTest{
         general_traj.request.dt = req.dt;
         generalTrajectory_.call(general_traj);
 
-        general_traj.request.time = req.t_step;
-        general_traj.request.init_com_pos = {0, 0, req.COM_height};
-        general_traj.request.final_com_pos = {0, 0, req.COM_height};
-        generalTrajectory_.call(general_traj);
+        // general_traj.request.time = req.t_step;
+        // general_traj.request.init_com_pos = {0, 0, req.COM_height};
+        // general_traj.request.final_com_pos = {0, 0, req.COM_height};
+        // generalTrajectory_.call(general_traj);
 
         // general_traj.request.init_rankle_pos = {0, -0.0975, 0.05};
         // general_traj.request.final_rankle_pos = {0, -0.0975, 0.0};
@@ -562,7 +567,7 @@ class WalkTest{
         traj_srv.request.ankle_height = req.ankle_height;
         traj_srv.request.theta = req.theta;
         traj_srv.request.step_height = req.step_height;
-        // trajectoryGenerator_.call(traj_srv);
+        trajectoryGenerator_.call(traj_srv);
         //if(traj_srv.response.result){
            
         general_traj.request.init_com_pos = {0, 0, req.COM_height};
@@ -577,8 +582,8 @@ class WalkTest{
             
             int i = 0;
             // ROS_INFO("walking started!");
-            // int final_iter = req.t_step * (req.step_count + 2) + 4;
-            int final_iter = req.t_step + 4;
+            int final_iter = req.t_step * (req.step_count + 2) + 4;
+            // int final_iter = req.t_step + 4;
             while(i < rate * (final_iter)){
                 
                 trajectory_planner::JntAngs jnt_srv;

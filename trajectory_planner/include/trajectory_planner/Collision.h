@@ -12,7 +12,6 @@ class Collision{
     public:
         Collision(double a, double b, double c, double min_dist);
         bool checkColission(Vector3d left_ankle, Vector3d right_ankle, Matrix3d left_orient, Matrix3d right_orient);
-        void check(){cout << "Hiiii!" << endl;}
     private:
 
         Vector3d centerLeft_;

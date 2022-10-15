@@ -18,7 +18,6 @@
 #include "GeneralMotion.h"
 #include "Collision.h"
 #include "Estimator.h"
-#include "EKFEstimator.h"
 
 #include "fstream"
 
@@ -142,7 +141,6 @@ class Robot{
 
         Collision* ankleColide_;
         Estimator* estimator_;
-        EKFEstimator* ekfEstimator_;
 
         Vector3d lZMP_;
         Vector3d rZMP_;

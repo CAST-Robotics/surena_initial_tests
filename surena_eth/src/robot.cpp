@@ -250,9 +250,10 @@ void Robot::ActiveCSP(int id)
     //ReadAllInitialPositions();
     ////////////hand test
     _rosNode->RobotStatus="Motor Activating";
-    qDebug()<<"active csp slot..."<<id;
+    qDebug()<<"active csp slot...="<<id;
     _rosNode->teststr="OK";
     timer.stop();
+
 
     //    if(id==255){
     //    QThread::msleep(5);
@@ -266,7 +267,7 @@ void Robot::ActiveCSP(int id)
     //  }
 
 
-    Epos4.ActiveWaist(true);
+    // Epos4.ActiveWaist(true);
     _rosNode->OperationCompleted(0);
     _rosNode->RobotStatus="Ready";
 }
@@ -317,7 +318,8 @@ void Robot::ActivateHands(void)
     qDebug()<<"activating hands";
     _rosNode->teststr="OK";
     timer.stop();
-    Epos4.ActiveAllHands(true);
+   // Epos4.ActiveAllHands(true);
+    Epos4.ActiveHand(1,true);
     _rosNode->OperationCompleted(0);
     _rosNode->RobotStatus="Ready";
 

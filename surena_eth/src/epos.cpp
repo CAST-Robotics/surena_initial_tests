@@ -527,8 +527,9 @@ inline QByteArray Epos::CreateHandPacket(QList<int> motorPositions)
     QByteArray data;
 
     if(handDeviceID<4){
-        data.append(CreatePDOPacket(0x401+handDeviceID,motorPositions.at(12+handDeviceID),0x3f));
-        data.append(CreatePDOPacket(0x401+handDeviceID,motorPositions.at(12+8+handDeviceID),0x3f));
+        qDebug()<<motorPositions.at(13);
+        data.append(CreatePDOPacket(0x401+handDeviceID,motorPositions.at(13),0x3f));
+        data.append(CreatePDOPacket(0x401+handDeviceID,motorPositions.at(13),0x3f));
         handDeviceID++;
     }
     else if(handDeviceID> 3 && handDeviceID<7)
@@ -610,6 +611,7 @@ inline QByteArray Epos::CreateWaistAndHeadCommand(QList<int> motorPositions)
 //========================================================================
 void Epos::SetAllPositionCST(QList<int> motorPositions)
 {
+
     QByteArray command;
     for(int i=0; i< 12; i++)
         command.append(MotorDataToArray(0x401,motorPositions.at(i)));

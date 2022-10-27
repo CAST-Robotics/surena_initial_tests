@@ -176,7 +176,6 @@ class Epos : public QObject
     QByteArray CreateBumpRequestCommand();
     QByteArray CreateWaistAndHeadCommand(QList<int> motorPositions);
 
-    bool ActiveHand(int nodeID,bool switchOn=true);
     bool IsValidRunPacket(QByteArray packet);
     void GetFTSensorDataFromPacket(EthernetReceivedPacketType *packet);
     void GetIMUDataFromPacket(EthernetReceivedPacketType *packet);
@@ -252,6 +251,8 @@ public:
     bool ActivePPMPDO(int nodeID, int canID);
     //================================================================================================================================================================
     //bool ActiveHand();
+       bool ActiveHand(int nodeID,bool switchOn=true);
+ 
     //================================================================================================================================================================
     void WaitMs(int ms);
     //================================================================================================================================================================

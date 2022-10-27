@@ -41,11 +41,27 @@ bool Epos::ActiveCSP(int nodeID,bool switchOn)
 bool Epos::ActiveHand(int nodeID,bool switchOn) //13,2
 {
 
-    if(nodeID==255){ActiveAllHands(switchOn); return OK;}
-    int devid=12;
-    nodeID-=11;
-    if(nodeID>4){nodeID-=8;devid=13;}
-    if(nodeID>4 || nodeID<1)return false;
+
+    qDebug()<<"active node";
+    if(nodeID<13)return false;
+     if(nodeID==255)
+     {
+        ActiveAllHands(switchOn); 
+        return OK;
+    }
+    nodeID-=12;
+    // qDebug()<<"node:"<<nodeID<<" devid:"<<switchOn;
+
+    // int devid=12;
+    // nodeID-=11;
+    // if(nodeID>4){nodeID-=8;devid=13;}
+    // if(nodeID>4 || nodeID<1)return false;
+    int devid=13;
+
+
+//node 13 works for this
+    qDebug()<<"p2 node:"<<nodeID<<" devid:"<<devid;
+
     WaitMs(700);
     SetPreoperationalMode(devid,nodeID);
     WaitMs(700);
@@ -105,31 +121,32 @@ bool Epos::ActiveWaist(bool enableDrive) //14
 //========================================================================
 bool Epos::ActiveAllHands(bool switchOn) //13left,12right
 {
+
     WaitMs(700);
     for(int i=0 ;i<4;i++){
-        SetPreoperationalMode(12,i+1);
+        //SetPreoperationalMode(12,i+1);
         SetPreoperationalMode(13,i+1);
     }
     WaitMs(700);
-    StartNode(12);
+    // StartNode(12);
     StartNode(13);
     WaitMs(700);
     for(int i=0 ;i<4;i++){
-        SetMode(12,PPM,i+1);
-        WaitMs(700);
+     //   SetMode(12,PPM,i+1);
+     //   WaitMs(700);
         SetMode(13,PPM,i+1);
         WaitMs(700);
 
     }
     WaitMs(700);
     for(int i=0 ;i<4;i++){
-        SwitchOff(12,i+1);
+       // SwitchOff(12,i+1);
         SwitchOff(13,i+1);
     }
     WaitMs(700);
     if(!switchOn)return OK;
     for(int i=0 ;i<4;i++){
-        SwitchOn(12,i+1);
+     //   SwitchOn(12,i+1);
         SwitchOn(13,i+1);
     }
     WaitMs(700);
@@ -517,8 +534,8 @@ inline QByteArray Epos::CreateHandPacket(QList<int> motorPositions)
     QByteArray data;
 
     if(handDeviceID<4){
-        data.append(CreatePDOPacket(0x401+handDeviceID,motorPositions.at(12+handDeviceID),0x3f));
-        data.append(CreatePDOPacket(0x401+handDeviceID,motorPositions.at(12+8+handDeviceID),0x3f));
+        data.append(CreatePDOPacket(0x401+handDeviceID,motorPositions[12+handDeviceID+4],0x3f));
+        data.append(CreatePDOPacket(0x401+handDeviceID,motorPositions[12+handDeviceID],0x3f));
         handDeviceID++;
     }
     else if(handDeviceID> 3 && handDeviceID<7)
@@ -600,6 +617,7 @@ inline QByteArray Epos::CreateWaistAndHeadCommand(QList<int> motorPositions)
 //========================================================================
 void Epos::SetAllPositionCST(QList<int> motorPositions)
 {
+
     QByteArray command;
     for(int i=0; i< 12; i++)
         command.append(MotorDataToArray(0x401,motorPositions.at(i)));

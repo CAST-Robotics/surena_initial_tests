@@ -41,81 +41,19 @@ Robot::Robot(QObject *parent, int argc, char **argv)
 //=================================================================================================
 void Robot::Initialize()
 {
-    //qDebug()<<"z check...";
-    //if(!Epos4.CheckZynq())return;
-    //qDebug()<<"init...";
-    //if(Epos4.Init(2)!=OK)
-    //    return;
-    //QElapsedTimer t;
-    //t.start();
-    //int32_t result=0;
-    //QList<int32_t> alldata;
-    //for(int i=0;i<1;i++){
-    //Epos4.ReadRegister(0x1000,0,1,i,result,20,1);
-    //alldata.append(result);
-    //}
-    //qDebug()<<"elapsed:"<<t.elapsed();
-    //for(int i=0;i<alldata.length();i++)
-    //qDebug()<<QString::number( alldata[i],16);
+  
     ReadAllInitialPositions();
 
 
-    ////Epos4.ReadAllRegisters(0x60e4,1,1,results,10);
-    //qDebug()<<"------------------------------start";
-    //int32_t result;
-    //result=Epos4.ReadRegister(0x1000,0,1,2,10,1);
-    //(int index,int subIndex,int canID, int devID,int timeout,int trycount)
-    //for(int i=0;i<4;i++){
-    //result=   Epos4.ReadRegister(0x60e4,2,i+1,12,10,1);
-    //qDebug()<<"get val="<<QString::number( result,16)<<result;
-    //result=   Epos4.ReadRegister(0x60e4,2,i+1,13,10,1);
-    //qDebug()<<"get val="<<QString::number( result,16)<<result;
+    
 
-    //}
-    //qDebug()<<"get val="<<QString::number( result,16)<<result;
-    //QList<int32_t> results;
-    //Epos4.ReadAllRegisters(0x1000,0,1,results,10); //this function socks
-    //qDebug()<<"------------------------------end";
-    //if(results.count()>2)qDebug()<<QString::number( results[2],16);
-    //return;
-
-
-
-    //qDebug()<<"foot init...OK";
-    //if(Epos4.HandsInit(2)!=OK)
-    //{
-    // return;
-    //}
-
-
-    //if(! ReadAllInitialPositions())
-    //{return; }
-
-
-    //_initialTimer.stop();
-
-    //   Epos4.ActivePPMPDO(13,1);
-    //   Epos4.ActivePPMPDO(13,2);
-    //   Epos4.ActivePPMPDO(13,3);
-    //   Epos4.ActivePPMPDO(13,4);
-
-    //Epos4.ActivePPMPDO(12,1);
-    //Epos4.ActivePPMPDO(12,2);
-    //Epos4.ActivePPMPDO(12,3);
-    //Epos4.ActivePPMPDO(12,4);
-
-    qDebug()<<"hands init...OK";
+    // qDebug()<<"hands init...OK";
     _initialTimer.stop();
     connect(&timer,SIGNAL(timeout()),this,SLOT(Timeout()));
     Initialized=true;
-    //Epos4.ActiveJoint(2);
-    //Epos4.ActiveAllHands();
-    //Epos4.ActiveCSP(255);
-    //Epos4.StartFeedBack();
-    //timer.start(5);
-
     _rosNode->RobotStatus="Ready";
-    QLOG_TRACE()<<"initialize Completed";
+    QLOG_TRACE()<<"initialize Completed...";
+   
 }
 //=================================================================================================
 bool Robot::ReadAllInitialPositions()
@@ -250,23 +188,23 @@ void Robot::ActiveCSP(int id)
     //ReadAllInitialPositions();
     ////////////hand test
     _rosNode->RobotStatus="Motor Activating";
-    qDebug()<<"active csp slot..."<<id;
+    qDebug()<<"active csp slot...="<<id;
     _rosNode->teststr="OK";
     timer.stop();
 
+
     //    if(id==255){
-    //    QThread::msleep(5);
+    //    WaitMs(5);
     //    Epos4.ActiveAllCSP();
-    //    QThread::msleep(5);
-    //    //Epos4.ActiveHand();
+    //    WaitMs(5);
     //    }
     //    else
     //    {
-    Epos4.ActiveJoint(id,true);
-    //  }
 
+    //     }
+    // Epos4.ActiveCSP(id);
 
-    Epos4.ActiveWaist(true);
+    // Epos4.ActiveWaist(true);
     _rosNode->OperationCompleted(0);
     _rosNode->RobotStatus="Ready";
 }

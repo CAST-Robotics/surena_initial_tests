@@ -124,29 +124,28 @@ bool Epos::ActiveAllHands(bool switchOn) //13left,12right
 
     WaitMs(700);
     for(int i=0 ;i<4;i++){
-        //SetPreoperationalMode(12,i+1);
+        SetPreoperationalMode(12,i+1);
         SetPreoperationalMode(13,i+1);
     }
     WaitMs(700);
-    // StartNode(12);
+     StartNode(12);
     StartNode(13);
     WaitMs(700);
     for(int i=0 ;i<4;i++){
-     //   SetMode(12,PPM,i+1);
-     //   WaitMs(700);
+       SetMode(12,PPM,i+1);
         SetMode(13,PPM,i+1);
         WaitMs(700);
 
     }
     WaitMs(700);
     for(int i=0 ;i<4;i++){
-       // SwitchOff(12,i+1);
+       SwitchOff(12,i+1);
         SwitchOff(13,i+1);
     }
     WaitMs(700);
     if(!switchOn)return OK;
     for(int i=0 ;i<4;i++){
-     //   SwitchOn(12,i+1);
+        SwitchOn(12,i+1);
         SwitchOn(13,i+1);
     }
     WaitMs(700);

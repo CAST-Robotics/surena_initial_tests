@@ -44,7 +44,11 @@ bool Epos::ActiveHand(int nodeID,bool switchOn) //13,2
 
     qDebug()<<"active node";
     if(nodeID<13)return false;
-     if(nodeID==255){ActiveAllHands(switchOn); return OK;}
+     if(nodeID==255)
+     {
+        ActiveAllHands(switchOn); 
+        return OK;
+    }
     nodeID-=12;
     // qDebug()<<"node:"<<nodeID<<" devid:"<<switchOn;
 
@@ -117,7 +121,7 @@ bool Epos::ActiveWaist(bool enableDrive) //14
 //========================================================================
 bool Epos::ActiveAllHands(bool switchOn) //13left,12right
 {
-    qDebug()<<"Epos::ActiveAllHands";
+
     WaitMs(700);
     for(int i=0 ;i<4;i++){
         //SetPreoperationalMode(12,i+1);

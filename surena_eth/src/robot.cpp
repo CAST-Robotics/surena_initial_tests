@@ -42,22 +42,17 @@ Robot::Robot(QObject *parent, int argc, char **argv)
 void Robot::Initialize()
 {
   
-    // ReadAllInitialPositions();
+    ReadAllInitialPositions();
 
 
     
 
     // qDebug()<<"hands init...OK";
     _initialTimer.stop();
-    // connect(&timer,SIGNAL(timeout()),this,SLOT(Timeout()));
+    connect(&timer,SIGNAL(timeout()),this,SLOT(Timeout()));
     Initialized=true;
-   
-   Epos4.ResetNode(255);
-   WaitMs(1000);
-   Epos4.ActiveHand(16,true);
-   
     _rosNode->RobotStatus="Ready";
-    QLOG_TRACE()<<"initialize Completed for node 4";
+    QLOG_TRACE()<<"initialize Completed...";
    
 }
 //=================================================================================================
@@ -199,16 +194,15 @@ void Robot::ActiveCSP(int id)
 
 
     //    if(id==255){
-    //    QThread::msleep(5);
+    //    WaitMs(5);
     //    Epos4.ActiveAllCSP();
-    //    QThread::msleep(5);
-    //    //Epos4.ActiveHand();
+    //    WaitMs(5);
     //    }
     //    else
     //    {
-    Epos4.ActiveHand(16,true);
-    //  }
 
+    //     }
+    // Epos4.ActiveCSP(id);
 
     // Epos4.ActiveWaist(true);
     _rosNode->OperationCompleted(0);
@@ -261,8 +255,7 @@ void Robot::ActivateHands(void)
     qDebug()<<"activating hands";
     _rosNode->teststr="OK";
     timer.stop();
-   // Epos4.ActiveAllHands(true);
-    Epos4.ActiveHand(1,true);
+    Epos4.ActiveAllHands(true);
     _rosNode->OperationCompleted(0);
     _rosNode->RobotStatus="Ready";
 

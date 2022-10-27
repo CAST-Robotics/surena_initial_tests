@@ -40,6 +40,9 @@ bool Epos::ActiveCSP(int nodeID,bool switchOn)
 //========================================================================
 bool Epos::ActiveHand(int nodeID,bool switchOn) //13,2
 {
+
+
+    qDebug()<<"active node";
     if(nodeID<13)return false;
      if(nodeID==255){ActiveAllHands(switchOn); return OK;}
     nodeID-=12;
@@ -527,9 +530,8 @@ inline QByteArray Epos::CreateHandPacket(QList<int> motorPositions)
     QByteArray data;
 
     if(handDeviceID<4){
-        qDebug()<<motorPositions.at(13);
-        data.append(CreatePDOPacket(0x401+handDeviceID,motorPositions.at(13),0x3f));
-        data.append(CreatePDOPacket(0x401+handDeviceID,motorPositions.at(13),0x3f));
+        data.append(CreatePDOPacket(0x401+handDeviceID,motorPositions[12+handDeviceID+4],0x3f));
+        data.append(CreatePDOPacket(0x401+handDeviceID,motorPositions[12+handDeviceID],0x3f));
         handDeviceID++;
     }
     else if(handDeviceID> 3 && handDeviceID<7)

@@ -218,7 +218,7 @@ bool lefthand = false;
 
     }
 
-    else {gi
+    else {
 
         result_right = hand_func.wrist_right_calc(qr_cyc[5], qr_cyc[6]);
         result_left = hand_func.wrist_left_calc(qr_cyc[5], qr_cyc[6]);

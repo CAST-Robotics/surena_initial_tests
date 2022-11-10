@@ -43,10 +43,6 @@ void Robot::Initialize()
 {
   
     ReadAllInitialPositions();
-
-
-    
-
     // qDebug()<<"hands init...OK";
     _initialTimer.stop();
     connect(&timer,SIGNAL(timeout()),this,SLOT(Timeout()));

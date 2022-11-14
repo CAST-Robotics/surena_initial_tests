@@ -62,7 +62,7 @@ int main(int argc, char **argv)
      QLOG_INFO() << "Built with Qt" << QT_VERSION_STR << "running on" << qVersion();
      QLOG_TRACE()<<"Instantiate robot";
      Robot w(nullptr,argc,argv);
-      QLOG_TRACE()<<"Robot Created";
+      QLOG_TRACE()<<"Robot Created !!";
    // w.show();
 //   app.connect(&w, SIGNAL(, &app, SLOT(quit()));
 

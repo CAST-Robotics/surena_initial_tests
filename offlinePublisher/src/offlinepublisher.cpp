@@ -65,20 +65,22 @@ bool dir=false;
   {
 
     msg.data.clear();
-    _dataReader.GetData(_motorPosition,_dataIndex++);
-    for(size_t i = 0; i < 12; i++)
+    //_dataReader.GetData(_motorPosition,_dataIndex++);
+    for(size_t i = 0; i < 16; i++)
     {
-
-    if(dir){
-      _motorPosition[i]=pos;
-      pos+=1;
-      }
-    else{
-       _motorPosition[i]=pos;
-       pos-=1;
-       }
-    msg.data.push_back(_motorPosition[i]);
-
+	if(i<12)
+		msg.data.push_back(0);
+	else{
+		if(dir){
+		  //_motorPosition[i]=pos;
+		  pos+=1;
+		  }
+		else{
+		   //_motorPosition[i]=pos;
+		   pos-=1;
+		   }
+		msg.data.push_back(pos);
+	}
     }
 
     pub.publish(msg);

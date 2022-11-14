@@ -82,20 +82,20 @@ bool Epos::ActiveLegs(bool switchOn) //13,2
 int nodeID=1;
     WaitMs(700);
     for(int i=0;i<12;i++)
-    SetPreoperationalMode(i+1,nodeID);
+    SetPreoperationalMode(i+0,nodeID);
     WaitMs(700);
     for(int i=0;i<12;i++)
-    StartNode(i+1);
+    StartNode(i+0);
     WaitMs(700);
     for(int i=0;i<12;i++)
-    SetMode(i+1,PPM,nodeID);
+    SetMode(i+0,CSP,nodeID);
     WaitMs(700);
     for(int i=0;i<12;i++)
-    SwitchOff(i+1,nodeID);
+    SwitchOff(i+0,nodeID);
     WaitMs(700);
     if(!switchOn)return OK;
     for(int i=0;i<12;i++)
-    SwitchOn(i+1,nodeID);
+    SwitchOn(i+0,nodeID);
     WaitMs(700);
     return OK;
 }

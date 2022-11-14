@@ -16,7 +16,7 @@
 using namespace  std;
 using namespace  Eigen;
 
-bool simulation = false;
+bool simulation = true;
 bool lefthand = false;
 
     int main(int argc, char **argv) {
@@ -54,7 +54,7 @@ bool lefthand = false;
 
     // define joint variables
     VectorXd qr_cyc(7);
-    qr_cyc<<0,0,0,-10*M_PI/180,0,0,0; // initial condition
+    qr_cyc<<-10*M_PI/180,0.0,0.0,0.0,0.0,0.0,0.0; // initial condition -10*M_PI/180
     vector<double> q_motor(29,0);
     vector<double> q_gazebo(29,0);
     int qc_offset[29]={0}; // all joint offset calc
@@ -78,8 +78,10 @@ bool lefthand = false;
 
     // set target values
     r_start_r=hand0_r.r_right_palm;
-    r_middle_r<<0.05,0.0,-0.38; ///test
-    r_target_r<<0.1,0.0,-0.35;
+    //r_middle_r<<0.05,-0.05,-0.38; ///test
+    //r_target_r<<0.1,-0.05,-0.35;
+    r_middle_r<<0.0,-0.0,-0.57; ///test
+    r_target_r<<0.0,-0.0,-0.58;
     R_target_r=hand_func.rot(3,0*M_PI/180,3);
 
 
@@ -118,7 +120,7 @@ bool lefthand = false;
     // achive goal in 4 sec time_r = 0:0.005:4
     while (ros::ok())
     {   
-    while (time_r<4)
+    while (time_r<t_r(2))
     {
     
     // define minJerk elements to calculate end effector velocity
@@ -238,17 +240,17 @@ bool lefthand = false;
             */
         }
         else{
-            q_motor[12]=-int(qr_cyc[0]*4096*4*100/M_PI/2); // be samt jelo
+            q_motor[12]=int(qr_cyc[0]*4096*4*100/M_PI/2); // be samt jelo
             q_motor[13]=-int(qr_cyc[1]*4096*4*100/M_PI/2);  // be samte birun
             q_motor[14]=int(qr_cyc[2]*2048*4*100/M_PI/2); // be samte birun
-            q_motor[15]=int(qr_cyc[3]*2048*4*4*100/M_PI/2);// be samte bala
+            q_motor[15]=-int(qr_cyc[3]*2048*4*4*100/M_PI/2);// be samte bala
         //  q_motor[19]=int((qr_cyc[4])*(2048)/M_PI);
         //  q_motor[20]=result_right[1];   // wrist joints
         //  q_motor[21]=result_left[1];
         }
         trajectory_data.data.clear();
 
-        for(int  i = 0; i < 15; i++)
+        for(int  i = 0; i < 16; i++)
         {
             trajectory_data.data.push_back(q_motor[i]+qc_offset[i]);
         }

@@ -31,7 +31,7 @@ public:
     double L_arm=.25747;
     double L_forearm=.23113;
     double L_palm=0;
-    double angle_fix_shd=toRad(20);
+    double angle_fix_shd=toRad(10);
     double angle_fix_elbow=0;
 
     // solver parameters

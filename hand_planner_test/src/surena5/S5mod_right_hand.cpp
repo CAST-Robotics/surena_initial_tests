@@ -325,6 +325,7 @@ void right_hand::HO_FK_right_palm(VectorXd q_ra){
 
     T_right_palm.resize(4,4);
     // FK formula
+
     T_right_palm=R1_fix_shd*R1_ra*R2_fix_shd*R2_ra*R3_ra*P_arm_ra*R1_fix_elbow*R4_ra*R5_ra*P_forearm_ra*R2_fix_elbow*R6_ra*R7_ra*P_palm_ra;
 
     r_right_palm.resize(3,1);

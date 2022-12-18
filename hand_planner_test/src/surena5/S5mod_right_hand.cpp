@@ -677,8 +677,8 @@ g=g+pow(tanh(5*(d_orient-dist)/d_orient),2)*Right_palm_orientation_power*(-2)*J_
 vector<double> minimum(7);
 vector<double> maximum(7);
 
-minimum={-110.0,-90.0,-60.0,-90.0,-90.0,-20.0,-20.0};
-maximum={80.0 ,-5.0 ,60.0 ,-5.0 ,90.0 ,20.0 ,20.0 };
+minimum={-110.0,-90.0,-60.0,-90.0,-90.0,-30.0,-30.0};
+maximum={80.0 ,-5.0 ,60.0 ,-5.0 ,90.0 ,30.0 ,30.0 };
 
     CI.resize(7,14);
     CI<<MatrixXd::Identity(7,7)*(-1),MatrixXd::Identity(7,7); 

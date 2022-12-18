@@ -9,7 +9,13 @@
 #include "../Eigen/Cholesky"
 #include "../Eigen/LU"
 //#include "qdebug.h"
-
+/*
+#include "ros/ros.h"
+#include<std_msgs/Float32MultiArray.h>
+#include<std_msgs/Int32MultiArray.h>
+#include<std_msgs/Float64.h>
+#include<gazebo_msgs/LinkStates.h>
+*/
 #include<math.h>
 
 using namespace Eigen;

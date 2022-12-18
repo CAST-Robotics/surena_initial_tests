@@ -15,6 +15,7 @@
 #include <vector>
 #include "fstream"
 #include <string>
+
 #include "ros/ros.h"
 #include<std_msgs/Float32MultiArray.h>
 #include<std_msgs/Int32MultiArray.h>
@@ -42,7 +43,7 @@ public:
     double dist_or;
     double power=1e-4;
     double Right_palm_position_power=1e6;
-    double Right_palm_orientation_power=1e2; //1e6
+    double Right_palm_orientation_power=1e3; //1e6
     double qdot_max=1;
     double v0;
     double v_des=0.3;              

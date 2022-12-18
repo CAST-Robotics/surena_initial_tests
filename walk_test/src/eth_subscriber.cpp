@@ -55,9 +55,9 @@ class WalkTest{
 
         qcInitialBool_ = true;
         int temp_ratio[12] = {100, 100, 50, 80, 100, 100, 50, 80, 120, 120, 120, 120};
-        int temp_home_abs[12] = {120330, 141154, 134889, 7007, 131640, 130859, 137809, 120607, 125062, 16512, 131946, 141008};
+        int temp_home_abs[12] = {120330, 141154, 134889, 7007, 131640, 130859, 137809, 146079, 125062, 16512, 131946, 141008};
         int temp_abs_high[12] = {108426, 119010, 89733, 136440, 71608, 102443, 119697, 82527, 168562, 131334, 191978, 111376};
-        int temp_abs_low[12] = {145354, 183778, 194153, 7000, 203256, 160491, 150225, 146143, 61510, 16500, 61482, 172752};
+        int temp_abs_low[12] = {145354, 183778, 194153, 7000, 203256, 160491, 150225, 180000, 61510, 16500, 61482, 172752};
         int temp_abs2inc_dir[12] = {1, 1, -1, -1, -1, 1, 1, 1, -1, 1, 1, 1};
         int temp_abs_dir[12] = {-1, -1, -1, 1, -1, -1, -1, -1, 1, 1, 1, -1};
         int temp_motor_dir[12] = {1, 1, 1, -1, -1, 1, 1, 1, -1, 1, 1, -1};
@@ -292,7 +292,7 @@ class WalkTest{
 
     bool sendCommand(walk_test::command::Request &req, walk_test::command::Response &res){
 
-        ros::Rate rate_(50);
+        ros::Rate rate_(200);
         this->emptyCommand();
         if(req.motor_id == 4){
             
@@ -518,7 +518,7 @@ class WalkTest{
     bool walk(trajectory_planner::Trajectory::Request  &req,
             trajectory_planner::Trajectory::Response &res){
         this->emptyCommand();
-        int rate = 200;
+        int rate = 100;
         ros::Rate rate_(rate);
 
         

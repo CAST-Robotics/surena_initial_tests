@@ -68,23 +68,23 @@ bool dir=false;
     //_dataReader.GetData(_motorPosition,_dataIndex++);
     for(size_t i = 0; i < 16; i++)
     {
-	if(i<12)
+	if(i == 0 || i > 5)
 		msg.data.push_back(0);
 	else{
 		if(dir){
 		  //_motorPosition[i]=pos;
-		  pos+=1;
+		  pos+=10;
 		  }
 		else{
 		   //_motorPosition[i]=pos;
-		   pos-=1;
+		   pos-=10;
 		   }
 		msg.data.push_back(pos);
 	}
     }
 
     pub.publish(msg);
-    if(pos>16384 || pos<-16384  )
+    if(pos>(16384*3) || pos<(-16384*3)  )
     dir=!dir;
    // pub2.publish(myCustomMsg);
     ROS_INFO("this is %d" ,_motorPosition[0]);

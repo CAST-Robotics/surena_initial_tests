@@ -13,13 +13,6 @@
 #include <vector>
 #include "fstream"
 #include <string>
-
-#include "ros/ros.h"
-#include<std_msgs/Float32MultiArray.h>
-#include<std_msgs/Int32MultiArray.h>
-#include<std_msgs/Float64.h>
-#include<gazebo_msgs/LinkStates.h>
-
 using namespace Eigen;
 using namespace std;
 //LEFT HAND does not have angle fix elbow

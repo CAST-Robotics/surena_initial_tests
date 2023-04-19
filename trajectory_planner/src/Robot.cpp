@@ -14,19 +14,19 @@ void write2File(Vector3d* input, int size, string file_name="data"){
 }
 
 
-Robot::Robot(ros::NodeHandle *nh, Controller robot_ctrl){
+Robot::Robot(){
 
-    trajGenServer_ = nh->advertiseService("/traj_gen", 
-            &Robot::trajGenCallback, this);
-    jntAngsServer_ = nh->advertiseService("/jnt_angs", 
-            &Robot::jntAngsCallback, this);
-    generalTrajServer_ = nh->advertiseService("/general_traj", 
-            &Robot::generalTrajCallback, this);
-    resetTrajServer_ = nh->advertiseService("/reset_traj",
-            &Robot::resetTrajCallback, this);
-    zmpDataPub_ = nh->advertise<geometry_msgs::Point>("/zmp_position", 100);
-    comDataPub_ = nh->advertise<geometry_msgs::Twist>("/com_data", 100);
-    xiDataPub_ = nh->advertise<geometry_msgs::Twist>("/xi_data", 100);
+    // trajGenServer_ = nh->advertiseService("/traj_gen", 
+    //         &Robot::trajGenCallback, this);
+    // jntAngsServer_ = nh->advertiseService("/jnt_angs", 
+    //         &Robot::jntAngsCallback, this);
+    // generalTrajServer_ = nh->advertiseService("/general_traj", 
+    //         &Robot::generalTrajCallback, this);
+    // resetTrajServer_ = nh->advertiseService("/reset_traj",
+    //         &Robot::resetTrajCallback, this);
+    // zmpDataPub_ = nh->advertise<geometry_msgs::Point>("/zmp_position", 100);
+    // comDataPub_ = nh->advertise<geometry_msgs::Twist>("/com_data", 100);
+    // xiDataPub_ = nh->advertise<geometry_msgs::Twist>("/xi_data", 100);
     
     // SURENA IV geometrical params
     
@@ -38,7 +38,7 @@ Robot::Robot(ros::NodeHandle *nh, Controller robot_ctrl){
     double sole_x_back = 0.09;      // Surena4: ??, Surena5: 0.09
     double min_dist = 0.18;         // Surena4: ??, Surena5: 0.18
 
-    mass_ = 62; // SR1: ?, Surena4: 48.3, Surena5: 55.7(Solid: 43.813) 62
+    mass_ = 66.5; // SR1: ?, Surena4: 48.3, Surena5: 66.5(Solid: 43.813) 62
 
     dataSize_ = 0;
     rSole_ << 0.0, -torso_, 0.0;
@@ -104,7 +104,12 @@ Robot::Robot(ros::NodeHandle *nh, Controller robot_ctrl){
     _Link* lAnkleR = new _Link(12, a[11], b[11], 1.8051, Matrix3d::Identity(3, 3), Vector3d(0.02617, 0.00013891, -0.040175), links_[11]);
     links_[12] = lAnkleR;
 
-    onlineWalk_ = robot_ctrl;
+    Matrix3d kp, ki, kcom, kzmp;
+    kp << 1,0,0,0,1,0,0,0,0;
+    ki = MatrixXd::Zero(3, 3);
+    kcom = MatrixXd::Zero(3, 3);
+    kzmp = MatrixXd::Zero(3, 3);
+    onlineWalk_ = new Controller(kp, ki, kzmp, kcom);
 
     ankleColide_ = new Collision(sole_x_front, sole_y, sole_x_back, min_dist);
     estimator_ = new Estimator();
@@ -153,10 +158,10 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
         Vector3d r_wrench;
         distributeFT(zmpd_[iter - trajSizes_[0]], rAnklePos_[iter], lAnklePos_[iter], r_wrench, l_wrench);
         // cout << r_wrench(1) << ',' << r_wrench(2) << ',' << l_wrench(1) << ',' << l_wrench(2) << ',';
-        // // double delta_z = onlineWalk_.footLenController(0.0, floor((f_l - f_r) * 10) / 10, 0.00011, 0.0, 1);
-        double delta_z = onlineWalk_.footLenController(floor((l_wrench(0) - r_wrench(0)) * 10) / 10, floor((f_l - f_r) * 10) / 10, 0.00002, 0.0, 1.0);
-        // lfoot << lAnklePos_[iter](0), lAnklePos_[iter](1), lAnklePos_[iter](2) - 0.5 * delta_z;
-        // rfoot << rAnklePos_[iter](0), rAnklePos_[iter](1), rAnklePos_[iter](2) + 0.5 * delta_z;
+        // // double delta_z = onlineWalk_->footLenController(0.0, floor((f_l - f_r) * 10) / 10, 0.00011, 0.0, 1);
+        double delta_z = onlineWalk_->footLenController(floor((l_wrench(0) - r_wrench(0)) * 10) / 10, floor((f_l - f_r) * 10) / 10, 0.00002, 0.0, 1.0);
+        lfoot << lAnklePos_[iter](0), lAnklePos_[iter](1), lAnklePos_[iter](2) - 0.5 * delta_z;
+        rfoot << rAnklePos_[iter](0), rAnklePos_[iter](1), rAnklePos_[iter](2) + 0.5 * delta_z;
         // cout << zmpd_[iter - trajSizes_[0]](0) << ',' << zmpd_[iter - trajSizes_[0]](1) << ',' << zmpd_[iter - trajSizes_[0]](2) << ',';
         // cout << CoMPos_[iter](0) << ',' << CoMPos_[iter](1) << ',' << CoMPos_[iter](2) << ',';
         // cout << xiDesired_[iter - trajSizes_[0]](0) << ',' << xiDesired_[iter - trajSizes_[0]](1) << ',' << xiDesired_[iter- trajSizes_[0]](2) << ',';
@@ -164,22 +169,22 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
         // cout << delta_z << ',' << f_r << ',' << f_l << ',' << floor((f_l - f_r) * 10) / 10 << endl;
         
         //Foot Orientation Controller
-        //Vector3d delta_theta = onlineWalk_.footDampingController(Vector3d::Zero(), Vector3d(0, 0, f_r), torque_r, gain, true);
+        //Vector3d delta_theta = onlineWalk_->footDampingController(Vector3d::Zero(), Vector3d(0, 0, f_r), torque_r, gain, true);
         // Vector3d delta_theta_r(0, 0, 0);
         // Vector3d delta_theta_l(0, 0, 0);
-        // // delta_theta_r = onlineWalk_.footOrientController(Vector3d(0, 0, 0), torque_r, -0.05, 0.000, 2, true);
-        // // delta_theta_l = onlineWalk_.footOrientController(Vector3d(0, 0, 0), torque_l, -0.05, 0.000, 2, false);
+        // // delta_theta_r = onlineWalk_->footOrientController(Vector3d(0, 0, 0), torque_r, -0.05, 0.000, 2, true);
+        // // delta_theta_l = onlineWalk_->footOrientController(Vector3d(0, 0, 0), torque_l, -0.05, 0.000, 2, false);
         // if(robotState_[iter] == 2){
-        // //    delta_theta_r = onlineWalk_.footOrientController(Vector3d(r_wrench(1), r_wrench(2), 0), torque_r, 0.001, 0, 1, true);
-        //    delta_theta_r = onlineWalk_.footOrientController(Vector3d(0, 0, 0), torque_r, 0, 0.000, 0.5, true);
-        //    delta_theta_l = onlineWalk_.footOrientController(Vector3d(0, 0, 0), torque_l, -0.03, 0.000, 4, false);
+        // //    delta_theta_r = onlineWalk_->footOrientController(Vector3d(r_wrench(1), r_wrench(2), 0), torque_r, 0.001, 0, 1, true);
+        //    delta_theta_r = onlineWalk_->footOrientController(Vector3d(0, 0, 0), torque_r, 0, 0.000, 0.5, true);
+        //    delta_theta_l = onlineWalk_->footOrientController(Vector3d(0, 0, 0), torque_l, -0.03, 0.000, 4, false);
         // }else if(robotState_[iter] == 3){
-        //    delta_theta_r = onlineWalk_.footOrientController(Vector3d(0, 0, 0), torque_r, -0.03, 0.000, 4, true);
-        //    delta_theta_l = onlineWalk_.footOrientController(Vector3d(0, 0, 0), torque_l, 0, 0.000, 0.5, false);
+        //    delta_theta_r = onlineWalk_->footOrientController(Vector3d(0, 0, 0), torque_r, -0.03, 0.000, 4, true);
+        //    delta_theta_l = onlineWalk_->footOrientController(Vector3d(0, 0, 0), torque_l, 0, 0.000, 0.5, false);
         // }else if(robotState_[iter] == 1){
-        //    delta_theta_r = onlineWalk_.footOrientController(Vector3d(0, 0, 0), Vector3d(0, 0, 0), 0, 0.000, 0.5, true);
-        // //    delta_theta_l = onlineWalk_.footOrientController(Vector3d(l_wrench(1), l_wrench(2), 0), torque_l, 0.001, 0, 1, false);
-        //    delta_theta_l = onlineWalk_.footOrientController(Vector3d(0, 0, 0), Vector3d(0, 0, 0), 0, 0.000, 0.5, false);
+        //    delta_theta_r = onlineWalk_->footOrientController(Vector3d(0, 0, 0), Vector3d(0, 0, 0), 0, 0.000, 0.5, true);
+        // //    delta_theta_l = onlineWalk_->footOrientController(Vector3d(l_wrench(1), l_wrench(2), 0), torque_l, 0.001, 0, 1, false);
+        //    delta_theta_l = onlineWalk_->footOrientController(Vector3d(0, 0, 0), Vector3d(0, 0, 0), 0, 0.000, 0.5, false);
         // }
         // Matrix3d delta_rot_r;
         // Matrix3d delta_rot_l;
@@ -196,18 +201,18 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
         Vector3d delta_theta_l(0, 0, 0);
 
         if (robotState_[iter] == 2){
-            delta_theta_l = onlineWalk_.bumpFootOrientController(bump_l, Vector3d::Zero(), 2.5 / 300.0, 0.0, 6.0, false);
-            delta_theta_r = onlineWalk_.bumpFootOrientController(bump_r, Vector3d::Zero(), 2.5 / 300.0, 0.0, 6.0, true);
+            delta_theta_l = onlineWalk_->bumpFootOrientController(bump_l, Vector3d::Zero(), 2.5 / 300.0, 0.0, 6.0, false);
+            delta_theta_r = onlineWalk_->bumpFootOrientController(bump_r, Vector3d::Zero(), 2.5 / 300.0, 0.0, 6.0, true);
         }else if(robotState_[iter] == 3){
-            delta_theta_l = onlineWalk_.bumpFootOrientController(bump_l, Vector3d::Zero(), 2.5 / 300.0, 0.0, 6.0, false);
-            delta_theta_r = onlineWalk_.bumpFootOrientController(bump_r, Vector3d::Zero(), 2.5 / 300.0, 0.0, 6.0, true);
+            delta_theta_l = onlineWalk_->bumpFootOrientController(bump_l, Vector3d::Zero(), 2.5 / 300.0, 0.0, 6.0, false);
+            delta_theta_r = onlineWalk_->bumpFootOrientController(bump_r, Vector3d::Zero(), 2.5 / 300.0, 0.0, 6.0, true);
         }else if(robotState_[iter] == 1){
             int temp_bump[] = {0, 0, 0, 0};
-            delta_theta_l = onlineWalk_.bumpFootOrientController(temp_bump, Vector3d::Zero(), 2.5 / 300.0, 0.0, 6.0, false);
-            delta_theta_r = onlineWalk_.bumpFootOrientController(temp_bump, Vector3d::Zero(), 2.5 / 300.0, 0.0, 6.0, true);
+            delta_theta_l = onlineWalk_->bumpFootOrientController(temp_bump, Vector3d::Zero(), 2.5 / 300.0, 0.0, 6.0, false);
+            delta_theta_r = onlineWalk_->bumpFootOrientController(temp_bump, Vector3d::Zero(), 2.5 / 300.0, 0.0, 6.0, true);
         }else{
-            delta_theta_l = onlineWalk_.bumpFootOrientController(bump_l, Vector3d::Zero(), 0.0 / 300.0, 0.0, 0.0, false);
-            delta_theta_r = onlineWalk_.bumpFootOrientController(bump_r, Vector3d::Zero(), 0.0 / 300.0, 0.0, 0.0, true);
+            delta_theta_l = onlineWalk_->bumpFootOrientController(bump_l, Vector3d::Zero(), 0.0 / 300.0, 0.0, 0.0, false);
+            delta_theta_r = onlineWalk_->bumpFootOrientController(bump_r, Vector3d::Zero(), 0.0 / 300.0, 0.0, 0.0, true);
         }
 
         // cout << delta_theta_r(0) << ',' << delta_theta_r(1) << ',' << delta_theta_r(2) << ',';
@@ -220,8 +225,9 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
         // Vector3d euler_r = (rAnkleRot_[iter] + delta_theta_r).eulerAngles(2,1,0);
         // Vector3d euler_l =  (lAnkleRot_[iter] + delta_theta_l).eulerAngles(2,1,0);
         
-        // rAnkleRot_[iter] = rAnkleRot_[iter] * delta_rot_r;
-        // lAnkleRot_[iter] = lAnkleRot_[iter] * delta_rot_l;
+        rAnkleRot_[iter] = rAnkleRot_[iter] * delta_rot_r;
+        lAnkleRot_[iter] = lAnkleRot_[iter] * delta_rot_l;
+        
         // Early Contact Controller
         double r_mean_bump = 0.25 * (bump_r[0] + bump_r[1] + bump_r[2] + bump_r[3]);
         double l_mean_bump = 0.25 * (bump_l[0] + bump_l[1] + bump_l[2] + bump_l[3]);
@@ -235,20 +241,20 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
         
         
         if(r_mean_bump < -20 && rAnklePos_[iter](2) < rAnklePos_[iter - 1](2))
-            delta_r_foot = onlineWalk_.earlyContactController(bump_r, r_bump_d, 0.004, 3, true);
+            delta_r_foot = onlineWalk_->earlyContactController(bump_r, r_bump_d, 0.004, 3, true);
         else
-            delta_r_foot = onlineWalk_.earlyContactController(bump_r, r_bump_d, 0.0, 3, true);
+            delta_r_foot = onlineWalk_->earlyContactController(bump_r, r_bump_d, 0.0, 3, true);
 
         if(l_mean_bump < -20 && lAnklePos_[iter](2) < lAnklePos_[iter - 1](2))
-            delta_l_foot = onlineWalk_.earlyContactController(bump_l, l_bump_d, 0.004, 3, false);
+            delta_l_foot = onlineWalk_->earlyContactController(bump_l, l_bump_d, 0.004, 3, false);
         else
-            delta_l_foot = onlineWalk_.earlyContactController(bump_l, l_bump_d, 0.0, 3, false);
+            delta_l_foot = onlineWalk_->earlyContactController(bump_l, l_bump_d, 0.0, 3, false);
         
-        //Vector3d delta_r_foot = onlineWalk_.earlyContactController(bump_r, r_bump_d, 0.007, 5, true);
-        //Vector3d delta_l_foot = onlineWalk_.earlyContactController(bump_l, l_bump_d, 0.007, 5, false);
+        //Vector3d delta_r_foot = onlineWalk_->earlyContactController(bump_r, r_bump_d, 0.007, 5, true);
+        //Vector3d delta_l_foot = onlineWalk_->earlyContactController(bump_l, l_bump_d, 0.007, 5, false);
 
-        // rfoot = rfoot + delta_r_foot;
-        // lfoot = lfoot + delta_l_foot;
+        rfoot = rfoot + delta_r_foot;
+        lfoot = lfoot + delta_l_foot;
         // rfoot = rfoot + 0.5 * delta_r_foot - 0.5 * delta_l_foot;
         // lfoot = lfoot - 0.5 * delta_r_foot + 0.5 * delta_l_foot;
 
@@ -268,22 +274,22 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
         // Matrix3d kp = Vector3d(1.5, 1, 0).asDiagonal();
         // Matrix3d kc = Vector3d(4.5, 4, 0).asDiagonal();
         // if(robotState_[iter] == 2){
-        //     Vector3d  temp = onlineWalk_.ZMPAdmitanceComtroller_(pelvis, FKBase_[iter], rZMP_, Vector3d(0.02, 0, 0), kp, kc);
+        //     Vector3d  temp = onlineWalk_->ZMPAdmitanceComtroller_(pelvis, FKBase_[iter], rZMP_, Vector3d(0.02, 0, 0), kp, kc);
         //     pelvis += temp;
         //     // cout << temp(0) << "," << temp(1)  << "," << temp(2)  << "," << rZMP_(0) << "," << rZMP_(1)  << "," << rZMP_(2)  << "," << pelvis(0) << "," << pelvis(1)  << "," << FKBase_[iter](0) << "," << FKBase_[iter](1)  << ","; 
         // }
         // else if (robotState_[iter] == 3){
-        //     Vector3d  temp = onlineWalk_.ZMPAdmitanceComtroller_(pelvis, FKBase_[iter], lZMP_, Vector3d(0.02, 0, 0), kp, kc);
+        //     Vector3d  temp = onlineWalk_->ZMPAdmitanceComtroller_(pelvis, FKBase_[iter], lZMP_, Vector3d(0.02, 0, 0), kp, kc);
         //     pelvis += temp;
         //     // cout << temp(0) << "," << temp(1)  << "," << temp(2)  << "," << lZMP_(0) << "," << lZMP_(1)  << "," << lZMP_(2)  << "," << pelvis(0) << "," << pelvis(1)  << "," << FKBase_[iter](0) << "," << FKBase_[iter](1)  << ","; 
         // }
         // else if (robotState_[iter] == 1){
-        //     Vector3d  temp = onlineWalk_.ZMPAdmitanceComtroller_(pelvis, pelvis, Vector3d(0, 0, 0), Vector3d(0, 0, 0), kp, kc);
+        //     Vector3d  temp = onlineWalk_->ZMPAdmitanceComtroller_(pelvis, pelvis, Vector3d(0, 0, 0), Vector3d(0, 0, 0), kp, kc);
         //     pelvis += temp;
         //     // cout << temp(0) << "," << temp(1)  << "," << temp(2)  << "," << 0 << "," << 0  << "," << 0  << "," << pelvis(0) << "," << pelvis(1)  << "," << FKBase_[iter](0) << "," << FKBase_[iter](1)  << ","; 
         // }
         // else {
-        //     Vector3d  temp = onlineWalk_.ZMPAdmitanceComtroller_(pelvis, FKBase_[iter], realZMP_[iter], Vector3d(0, 0, 0), kp, kc);
+        //     Vector3d  temp = onlineWalk_->ZMPAdmitanceComtroller_(pelvis, FKBase_[iter], realZMP_[iter], Vector3d(0, 0, 0), kp, kc);
         //     pelvis += temp;
         //     // cout << temp(0) << "," << temp(1)  << "," << temp(2)  << "," << realZMP_[iter](0) << "," << realZMP_[iter](1) << "," << 0 << "," << pelvis(0) << "," << pelvis(1)  << "," << FKBase_[iter](0) << "," << FKBase_[iter](1)  << ","; 
         // }
@@ -296,8 +302,8 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
     // cout << 0 << "," << 0  << "," << 0 << "," << 0 << "," << 0  << "," << 0 << "," << 0  << "," << 0 << "," << 0  << "," << 0 << endl;
     //cout << realZMP_[iter](0) << "," << realZMP_[iter](1) << endl;
     if(trajContFlags_[traj_index] == true){
-        Vector3d zmp_ref = onlineWalk_.dcmController(xiDesired_[iter+1], xiDot_[iter+1], realXi_[iter], COM_height_);
-        Vector3d cont_out = onlineWalk_.comController(CoMPos_[iter], CoMDot_[iter+1], FKBase_[iter], zmp_ref, realZMP_[iter]);
+        Vector3d zmp_ref = onlineWalk_->dcmController(xiDesired_[iter+1], xiDot_[iter+1], realXi_[iter], COM_height_);
+        Vector3d cont_out = onlineWalk_->comController(CoMPos_[iter], CoMDot_[iter+1], FKBase_[iter], zmp_ref, realZMP_[iter]);
         pelvis = cont_out;
     }
 
@@ -324,12 +330,10 @@ void Robot::updateState(double config[], Vector3d torque_r, Vector3d torque_l, d
     Vector3d base_pos = links_[0]->getPose();
     // cout << base_attitude(0) * 180/M_PI << ", " << base_attitude(1) * 180/M_PI << ", " << base_attitude(2) * 180/M_PI << endl;
     // cout << base_pos(0) << ", " << base_pos(1) << ", " << base_pos(2) << ", " << base_vel(0) << ", " << base_vel(1) << ", " << base_vel(2) << endl;
-
     estimator_->atitudeEulerEstimator(base_attitude, gyro);
     Matrix3d rot = (AngleAxisd(base_attitude[2], Vector3d::UnitZ()) // roll, pitch, yaw
                   * AngleAxisd(base_attitude[1], Vector3d::UnitY())
                   * AngleAxisd(base_attitude[0], Vector3d::UnitX())).matrix();
-    
     //links_[0]->setEuler(base_attitude);
     links_[0]->setRot(rot);
     links_[0]->setOmega(gyro);
@@ -365,7 +369,7 @@ void Robot::updateState(double config[], Vector3d torque_r, Vector3d torque_l, d
     zmpPosition_.x = realZMP_[index_](0);
     zmpPosition_.y = realZMP_[index_](1);
     zmpPosition_.z = realZMP_[index_](2);
-    zmpDataPub_.publish(zmpPosition_);
+    // zmpDataPub_.publish(zmpPosition_);
 }
 
 void Robot::updateSolePosition(){
@@ -433,7 +437,7 @@ void Robot::updateSolePosition(){
     // realXi_[index_] = FKBase_[index_] + FKBaseDot_[index_] / sqrt(K_G/COM_height_);
     realXi_[index_] = FKCoM_[index_] + FKCoMDot_[index_] / sqrt(K_G/COM_height_);
     // cout << FKBase_[index_](0) << "," << FKBase_[index_](1) << "," << FKBase_[index_](2) << "," ;
-    cout << FKCoM_[index_](0) << "," << FKCoM_[index_](1) << "," << FKCoM_[index_](2) << endl;
+    // cout << FKCoM_[index_](0) << "," << FKCoM_[index_](1) << "," << FKCoM_[index_](2) << endl;
     // cout << FKBaseDot_[index_](0) << "," << FKBaseDot_[index_](1) << "," << FKBaseDot_[index_](2) << ",";
     //cout << FKCoMDot_[index_](0) << "," << FKCoMDot_[index_](1) << "," << FKCoMDot_[index_](2) << ",";
     // cout << realZMP_[index_](0) << ", " << realZMP_[index_](1) << ", " << realZMP_[index_](2) << ",";
@@ -466,7 +470,7 @@ Vector3d Robot::ZMPGlobal(Vector3d zmp_r, Vector3d zmp_l, double f_r, double f_l
 Vector3d Robot::CoM2Base(){
     Vector3d com;
     Vector3d mc = Vector3d::Zero();
-    for(int i = 0; i < 14; i++){
+    for(int i = 0; i < 13; i++){
         double m_i = links_[i]->getMass();
         Vector3d p_com_b = links_[i]->getPose() + links_[i]->getRot() * links_[i]->getLinkCoM();
         mc += m_i * p_com_b;
@@ -629,27 +633,24 @@ void Robot::distributeBump(double r_foot_z, double l_foot_z, double &r_bump, dou
     l_bump = max(bumpBiasL_, min(0.0, (bumpBiasL_ / 0.02) * (0.02 - l_foot_z)));
 }
 
-bool Robot::trajGenCallback(trajectory_planner::Trajectory::Request  &req,
-                            trajectory_planner::Trajectory::Response &res)
+bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double_support,
+                            double COM_height, double step_length, double step_width, double dt,
+                            double theta, double ankle_height, double step_height)
 {
     /*
         ROS service for generating robot COM & ankles trajectories
     */
     //ROS_INFO("Generating Trajectory started.");
     //auto start = high_resolution_clock::now();
-    int trajectory_size = int(((req.step_count + 2) * req.t_step) / req.dt);
-    double alpha = req.alpha;
-    double t_ds = req.t_double_support;
-    double t_s = req.t_step;
-    COM_height_ = req.COM_height;
-    double step_len = req.step_length;
-    double step_width = req.step_width;
-    int num_step = req.step_count;
-    dt_ = req.dt;
-    float theta = req.theta;
-    double swing_height = req.ankle_height;
+    int trajectory_size = int(((step_count + 2) * t_step) / dt);
+    double t_ds = t_double_support;
+    double t_s = t_step;
+    COM_height_ = COM_height;
+    double step_len = step_length;
+    int num_step = step_count;
+    dt_ = dt;
+    double swing_height = ankle_height;
     double init_COM_height = thigh_ + shank_;  // SURENA IV initial height 
-    double step_height = req.step_height;
     
     DCMPlanner* trajectoryPlanner = new DCMPlanner(COM_height_, t_s, t_ds, dt_, num_step + 2, alpha, theta);
     Ankle* anklePlanner = new Ankle(t_s, t_ds, swing_height, alpha, num_step, dt_, theta);
@@ -736,12 +737,12 @@ bool Robot::trajGenCallback(trajectory_planner::Trajectory::Request  &req,
     anklePlanner->updateFoot(ankle_rf, -sign);
     anklePlanner->generateTrajectory();
     delete[] ankle_rf;
-    onlineWalk_.setDt(req.dt);
-    estimator_->setDt(req.dt);
-    onlineWalk_.setBaseHeight(req.COM_height);
-    onlineWalk_.setBaseIdle(shank_ + thigh_);
-    onlineWalk_.setBaseLowHeight(0.65);
-    onlineWalk_.setInitCoM(Vector3d(0.0,0.0,COM_height_));
+    onlineWalk_->setDt(dt);
+    estimator_->setDt(dt);
+    onlineWalk_->setBaseHeight(COM_height);
+    onlineWalk_->setBaseIdle(shank_ + thigh_);
+    onlineWalk_->setBaseLowHeight(0.65);
+    onlineWalk_->setInitCoM(Vector3d(0.0,0.0,COM_height_));
 
     if (dataSize_ != 0){
         dataSize_ += trajectory_size;
@@ -779,7 +780,7 @@ bool Robot::trajGenCallback(trajectory_planner::Trajectory::Request  &req,
     }
     CoMDot_ = trajectoryPlanner->get_CoMDot();
     //ROS_INFO("trajectory generated");
-    res.result = true;
+    // res.result = true;
     trajSizes_.push_back(dataSize_);
     trajContFlags_.push_back(false);
     isTrajAvailable_ = true;
@@ -800,31 +801,32 @@ bool Robot::trajGenCallback(trajectory_planner::Trajectory::Request  &req,
     return true;
 }
 
-bool Robot::generalTrajCallback(trajectory_planner::GeneralTraj::Request  &req,
-                                trajectory_planner::GeneralTraj::Response &res)
+bool Robot::generalTrajGen(double dt, double time, double init_com_pos[3], double final_com_pos[3], double init_com_orient[3], double final_com_orient[3],
+                           double init_lankle_pos[3], double final_lankle_pos[3], double init_lankle_orient[3], double final_lankle_orient[3],
+                           double init_rankle_pos[3], double final_rankle_pos[3], double init_rankle_orient[3], double final_rankle_orient[3])
 {
-    dt_ = req.dt;
+    dt_ = dt;
     GeneralMotion* motion_planner = new GeneralMotion(dt_);
-    motion_planner->changeInPlace(Vector3d(req.init_com_pos[0], req.init_com_pos[1], req.init_com_pos[2]), 
-                                  Vector3d(req.final_com_pos[0], req.final_com_pos[1], req.final_com_pos[2]), 
-                                  Vector3d(req.init_com_orient[0], req.init_com_orient[1], req.init_com_orient[2]), 
-                                  Vector3d(req.final_com_orient[0], req.final_com_orient[1], req.final_com_orient[2]),
-                                  Vector3d(req.init_lankle_pos[0], req.init_lankle_pos[1], req.init_lankle_pos[2]), 
-                                  Vector3d(req.final_lankle_pos[0], req.final_lankle_pos[1], req.final_lankle_pos[2]),
-                                  Vector3d(req.init_lankle_orient[0], req.init_lankle_orient[1], req.init_lankle_orient[2]), 
-                                  Vector3d(req.final_lankle_orient[0], req.final_lankle_orient[1], req.final_lankle_orient[2]),
-                                  Vector3d(req.init_rankle_pos[0], req.init_rankle_pos[1], req.init_rankle_pos[2]), 
-                                  Vector3d(req.final_rankle_pos[0], req.final_rankle_pos[1], req.final_rankle_pos[2]),
-                                  Vector3d(req.init_rankle_orient[0], req.init_rankle_orient[1], req.init_rankle_orient[2]), 
-                                  Vector3d(req.final_rankle_orient[0], req.final_rankle_orient[1], req.final_rankle_orient[2]),
-                                  req.time);
+    motion_planner->changeInPlace(Vector3d(init_com_pos[0], init_com_pos[1], init_com_pos[2]), 
+                                  Vector3d(final_com_pos[0], final_com_pos[1], final_com_pos[2]), 
+                                  Vector3d(init_com_orient[0], init_com_orient[1], init_com_orient[2]), 
+                                  Vector3d(final_com_orient[0], final_com_orient[1], final_com_orient[2]),
+                                  Vector3d(init_lankle_pos[0], init_lankle_pos[1], init_lankle_pos[2]), 
+                                  Vector3d(final_lankle_pos[0], final_lankle_pos[1], final_lankle_pos[2]),
+                                  Vector3d(init_lankle_orient[0], init_lankle_orient[1], init_lankle_orient[2]), 
+                                  Vector3d(final_lankle_orient[0], final_lankle_orient[1], final_lankle_orient[2]),
+                                  Vector3d(init_rankle_pos[0], init_rankle_pos[1], init_rankle_pos[2]), 
+                                  Vector3d(final_rankle_pos[0], final_rankle_pos[1], final_rankle_pos[2]),
+                                  Vector3d(init_rankle_orient[0], init_rankle_orient[1], init_rankle_orient[2]), 
+                                  Vector3d(final_rankle_orient[0], final_rankle_orient[1], final_rankle_orient[2]),
+                                  time);
     int trajectory_size = motion_planner->getLength();
 
-    onlineWalk_.setDt(req.dt);
-    estimator_->setDt(req.dt);
-    onlineWalk_.setBaseIdle(shank_ + thigh_);
-    onlineWalk_.setBaseLowHeight(0.65);
-    onlineWalk_.setInitCoM(Vector3d(0.0,0.0,COM_height_));
+    onlineWalk_->setDt(dt);
+    estimator_->setDt(dt);
+    onlineWalk_->setBaseIdle(shank_ + thigh_);
+    onlineWalk_->setBaseLowHeight(0.65);
+    onlineWalk_->setInitCoM(Vector3d(0.0,0.0,COM_height_));
 
     if (dataSize_ != 0){
         dataSize_ += trajectory_size;
@@ -861,7 +863,6 @@ bool Robot::generalTrajCallback(trajectory_planner::GeneralTraj::Request  &req,
         rAnkleRot_ = motion_planner->getRAnkleOrient();
     }
 
-    res.duration = dataSize_;
     trajSizes_.push_back(dataSize_);
     trajContFlags_.push_back(false);
     isTrajAvailable_ = true;
@@ -878,32 +879,27 @@ bool Robot::generalTrajCallback(trajectory_planner::GeneralTraj::Request  &req,
     return true;
 }
 
-bool Robot::jntAngsCallback(trajectory_planner::JntAngs::Request  &req,
-                            trajectory_planner::JntAngs::Response &res)
+bool Robot::getJointAngs(int iter, double config[12], double jnt_vel[12], double right_ft[3],
+                         double left_ft[3], int right_bump[4], int left_bump[4], double gyro[3],
+                         double accelerometer[3], double jnt_command[12],int &status)
 {
     /*
-        ROS service for returning joint angles. before calling this service, 
-        you must first call traj_gen service. 
+        function for returning joint angles. before calling this function, 
+        you must first call trajectory planning functions. 
     */
     if (isTrajAvailable_)
     {
-        index_ = req.iter;
+        index_ = iter;
         double jnt_angs[12];
-        Vector3d right_torque(req.right_ft[1], req.right_ft[2], 0.0);
-        Vector3d left_torque(req.left_ft[1], req.left_ft[2], 0.0);
-        double config[13];
-        double jnt_vel[13];
-        int right_bump[4];
-        int left_bump[4];
-        config[0] = 0;     //Pelvis joint angle
-        jnt_vel[0] = 0;  //Pelvis joint velocity
+        Vector3d right_torque(right_ft[1], right_ft[2], 0.0);
+        Vector3d left_torque(left_ft[1], left_ft[2], 0.0);
+        double robot_config[13];
+        double robot_jnt_vel[13];
+        robot_config[0] = 0;     //Pelvis joint angle
+        robot_jnt_vel[0] = 0;  //Pelvis joint velocity
         for(int i = 1; i < 13; i++){
-            config[i] = req.config[i-1];
-            jnt_vel[i] = req.jnt_vel[i-1];  
-            if(i < 5){
-                right_bump[i-1] = req.right_bump[i-1];
-                left_bump[i-1] = req.left_bump[i-1];
-            }
+            robot_config[i] = config[i-1];
+            robot_jnt_vel[i] = jnt_vel[i-1];  
         }
         //cout << req.right_ft[0] << "," << req.right_ft[1] << ","  << req.right_ft[2] << "," <<  
         //req.left_ft[0] << "," << req.left_ft[1] << ","  << req.left_ft[2] << "," << 
@@ -915,35 +911,32 @@ bool Robot::jntAngsCallback(trajectory_planner::JntAngs::Request  &req,
         //req.gyro[0] << "," << req.gyro[1] << ","  << req.gyro[2] << ","<< req.left_ft[0]<< ",";
         //cout << req.right_ft[0] << "," << req.right_ft[1] << "," << req.right_ft[2] << ","
         //<< req.left_ft[0] << "," << req.left_ft[1] << "," << req.left_ft[2] << "," << endl;
-        int status = 0;     // 0: Okay, 1: Ankle Collision
-        this->spinOnline(req.iter, config, jnt_vel, right_torque, left_torque, req.right_ft[0], req.left_ft[0],
-                         Vector3d(req.gyro[0], req.gyro[1], req.gyro[2]),
-                         Vector3d(req.accelerometer[0],req.accelerometer[1],req.accelerometer[2]),
-                         right_bump, left_bump, jnt_angs, status);
-        res.status = status;
+        status = 0;     // 0: Okay, 1: Ankle Collision
+        this->spinOnline(iter, robot_config, robot_jnt_vel, right_torque, left_torque, right_ft[0], left_ft[0],
+                         Vector3d(gyro[0], gyro[1], gyro[2]), Vector3d(accelerometer[0], accelerometer[1], accelerometer[2]),
+                         right_bump, left_bump, jnt_command, status);
         //this->spinOffline(req.iter, jnt_angs);
-        for(int i = 0; i < 12; i++)
-            res.jnt_angs[i] = jnt_angs[i];
+        // for(int i = 0; i < 12; i++)
+        //     res.jnt_angs[i] = jnt_angs[i];
         //ROS_INFO("joint angles requested");
     }else{
         ROS_INFO("First call traj_gen service");
         return false;
     }
     
-    if (req.iter == dataSize_ - 1 ){ 
-        write2File(FKBase_, dataSize_,"CoM Real");
-        write2File(realZMP_, dataSize_, "ZMP Real");
-        write2File(realXi_, dataSize_, "Xi Real");
-        write2File(FKCoMDot_, dataSize_, "CoM Velocity Real");
-        write2File(rSoles_, dataSize_, "Right Sole");
-        write2File(lSoles_, dataSize_, "Left Sole");
-    }
+    // if (iter == dataSize_ - 1 ){ 
+    //     write2File(FKBase_, dataSize_,"CoM Real");
+    //     write2File(realZMP_, dataSize_, "ZMP Real");
+    //     write2File(realXi_, dataSize_, "Xi Real");
+    //     write2File(FKCoMDot_, dataSize_, "CoM Velocity Real");
+    //     write2File(rSoles_, dataSize_, "Right Sole");
+    //     write2File(lSoles_, dataSize_, "Left Sole");
+    // }
     //ROS_INFO("joint angles returned");
     return true;
 }
 
-bool Robot::resetTrajCallback(std_srvs::Empty::Request  &req,
-                              std_srvs::Empty::Response &res)
+bool Robot::resetTraj()
 {
     delete[] CoMPos_;
     delete[] robotState_;
@@ -980,18 +973,18 @@ Robot::~Robot(){
     //delete[] FKBase_;
 }
 
-int main(int argc, char* argv[])
-{
-    ros::init(argc, argv, "trajectory_node");
-    ros::NodeHandle nh;
-    Matrix3d kp, ki, kcom, kzmp;
-    kp << 1,0,0,0,1,0,0,0,0;
-    ki = MatrixXd::Zero(3, 3);
-    kcom = MatrixXd::Zero(3, 3);
-    kzmp = MatrixXd::Zero(3, 3);
-    //kcom << 4,0,0,0,4,0,0,0,0;
-    //kzmp << 0.5,0,0,0,0.5,0,0,0,0;
-    Controller default_ctrl(kp, ki, kzmp, kcom);
-    Robot surena(&nh, default_ctrl);
-    ros::spin();
-}
+// int main(int argc, char* argv[])
+// {
+//     ros::init(argc, argv, "trajectory_node");
+//     ros::NodeHandle nh;
+//     Matrix3d kp, ki, kcom, kzmp;
+//     kp << 1,0,0,0,1,0,0,0,0;
+//     ki = MatrixXd::Zero(3, 3);
+//     kcom = MatrixXd::Zero(3, 3);
+//     kzmp = MatrixXd::Zero(3, 3);
+//     //kcom << 4,0,0,0,4,0,0,0,0;
+//     //kzmp << 0.5,0,0,0,0.5,0,0,0,0;
+//     Controller default_ctrl(kp, ki, kzmp, kcom);
+//     Robot surena(&nh, default_ctrl);
+//     ros::spin();
+// }

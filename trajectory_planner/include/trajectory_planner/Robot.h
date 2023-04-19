@@ -26,19 +26,21 @@ using namespace std;
 class Robot{
     friend class Surena;
     public:
-        Robot(ros::NodeHandle *nh, Controller robot_ctrl);
+        Robot();
         ~Robot();
 
         void spinOnline(int iter, double config[], double jnt_vel[], Vector3d torque_r, Vector3d torque_l, double f_r, double f_l, Vector3d gyro, Vector3d accelerometer, int bump_r[], int bump_l[], double* joint_angles, int& status);
         void spinOffline(int iter, double* config);
-        bool jntAngsCallback(trajectory_planner::JntAngs::Request  &req,
-                            trajectory_planner::JntAngs::Response &res);
-        bool trajGenCallback(trajectory_planner::Trajectory::Request  &req,
-                            trajectory_planner::Trajectory::Response &res);
-        bool generalTrajCallback(trajectory_planner::GeneralTraj::Request  &req,
-                                trajectory_planner::GeneralTraj::Response &res);
-        bool resetTrajCallback(std_srvs::Empty::Request  &req,
-                              std_srvs::Empty::Response &res);
+        bool getJointAngs(int iter, double config[12], double jnt_vel[12], double right_ft[3],
+                          double left_ft[3], int right_bump[4], int left_bump[4], double gyro[3],
+                          double accelerometer[3], double jnt_command[12],int &status);
+        bool trajGen(int step_count, double t_step, double alpha, double t_double_support,
+                     double COM_height, double step_length, double step_width, double dt,
+                     double theta, double ankle_height, double step_height);
+        bool generalTrajGen(double dt, double time, double init_com_pos[3], double final_com_pos[3], double init_com_orient[3], double final_com_orient[3],
+                            double init_lankle_pos[3], double final_lankle_pos[3], double init_lankle_orient[3], double final_lankle_orient[3],
+                            double init_rankle_pos[3], double final_rankle_pos[3], double init_rankle_orient[3], double final_rankle_orient[3]);
+        bool resetTraj();
 
         int findTrajIndex(vector<int> arr, int n, int K);
 
@@ -56,7 +58,7 @@ class Robot{
 
         PID* DCMController_;
         PID* CoMController_;
-        Controller onlineWalk_;
+        Controller* onlineWalk_;
 
         template <typename T>
         T* appendTrajectory(T* old_traj, T* new_traj, int old_size, int new_size){

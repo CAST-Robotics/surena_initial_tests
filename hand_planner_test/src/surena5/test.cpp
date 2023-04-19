@@ -92,7 +92,7 @@ int main(){
     MatrixXd R_target_r(3,3);
     VectorXd r_target_r(3);
     VectorXd q_ra(7);
-    q_ra<<0,-0.087,0,-0.174,0.0,0.0,0.0;
+    q_ra<<0,-5*M_PI/180,0,0,0.0,0.0,0.0;
 
     double angle_fix_shd=toRad(0);
     double angle_fix_elbow=0;
@@ -127,6 +127,6 @@ int main(){
     T_right_palm=R1_fix_shd*R1_ra*R2_fix_shd*R2_ra*R3_ra*P_arm_ra*R1_fix_elbow*R4_ra*R5_ra*P_forearm_ra*R2_fix_elbow*R6_ra*R7_ra*P_palm_ra;
     r_right_palm<<T_right_palm.block(0,3,3,1);
     R_right_palm<<T_right_palm.block(0,0,3,3);
-    cout << r_right_palm;
+    cout << R_right_palm;
 
 }

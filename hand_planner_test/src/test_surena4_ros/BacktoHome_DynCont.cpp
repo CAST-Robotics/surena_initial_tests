@@ -16,16 +16,17 @@ int main(int argc, char **argv) {
     {
         for(int  i = 0; i < 16; i++)
         {
-            //ROS_INFO("ith: %d", i);
+            // ROS_INFO("ith: %d", i);
             while (a[i]!=0)
             {   
                 home_data.data.clear();
                 if (a[i]>0){
-                    a[i]=a[i]-1;
-                    b[i] = b[i]-1;
+                    a[i]=a[i]-500;
+                    b[i] = b[i]-500;
                     if (a[i]<0){
                         break;
                     }
+                    ROS_INFO("b: %d", b[i]);
                     for(int j=0; j<16; j++){
                         home_data.data.push_back(b[j]);
                     }
@@ -33,11 +34,12 @@ int main(int argc, char **argv) {
                     //ROS_INFO("ok1");
                     }
                 else{
-                    a[i]=a[i]+1;
-                    b[i] = b[i]+1;
+                    a[i]=a[i]+500;
+                    b[i] = b[i]+500;
                     if (a[i]>0){
                         break;
                     }
+                    ROS_INFO("b: %d", b[i]);
                     for(int j=0; j<16; j++){
                         home_data.data.push_back(b[j]);
                     }

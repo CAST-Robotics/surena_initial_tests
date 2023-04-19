@@ -19,7 +19,7 @@
 using namespace  std;
 using namespace  Eigen;
 
-bool simulation = true;
+bool simulation = false;
 bool lefthand = false;
 int main(int argc, char **argv)
 {
@@ -140,6 +140,7 @@ int main(int argc, char **argv)
         //  q_motor[19]=int((qr_cyc[4])*(2048)/M_PI);
         //  q_motor[20]=result_right[1];   // wrist joints
         //  q_motor[21]=result_left[1];
+            // cout<<q_motor[12]<<','<<q_motor[13]<<','<<q_motor[14]<<','<<q_motor[15]<<endl;
         }
         trajectory_data.data.clear();
 

@@ -7,6 +7,65 @@
 #include "datareader.h"
 #include "offlinepublisher/srv1.h"
 #include "offlinepublisher/num.h"
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <vector>
+#include <sstream>
+#include <istream>
+
+using namespace std;
+
+std::vector<std::string> csv_read_row(std::istream &in, char delimiter);
+std::vector<std::string> csv_read_row(std::string &in, char delimiter);
+
+std::vector<std::string> csv_read_row(std::string &line, char delimiter)
+{
+    std::stringstream ss(line);
+    return csv_read_row(ss, delimiter);
+}
+ 
+std::vector<std::string> csv_read_row(std::istream &in, char delimiter)
+{
+    std::stringstream ss;
+    bool inquotes = false;
+    std::vector<std::string> row;//relying on RVO
+    while(in.good())
+    {
+        char c = in.get();
+        if (!inquotes && c=='"') //beginquotechar
+        {
+            inquotes=true;
+        }
+        else if (inquotes && c=='"') //quotechar
+        {
+            if ( in.peek() == '"')//2 consecutive quotes resolve to 1
+            {
+                ss << (char)in.get();
+            }
+            else //endquotechar
+            {
+                inquotes=false;
+            }
+        }
+        else if (!inquotes && c==delimiter) //end of field
+        {
+            row.push_back( ss.str() );
+            ss.str("");
+        }
+        else if (!inquotes && (c=='\r' || c=='\n') )
+        {
+            if(in.peek()=='\n') { in.get(); }
+            row.push_back( ss.str() );
+            return row;
+        }
+        else
+        {
+            ss << c;
+        }
+    }
+}
+
 
 int _dataIndex=0;
 QList<int> _motorPosition;
@@ -45,44 +104,52 @@ int main(int argc, char *argv[])
   std_msgs::Int32MultiArray msg;
   std_msgs::MultiArrayDimension msg_dim;
   offlinepublisher::num myCustomMsg;
-myCustomMsg.age=40;
-myCustomMsg.first_name="amin";
+  myCustomMsg.age=40;
+  myCustomMsg.first_name="amin";
 
-myCustomMsg.last_name="amani";
-myCustomMsg.score=20;
-
-
-
+  myCustomMsg.last_name="amani";
+  myCustomMsg.score=20;
 
   msg_dim.label = "jointdata/qc";
   msg_dim.size = 1;
   msg.layout.dim.clear();
   msg.layout.dim.push_back(msg_dim);
 
-int pos=0;
-bool dir=false;
+  std::ifstream in("/home/surena/qref_deal.csv");
+  if (in.fail()) return (std::cout << "File not found" << endl) && 0;
+  std::string line;
+  
+  int pos=0;
+  bool dir=false;
   while(ros::ok()) 
   {
-
-    msg.data.clear();
-    //_dataReader.GetData(_motorPosition,_dataIndex++);
-    for(size_t i = 0; i < 16; i++)
+    std::vector<std::string> row;
+    if(getline(in, line)  && in.good())
     {
-	if(i == 0 || i > 5)
-		msg.data.push_back(0);
-	else{
-		if(dir){
-		  //_motorPosition[i]=pos;
-		  pos+=10;
-		  }
-		else{
-		   //_motorPosition[i]=pos;
-		   pos-=10;
-		   }
-		msg.data.push_back(pos);
-	}
-    }
+      row = csv_read_row(line, ',');
 
+      msg.data.clear();
+      //_dataReader.GetData(_motorPosition,_dataIndex++);
+      for(size_t i = 0; i < 16; i++)
+      {
+        if(i == 12 || i == 13 || i == 14 || i == 15)
+        {
+          // if(dir){
+          //   //_motorPosition[i]=pos;
+          //   pos+=10;
+          //   }
+          // else{
+          //   //_motorPosition[i]=pos;
+          //   pos-=10;
+          //   }
+          msg.data.push_back(stoi(row[i - 12]));
+          cout << stoi(row[i - 12]) << "\t";
+        }
+        else{
+          msg.data.push_back(0);
+        }
+      }
+    }
     pub.publish(msg);
     if(pos>(16384*3) || pos<(-16384*3)  )
     dir=!dir;

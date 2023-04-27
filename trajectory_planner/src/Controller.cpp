@@ -6,10 +6,7 @@ Controller::Controller(Matrix3d K_p, Matrix3d K_i, Matrix3d K_zmp, Matrix3d K_co
     setK_i_(K_i);
     setK_zmp_(K_zmp);
     setK_com_(K_com);
-    //this->K_p_ = K_p;
-    //this->K_i_ = K_i;
-    //this->K_zmp_ = K_zmp;
-    //this->K_com_ = K_com;
+    
     xiErrorInt << 0.0, 0.0, 0.0;
     double deltaZ_ = 0.0;
     uOrientR_ << 0, 0, 0;

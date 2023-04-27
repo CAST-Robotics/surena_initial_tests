@@ -9,6 +9,7 @@ project(trajectory_planner)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   roscpp
+  roslib
   rospy
   std_msgs
   std_srvs

@@ -1,4 +1,5 @@
 #include <ros/ros.h>
+#include <ros/package.h>
 #include <Robot.h>
 #include <sensor_msgs/JointState.h>
 #include <std_msgs/Int32MultiArray.h>
@@ -24,8 +25,8 @@ using namespace std;
 class WalkTest{
   public:
     WalkTest(ros::NodeHandle *n){
-
-        robot = new Robot();
+        string config_path = ros::package::getPath("trajectory_planner") + "/config/surenav_config.json";
+        robot = new Robot(n, config_path);
 
         motorDataPub_ = n->advertise<std_msgs::Int32MultiArray>("jointdata/qc", 100);
         absSub_ = n->subscribe("/surena/abs_joint_state",100, &WalkTest::absReader, this);

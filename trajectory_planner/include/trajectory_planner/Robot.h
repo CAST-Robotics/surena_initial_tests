@@ -9,6 +9,7 @@
 #include "trajectory_planner/Trajectory.h"
 #include "trajectory_planner/GeneralTraj.h"
 
+#include "json.hpp"
 #include "DCM.h"
 #include "Link.h"
 #include "PID.h"
@@ -26,8 +27,12 @@ using namespace std;
 class Robot{
     friend class Surena;
     public:
-        Robot();
+        Robot(ros::NodeHandle* nh, std::string config_path);
         ~Robot();
+
+        void initROSCommunication();
+        void initializeRobotParams();
+        void initializeLinkObjects(Vector3d a[], Vector3d b[], Vector3d com_pos[], double links_mass[]);
 
         void spinOnline(int iter, double config[], double jnt_vel[], Vector3d torque_r, Vector3d torque_l, double f_r, double f_l, Vector3d gyro, Vector3d accelerometer, int bump_r[], int bump_l[], double* joint_angles, int& status);
         void spinOffline(int iter, double* config);
@@ -47,12 +52,18 @@ class Robot{
         void distributeFT(Vector3d zmp_y, Vector3d r_foot_y,Vector3d l_foot_y, Vector3d &r_wrench, Vector3d &l_wrench);
         void distributeBump(double r_foot_z, double l_foot_z, double &r_bump, double &l_bump);
     private:
+        ros::NodeHandle* nh_;
+        std::string robotConfigPath_;
 
         double thigh_;
         double shank_;
         double torso_;
+        double soleXFront_; 
+        double soleXBack_;    
+        double soleY_;               
+        double soleMinDist_;
         double dt_;
-        double mass_;
+        double totalMass_;
 
         double joints_[12];
 

@@ -1,6 +1,6 @@
 #include "Robot.h" 
-//#include <chrono>
-//using namespace std::chrono;
+
+using json = nlohmann::json;
 
 void write2File(Vector3d* input, int size, string file_name="data"){
     ofstream output_file(file_name + ".csv");
@@ -14,95 +14,16 @@ void write2File(Vector3d* input, int size, string file_name="data"){
 }
 
 
-Robot::Robot(){
+Robot::Robot(ros::NodeHandle* nh, std::string config_path): nh_(nh),robotConfigPath_(config_path)
+{   
+    initROSCommunication();
+    initializeRobotParams();
 
-    // trajGenServer_ = nh->advertiseService("/traj_gen", 
-    //         &Robot::trajGenCallback, this);
-    // jntAngsServer_ = nh->advertiseService("/jnt_angs", 
-    //         &Robot::jntAngsCallback, this);
-    // generalTrajServer_ = nh->advertiseService("/general_traj", 
-    //         &Robot::generalTrajCallback, this);
-    // resetTrajServer_ = nh->advertiseService("/reset_traj",
-    //         &Robot::resetTrajCallback, this);
-    // zmpDataPub_ = nh->advertise<geometry_msgs::Point>("/zmp_position", 100);
-    // comDataPub_ = nh->advertise<geometry_msgs::Twist>("/com_data", 100);
-    // xiDataPub_ = nh->advertise<geometry_msgs::Twist>("/xi_data", 100);
-    
-    // SURENA IV geometrical params
-    
-    thigh_ = 0.36;  // SR1: 0.3535, Surena4: 0.37, Surena5: 0.36
-    shank_ = 0.35;     // SR1: 0.3, Surena4: 0.36, Surena5: 0.35
-    torso_ = 0.0975;    // SR1: 0.09, Surena4: 0.115, Surena5: 0.0975
-    double sole_x_front = 0.16;     // Surena4: ??, Surena5: 0.16
-    double sole_y = 0.085;          // Surena4: ??, Surena5: 0.085
-    double sole_x_back = 0.09;      // Surena4: ??, Surena5: 0.09
-    double min_dist = 0.18;         // Surena4: ??, Surena5: 0.18
-
-    mass_ = 66.5; // SR1: ?, Surena4: 48.3, Surena5: 66.5(Solid: 43.813) 62
-
+    bumpBiasSet_ = false; // doc
+    isTrajAvailable_ = false; // doc
     dataSize_ = 0;
-    rSole_ << 0.0, -torso_, 0.0;
-    lSole_ << 0.0, torso_, 0.0;       // might be better if these two are input argument of constructor
-    isTrajAvailable_ = false;
-
-    Vector3d a[12];
-	Vector3d b[12];
-	// Defining Joint Axis
-	a[0] << 0.0, 0.0, 1.0;
-	a[1] << 1.0, 0.0, 0.0;
-	a[2] << 0.0, 1.0, 0.0;
-	a[3] << 0.0, 1.0, 0.0;
-	a[4] << 0.0, 1.0, 0.0;
-	a[5] << 1.0, 0.0, 0.0;
-	a[6] = a[0];
-	a[7] = a[1];
-	a[8] = a[2];
-	a[9] = a[3];
-	a[10] = a[4];
-	a[11] = a[5];
-	// Defining Joint Positions
-	b[0] << 0.0, -torso_, 0.0;
-	b[1] << 0.0, 0.0, 0.0;
-	b[2] = b[1];
-	b[3] << 0.0, 0.0, -thigh_;
-	b[4] << 0.0, 0.0, -shank_;
-	b[5] = b[1];
-	b[6] = -b[0];
-	b[7] = b[1];
-	b[8] = b[2];
-	b[9] = b[3];
-	b[10] = b[4];
-	b[11] = b[5];
-
-    _Link* pelvis = new _Link(0, Vector3d::Ones(3), Vector3d(0, 0, thigh_ + shank_), 13.2473824912366, Matrix3d::Identity(3,3), Vector3d(0.0063, -0.00179, 0.306));
-    Vector3d position(0.0, 0.0, 0.0);
-	pelvis->initPose(position, Matrix3d::Identity(3, 3));
-    links_[0] = pelvis;
-    _Link* rHipY = new _Link(1, a[0], b[0], 3.1729, Matrix3d::Identity(3, 3), Vector3d(-0.07423, 0, 0.0213), links_[0]);
-    links_[1] = rHipY;
-    _Link* rHipR = new _Link(2, a[1], b[1], 2.44028233906507, Matrix3d::Identity(3, 3), Vector3d(0.000984969543886728, 0.0247755120757208, -0.00015880471566998), links_[1]);
-    links_[2] = rHipR;
-    _Link* rHipP = new _Link(3, a[2], b[2], 5.27157, Matrix3d::Identity(3, 3), Vector3d(-0.00086, 0.01229, -0.18794), links_[2]);
-    links_[3] = rHipP;
-    _Link* rKnee = new _Link(4, a[3], b[3], 2.23575, Matrix3d::Identity(3, 3), Vector3d(0.01649, 0.00164, -0.08690), links_[3]);
-    links_[4] = rKnee;
-    _Link* rAnkleP = new _Link(5, a[4], b[4], 0.18834, Matrix3d::Identity(3, 3), Vector3d(-0.03478, 0.00111, -0.00042), links_[4]);
-    links_[5] = rAnkleP; 
-    _Link* rAnkleR = new _Link(6, a[5], b[5], 1.80660460486529, Matrix3d::Identity(3, 3), Vector3d(0.0261782638901839, 0.000138793078492322, -0.040153711347177), links_[5]);
-    links_[6] = rAnkleR; 
-
-    _Link* lHipY = new _Link(7, a[6], b[6], 3.1707, Matrix3d::Identity(3, 3), Vector3d(-0.07423, 0, 0.0213), links_[0]);
-    links_[7] = lHipY;
-    _Link* lHipR = new _Link(8, a[7], b[7], 2.43805, Matrix3d::Identity(3, 3), Vector3d(0.00085, -0.02478, 0.00015), links_[7]);
-    links_[8] = lHipR;
-    _Link* lHipP = new _Link(9, a[8], b[8], 5.61487, Matrix3d::Identity(3, 3), Vector3d(-0.00086, -0.013, -0.18504), links_[8]);
-    links_[9] = lHipP;
-    _Link* lKnee = new _Link(10, a[9], b[9], 2.23418, Matrix3d::Identity(3, 3), Vector3d(0.01575 , -0.00162, -0.08673), links_[9]);
-    links_[10] = lKnee;
-    _Link* lAnkleP = new _Link(11, a[10], b[10], 0.18834, Matrix3d::Identity(3, 3), Vector3d(-0.003478, -0.00112, -0.00042), links_[10]);
-    links_[11] = lAnkleP; 
-    _Link* lAnkleR = new _Link(12, a[11], b[11], 1.8051, Matrix3d::Identity(3, 3), Vector3d(0.02617, 0.00013891, -0.040175), links_[11]);
-    links_[12] = lAnkleR;
+    bumpBiasR_ = -56.0;
+    bumpBiasL_ = -57.75;
 
     Matrix3d kp, ki, kcom, kzmp;
     kp << 1,0,0,0,1,0,0,0,0;
@@ -111,14 +32,62 @@ Robot::Robot(){
     kzmp = MatrixXd::Zero(3, 3);
     onlineWalk_ = new Controller(kp, ki, kzmp, kcom);
 
-    ankleColide_ = new Collision(sole_x_front, sole_y, sole_x_back, min_dist);
+    ankleColide_ = new Collision(soleXFront_, soleY_, soleXBack_, soleMinDist_);
+    
     estimator_ = new Estimator();
+}
 
-    bumpBiasSet_ = false;
-    bumpBiasR_ = -56.0;
-    bumpBiasL_ = -57.75;
+void Robot::initROSCommunication() {
+    zmpDataPub_ = nh_->advertise<geometry_msgs::Point>("/zmp_position", 100);
+    comDataPub_ = nh_->advertise<geometry_msgs::Twist>("/com_data", 100);
+    xiDataPub_ = nh_->advertise<geometry_msgs::Twist>("/xi_data", 100);
+}
 
-    //cout << "Robot Object has been Created" << endl;
+void Robot::initializeRobotParams() {
+    std::ifstream f(robotConfigPath_);
+    json config = json::parse(f);
+    thigh_ = config["thigh"];      // SR1: 0.3535, Surena4: 0.37, Surena5: 0.36
+    shank_ = config["shank"];      // SR1: 0.3, Surena4: 0.36, Surena5: 0.35
+    torso_ = config["torso"];      // SR1: 0.09, Surena4: 0.115, Surena5: 0.0975
+    soleXFront_ = config["sole_x_front"]; 
+    soleXBack_ = config["sole_x_back"];    
+    soleY_ = config["sole_y"];               
+    soleMinDist_ = config["soles_min_distance"];
+    rSole_ << config["sole_r"][0], config["sole_r"][1], config["sole_r"][2];
+    lSole_ << config["sole_l"][0], config["sole_l"][1], config["sole_l"][2];
+
+    totalMass_ = config["total_mass"];   // SR1: ?, Surena4: 48.3, Surena5: 66.5(Solid: 43.813) 62
+
+    Vector3d a[12];
+    Vector3d b[12];
+    Vector3d com_pos[13];
+    double links_mass[13];
+    links_mass[0] = config["links_mass"][0];
+    com_pos[0] << config["links_com_position"][0][0], config["links_com_position"][0][1], config["links_com_position"][0][2];
+
+    for(int i=0; i<12; i++){
+        links_mass[i+1] = config["links_mass"][i+1];
+        com_pos[i+1] << config["links_com_position"][i+1][0], config["links_com_position"][i+1][1], config["links_com_position"][i+1][2];
+        a[i] << config["joint_axis"][i][0], config["joint_axis"][i][1], config["joint_axis"][i][2];
+        b[i] << config["joint_position"][i][0], config["joint_position"][i][1], config["joint_position"][i][2];
+    }
+    initializeLinkObjects(a, b, com_pos, links_mass);
+}
+
+void Robot::initializeLinkObjects(Vector3d a[], Vector3d b[], Vector3d com_pos[], double links_mass[]) {
+    
+    links_[0] = new _Link(0, Vector3d::Ones(3), Vector3d(0, 0, thigh_ + shank_), links_mass[0],
+                              Matrix3d::Identity(3,3), com_pos[0]);
+    links_[0]->initPose(Vector3d(0.0, 0.0, 0.0), Matrix3d::Identity(3, 3));
+
+    for (int i = 0; i < 12; i++) {
+        if (i == 6)
+            links_[i+1] = new _Link(i+1, a[i], b[i], links_mass[i+1], Matrix3d::Identity(3,3),
+                                    com_pos[i+1], links_[0]);
+        else
+            links_[i+1] = new _Link(i+1, a[i], b[i], links_mass[i+1], Matrix3d::Identity(3, 3),
+                                    com_pos[i+1], links_[i]);
+    }
 }
 
 void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d torque_r, Vector3d torque_l, double f_r, double f_l, Vector3d gyro, Vector3d accelerometer, int bump_r[], int bump_l[], double* joint_angles, int& status){
@@ -475,7 +444,7 @@ Vector3d Robot::CoM2Base(){
         Vector3d p_com_b = links_[i]->getPose() + links_[i]->getRot() * links_[i]->getLinkCoM();
         mc += m_i * p_com_b;
     }
-    com = mc / mass_;
+    com = mc / totalMass_;
     return(com);
 }
 
@@ -486,7 +455,7 @@ Vector3d Robot::CoM2BaseVel(){
         m_p += links_[i]->getMass() * (links_[0]->getOmega().cross(links_[0]->getRot() * links_[i]->getLinkCoM()) + 
                     links_[0]->getRot() * links_[i]->getLinkVel());
     }
-    return m_p/ mass_;
+    return m_p/ totalMass_;
 }
 
 void Robot::spinOffline(int iter, double* config){
@@ -618,8 +587,8 @@ int Robot::findTrajIndex(vector<int> arr, int n, int K)
 void Robot::distributeFT(Vector3d zmp, Vector3d r_foot,Vector3d l_foot, Vector3d &r_wrench, Vector3d &l_wrench){
     
     double k_f = abs((zmp(1) - r_foot(1))) / abs((r_foot(1) - l_foot(1)));
-    l_wrench(0) = k_f * mass_ * K_G;
-    r_wrench(0) = (1 - k_f) * mass_ * K_G;
+    l_wrench(0) = k_f * totalMass_ * K_G;
+    r_wrench(0) = (1 - k_f) * totalMass_ * K_G;
 
     l_wrench(1) = l_wrench(0) * (zmp(1) - l_foot(1));
     r_wrench(1) = r_wrench(0) * (zmp(1) - r_foot(1));

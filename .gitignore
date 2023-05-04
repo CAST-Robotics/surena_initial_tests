@@ -1,5 +1,4 @@
 .vscode/settings.json
 *.out
 *.csv
-surenaVgazebo
-surenaVgazebo_control
+*.STL

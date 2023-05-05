@@ -22,32 +22,32 @@ using namespace std;
 
 
 
-class WalkTest{
+class RobotManager{
   public:
-    WalkTest(ros::NodeHandle *n){
+    RobotManager(ros::NodeHandle *n){
         string config_path = ros::package::getPath("trajectory_planner") + "/config/surenav_config.json";
         robot = new Robot(n, config_path);
 
         motorDataPub_ = n->advertise<std_msgs::Int32MultiArray>("jointdata/qc", 100);
-        absSub_ = n->subscribe("/surena/abs_joint_state",100, &WalkTest::absReader, this);
-        offsetSub_ = n->subscribe("/surena/inc_joint_state",100, &WalkTest::qcInitial, this);
-        incSub_ = n->subscribe("/surena/inc_joint_state",100, &WalkTest::incReader, this);
-        jointCommand_ = n->advertiseService("joint_command", &WalkTest::sendCommand, this);
+        absSub_ = n->subscribe("/surena/abs_joint_state",100, &RobotManager::absReader, this);
+        offsetSub_ = n->subscribe("/surena/inc_joint_state",100, &RobotManager::qcInitial, this);
+        incSub_ = n->subscribe("/surena/inc_joint_state",100, &RobotManager::incReader, this);
+        jointCommand_ = n->advertiseService("joint_command", &RobotManager::sendCommand, this);
         // trajectoryGenerator_ = n->serviceClient<trajectory_planner::Trajectory>("/traj_gen");
         // generalTrajectory_  = n->serviceClient<trajectory_planner::GeneralTraj>("/general_traj");
         // resetTrajectory_  = n->serviceClient<std_srvs::Empty>("/reset_traj");
         // jointAngles_ = n->serviceClient<trajectory_planner::JntAngs>("/jnt_angs");
-        absPrinter_ = n->advertiseService("print_absolute", &WalkTest::absPrinter, this);
-        walkService_ = n->advertiseService("walk_service", &WalkTest::walk, this);
-        homeService_ = n->advertiseService("home_service", &WalkTest::home, this);
-        dummyCommand_ = n->advertiseService("get_data", &WalkTest::dummyCallback, this);
-        lFT_ = n->subscribe("/surena/ft_l_state",100, &WalkTest::ftCallbackLeft, this);
-        rFT_ = n->subscribe("/surena/ft_r_state",100, &WalkTest::ftCallbackRight, this);
-        IMUSub_ = n->subscribe("/surena/imu_state",100, &WalkTest::IMUCallback, this);
-        AccSub_ = n->subscribe("/imu/acceleration",100, &WalkTest::AccCallback, this);
-        GyroSub_ = n->subscribe("/imu/angular_velocity",100, &WalkTest::GyroCallback, this);
-        bumpSub_ = n->subscribe("/surena/bump_sensor_state",100, &WalkTest::bumpCallback, this);
-        //bumpSub_ = n->subscribe("/SerialBump",100, &WalkTest::bumpCallback, this);
+        absPrinter_ = n->advertiseService("print_absolute", &RobotManager::absPrinter, this);
+        walkService_ = n->advertiseService("walk_service", &RobotManager::walk, this);
+        homeService_ = n->advertiseService("home_service", &RobotManager::home, this);
+        dummyCommand_ = n->advertiseService("get_data", &RobotManager::dummyCallback, this);
+        lFT_ = n->subscribe("/surena/ft_l_state",100, &RobotManager::ftCallbackLeft, this);
+        rFT_ = n->subscribe("/surena/ft_r_state",100, &RobotManager::ftCallbackRight, this);
+        IMUSub_ = n->subscribe("/surena/imu_state",100, &RobotManager::IMUCallback, this);
+        AccSub_ = n->subscribe("/imu/acceleration",100, &RobotManager::AccCallback, this);
+        GyroSub_ = n->subscribe("/imu/angular_velocity",100, &RobotManager::GyroCallback, this);
+        bumpSub_ = n->subscribe("/surena/bump_sensor_state",100, &RobotManager::bumpCallback, this);
+        //bumpSub_ = n->subscribe("/SerialBump",100, &RobotManager::bumpCallback, this);
 
         b = 0.049;
         c = 0.35;
@@ -894,7 +894,7 @@ private:
 int main(int argc, char **argv){
     ros::init(argc, argv, "eth_subscriber");
     ros::NodeHandle n;
-    WalkTest wt(&n);
+    RobotManager wt(&n);
     ros::spin();
 	return 0;
 }

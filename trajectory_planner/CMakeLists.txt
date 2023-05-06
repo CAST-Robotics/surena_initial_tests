@@ -60,6 +60,8 @@ find_package(catkin REQUIRED COMPONENTS
 add_service_files(
   FILES
   JntAngs.srv
+  getdata.srv
+  command.srv
   Trajectory.srv
   GeneralTraj.srv
 )

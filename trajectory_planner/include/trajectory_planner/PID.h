@@ -1,12 +1,14 @@
 #pragma once
 
+#include"eigen3/Eigen/Dense"
+#include "eigen3/Eigen/Core"
+#include <eigen3/Eigen/Geometry>
+
 #include "iostream"
 #include "fstream"
 #include <vector>
 #include "math.h"
 #include "cmath"
-#include <eigen3/Eigen/Eigen>
-//#include <trajectory_planner/DCMController.h>
 #include <ros/ros.h>
 
 using namespace Eigen;

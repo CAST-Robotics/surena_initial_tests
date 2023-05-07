@@ -35,7 +35,6 @@ class Robot{
         void initializeLinkObjects(Vector3d a[], Vector3d b[], Vector3d com_pos[], double links_mass[]);
 
         void spinOnline(int iter, double config[], double jnt_vel[], Vector3d torque_r, Vector3d torque_l, double f_r, double f_l, Vector3d gyro, Vector3d accelerometer, int bump_r[], int bump_l[], double* joint_angles, int& status);
-        void spinOffline(int iter, double* config);
         bool getJointAngs(int iter, double config[12], double jnt_vel[12], double right_ft[3],
                           double left_ft[3], int right_bump[4], int left_bump[4], double gyro[3],
                           double accelerometer[3], double jnt_command[12],int &status);
@@ -51,7 +50,19 @@ class Robot{
 
         void distributeFT(Vector3d zmp_y, Vector3d r_foot_y,Vector3d l_foot_y, Vector3d &r_wrench, Vector3d &l_wrench);
         void distributeBump(double r_foot_z, double l_foot_z, double &r_bump, double &l_bump);
+
     private:
+        enum TaskState {
+            IDLE,
+            WALK
+        };
+
+        TaskState robotTaskState_;
+
+        inline void setTaskState(TaskState state) {
+            robotTaskState_ = state;
+        }
+
         ros::NodeHandle* nh_;
         std::string robotConfigPath_;
 
@@ -103,10 +114,10 @@ class Robot{
         Vector3d* lAnklePos_;
         Matrix3d* rAnkleRot_;
         Matrix3d* lAnkleRot_;
-        int* robotState_;
+        int* robotPhase_;
         double bumpBiasR_;
         double bumpBiasL_;
-        bool bumpBiasSet_;
+        bool bumpSensorCalibrated_;
 
         Vector3d rSole_;    // current position of right sole
         Vector3d lSole_;    // current position of left sole
@@ -126,7 +137,7 @@ class Robot{
         _Link* links_[13];
 
         Vector3d CoMEstimatorFK(double config[]);
-        void updateState(double config[], Vector3d torque_r, Vector3d torque_l, double f_r, double f_l, Vector3d gyro, Vector3d accelerometer);
+        void updateRobotState(double config[], double jnt_vel[], Vector3d torque_r, Vector3d torque_l, double f_r, double f_l, Vector3d gyro, Vector3d accelerometer);
         Matrix3d rDot_(Matrix3d R);
         void updateSolePosition();
         Vector3d getZMPLocal(Vector3d torque, double fz);

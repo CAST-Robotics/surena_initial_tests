@@ -16,7 +16,7 @@
 using namespace  std;
 using namespace  Eigen;
 
-bool simulation = true;
+bool simulation = false;
 bool lefthand = false;
 
     int main(int argc, char **argv){

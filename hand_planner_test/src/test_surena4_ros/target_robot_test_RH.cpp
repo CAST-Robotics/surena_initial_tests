@@ -90,20 +90,10 @@ bool lefthand = false;
     VectorXd r_middle_r(3); 
     VectorXd r_target_r(3);
 
-    MatrixXd R_target2_r;
-    R_target2_r.resize(3,3);
-    VectorXd r_midpoint_r(3); 
-    VectorXd r_midpoint2_r(3);
-    VectorXd r_target2_r(3);
-
     // set target values
     r_middle_r<<.2,-0.1,-0.35; //shakehands
     r_target_r<<.3,-0.05,-0.35;
     R_target_r=hand_func.rot(2,-65*M_PI/180,3);
-
-    r_midpoint2_r<<0.3,-0.1,-0.3;//respect
-    r_target2_r<<0.3,0.1,-0.3; 
-    R_target2_r=hand_func.rot(2,-80*M_PI/180,3)*hand_func.rot(1,60*M_PI/180,3);
 
     // r_middle_r<<0.3,-0.1,-0.3  ; //respect
     // r_target_r<<0.25,0.1,-0.3;
@@ -142,6 +132,11 @@ bool lefthand = false;
     phi_r=hand0_r.phi; 
     phi_target_r=hand0_r.phi_target; 
     hand0_r.HO_FK_right_palm(qr_cyc);
+     
+    // define minJerk elements to calculate end effector velocity
+    P_x_r<< r_start_r(0),r_middle_r(0),r_target_r(0);
+    P_y_r<< r_start_r(1),r_middle_r(1),r_target_r(1);
+    P_z_r<< r_start_r(2),r_middle_r(2),r_target_r(2);
 
     V_x_r<<0,INFINITY,0;
     V_y_r<<0,INFINITY,0;
@@ -150,20 +145,14 @@ bool lefthand = false;
     A_y_r<<0,INFINITY,0;
     A_z_r<<0,INFINITY,0;
 
+    X_coef_r=coef_generator.Coefficient(t_r,P_x_r,V_x_r,A_x_r); 
+    Y_coef_r=coef_generator.Coefficient(t_r,P_y_r,V_y_r,A_y_r);
+    Z_coef_r=coef_generator.Coefficient(t_r,P_z_r,V_z_r,A_z_r);
+
     // achive goal in 4 sec time_r = 0:0.005:4
  
     while (time_r<t_total)
     {
-    if (time_r<t_r(2)){
-        // define minJerk elements to calculate end effector velocity
-        P_x_r<< r_start_r(0),r_middle_r(0),r_target_r(0);
-        P_y_r<< r_start_r(1),r_middle_r(1),r_target_r(1);
-        P_z_r<< r_start_r(2),r_middle_r(2),r_target_r(2);
-
-        X_coef_r=coef_generator.Coefficient(t_r,P_x_r,V_x_r,A_x_r); 
-        Y_coef_r=coef_generator.Coefficient(t_r,P_y_r,V_y_r,A_y_r);
-        Z_coef_r=coef_generator.Coefficient(t_r,P_z_r,V_z_r,A_z_r);
-
         if(time_r<t_r(1)&& time_r>=t_r(0))
         {
             P_r<<   coef_generator.GetAccVelPos(X_coef_r.row(0),time_r,t_r(0),5)(0,0),
@@ -200,66 +189,11 @@ bool lefthand = false;
                 sai_r=hand_r.sai;
                 phi_r=hand_r.phi;
         }
-        // else{
-        //         // qr_cyc(2)=qr_cyc(2)-0.5*M_PI/180*cos((time_r-t_r(2))*(2*M_PI));
-        //         qr_cyc(3)=qr_cyc(3)-0.125*M_PI/180*cos((time_r-t_r(2))*(M_PI));
-        //     }
-    }
-    if(time_r==t_r(2)){
-        r_midpoint_r=r_right_palm;
-    }
-    if(time_r>=t_r(2)){
-        
-        // define minJerk elements to calculate end effector velocity
-        P_x_r<< r_midpoint_r(0),r_midpoint2_r(0),r_target2_r(0);
-        P_y_r<< r_midpoint_r(1),r_midpoint2_r(1),r_target2_r(1);
-        P_z_r<< r_midpoint_r(2),r_midpoint2_r(2),r_target2_r(2);
-        
-        time_r=time_r-t_r(2);
-        
-        X_coef_r=coef_generator.Coefficient(t_r,P_x_r,V_x_r,A_x_r); 
-        Y_coef_r=coef_generator.Coefficient(t_r,P_y_r,V_y_r,A_y_r);
-        Z_coef_r=coef_generator.Coefficient(t_r,P_z_r,V_z_r,A_z_r);
+        else{
+                // qr_cyc(2)=qr_cyc(2)-0.5*M_PI/180*cos((time_r-t_r(2))*(2*M_PI));
+                qr_cyc(3)=qr_cyc(3)-0.125*M_PI/180*cos((time_r-t_r(2))*(M_PI));
+            }
 
-         if(time_r<t_r(1)&& time_r>=t_r(0))
-        {
-            P_r<<   coef_generator.GetAccVelPos(X_coef_r.row(0),time_r,t_r(0),5)(0,0),
-                    coef_generator.GetAccVelPos(Y_coef_r.row(0),time_r,t_r(0),5)(0,0),
-                    coef_generator.GetAccVelPos(Z_coef_r.row(0),time_r,t_r(0),5)(0,0);
-            V_r<<   coef_generator.GetAccVelPos(X_coef_r.row(0),time_r,t_r(0),5)(0,1),
-                    coef_generator.GetAccVelPos(Y_coef_r.row(0),time_r,t_r(0),5)(0,1),
-                    coef_generator.GetAccVelPos(Z_coef_r.row(0),time_r,t_r(0),5)(0,1);
-
-            hand_r.update_right_hand(qr_cyc,V_r,r_target2_r,R_target2_r);
-            r_right_palm=hand_r.r_right_palm;
-            hand_r.doQP(qr_cyc);
-            qr_cyc=hand_r.q_next;
-            d_r=hand_r.dist;
-            theta_r=hand_r.theta;
-            sai_r=hand_r.sai;
-            phi_r=hand_r.phi;
-
-        }
-
-        else if(time_r<t_r(2)&& time_r>t_r(1))
-        {
-            P_r<<   coef_generator.GetAccVelPos(X_coef_r.row(1),time_r,t_r(1),5)(0,0),
-                    coef_generator.GetAccVelPos(Y_coef_r.row(1),time_r,t_r(1),5)(0,0),
-                    coef_generator.GetAccVelPos(Z_coef_r.row(1),time_r,t_r(1),5)(0,0);
-            V_r<<   coef_generator.GetAccVelPos(X_coef_r.row(1),time_r,t_r(1),5)(0,1),
-                    coef_generator.GetAccVelPos(Y_coef_r.row(1),time_r,t_r(1),5)(0,1),
-                    coef_generator.GetAccVelPos(Z_coef_r.row(1),time_r,t_r(1),5)(0,1);
-
-            hand_r.update_right_hand(qr_cyc,V_r,r_target2_r,R_target2_r);
-            r_right_palm=hand_r.r_right_palm;
-            hand_r.doQP(qr_cyc);
-            qr_cyc=hand_r.q_next;
-            d_r=hand_r.dist;
-            theta_r=hand_r.theta;
-            sai_r=hand_r.sai;
-            phi_r=hand_r.phi;
-        }
-    }
     q_end=qr_cyc;
     qref.block(0,count,7,1)=q_end;
 

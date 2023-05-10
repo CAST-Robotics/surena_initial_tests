@@ -52,16 +52,12 @@ class Robot{
         void distributeBump(double r_foot_z, double l_foot_z, double &r_bump, double &l_bump);
 
     private:
-        enum TaskState {
+        enum ControlState {
             IDLE,
             WALK
         };
 
-        TaskState robotTaskState_;
-
-        inline void setTaskState(TaskState state) {
-            robotTaskState_ = state;
-        }
+        vector<ControlState> robotControlState_;
 
         ros::NodeHandle* nh_;
         std::string robotConfigPath_;
@@ -160,7 +156,6 @@ class Robot{
         int size_;
         int dataSize_;
         vector<int> trajSizes_;
-        vector<bool> trajContFlags_;
         double COM_height_;
 
         Collision* ankleColide_;

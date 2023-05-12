@@ -35,6 +35,17 @@ class Robot{
         void initializeLinkObjects(Vector3d a[], Vector3d b[], Vector3d com_pos[], double links_mass[]);
 
         void spinOnline(int iter, double config[], double jnt_vel[], Vector3d torque_r, Vector3d torque_l, double f_r, double f_l, Vector3d gyro, Vector3d accelerometer, int bump_r[], int bump_l[], double* joint_angles, int& status);
+        
+        void runFootLenController(int iter, double f_l, double f_r, int traj_index);
+
+        void runBumpFootOrientController(int iter, int bump_r[], int bump_l[]);
+
+        void runEarlyContactController(int iter, int bump_r[], int bump_l[]);
+
+        void runFootOrientController();
+
+        void runZMPAdmitanceController();
+        
         bool getJointAngs(int iter, double config[12], double jnt_vel[12], double right_ft[3],
                           double left_ft[3], int right_bump[4], int left_bump[4], double gyro[3],
                           double accelerometer[3], double jnt_command[12],int &status);

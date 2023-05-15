@@ -558,7 +558,8 @@ class RobotManager{
         // generalTrajectory_.call(general_traj);
 
         robot->trajGen(req.step_count, req.t_step, req.alpha, req.t_double_support, req.COM_height,
-                       req.step_length, req.step_width, req.dt, req.theta, req.ankle_height, req.step_height);
+                       req.step_length, req.step_width, req.dt, req.theta, req.ankle_height, 
+                       req.step_height, false, 1, 1);
         //if(traj_srv.response.result){
            
         init_com_pos[2] = req.COM_height;

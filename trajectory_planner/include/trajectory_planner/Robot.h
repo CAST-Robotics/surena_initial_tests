@@ -19,6 +19,10 @@
 #include "GeneralMotion.h"
 #include "Collision.h"
 #include "Estimator.h"
+#include "PreviewTraj.h"
+#include "ZMPPlanner.h"
+#include "AnkleTraj.h"
+#include "FootStepPlanner.h"
 
 #include "fstream"
 
@@ -51,7 +55,8 @@ class Robot{
                           double accelerometer[3], double jnt_command[12],int &status);
         bool trajGen(int step_count, double t_step, double alpha, double t_double_support,
                      double COM_height, double step_length, double step_width, double dt,
-                     double theta, double ankle_height, double step_height);
+                     double theta, double ankle_height, double step_height, bool use_file, 
+                     double t_init_double_support, double t_final_double_support);
         bool generalTrajGen(double dt, double time, double init_com_pos[3], double final_com_pos[3], double init_com_orient[3], double final_com_orient[3],
                             double init_lankle_pos[3], double final_lankle_pos[3], double init_lankle_orient[3], double final_lankle_orient[3],
                             double init_rankle_pos[3], double final_rankle_pos[3], double init_rankle_orient[3], double final_rankle_orient[3]);
@@ -61,6 +66,11 @@ class Robot{
 
         void distributeFT(Vector3d zmp_y, Vector3d r_foot_y,Vector3d l_foot_y, Vector3d &r_wrench, Vector3d &l_wrench);
         void distributeBump(double r_foot_z, double l_foot_z, double &r_bump, double &l_bump);
+
+        void planFootSteps();
+        void planCoMTraj();
+        void getInitCondition(Vector3d& x0, Vector3d& y0);
+        void planAnkleTraj();
 
     private:
         enum ControlState {
@@ -80,8 +90,20 @@ class Robot{
         double soleXBack_;    
         double soleY_;               
         double soleMinDist_;
-        double dt_;
         double totalMass_;
+
+        int num_steps_ = 2;
+        double CoM_height_ = 0.68;
+        double step_len_ = 0.15;
+        double step_width_ = 0;
+        double t_init_ds_ = 1;
+        double t_ds_ = 0.1;
+        double t_step_ = 1;
+        double t_final_ds_ = 1;
+        double swing_height_ = 0.025;
+        double theta_ = 0;
+        double dt_ = 0.005;
+        bool use_file_ = true;
 
         double joints_[12];
 
@@ -111,6 +133,14 @@ class Robot{
         Matrix3d Rroll(double phi);
         Matrix3d RPitch(double theta);
 
+        vector<Vector3d> _CoMPos_;
+        vector<Matrix3d> _CoMRot_;
+        vector<Vector3d> _rAnklePos_;
+        vector<Vector3d> _lAnklePos_;
+        vector<Matrix3d> _rAnkleRot_;
+        vector<Matrix3d> _lAnkleRot_;
+        vector<int> robotState_;
+        
         Vector3d* CoMPos_;
         Matrix3d* CoMRot_;
         Vector3d* zmpd_;
@@ -167,10 +197,10 @@ class Robot{
         int size_;
         int dataSize_;
         vector<int> trajSizes_;
-        double COM_height_;
 
         Collision* ankleColide_;
         Estimator* estimator_;
+        ZMPPlanner ZMPPlanner_;
 
         Vector3d lZMP_;
         Vector3d rZMP_;

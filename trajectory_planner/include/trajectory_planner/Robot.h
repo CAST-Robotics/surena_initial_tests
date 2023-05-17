@@ -72,6 +72,8 @@ class Robot{
         void getInitCondition(Vector3d& x0, Vector3d& y0);
         void planAnkleTraj();
 
+        inline int getTrajSize(){return dataSize_;}
+
     private:
         enum ControlState {
             IDLE,

@@ -95,22 +95,22 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
                        double* joint_angles, int& status)
 {
     
-    updateRobotState(config, jnt_vel, torque_r, torque_l, f_r, f_l, gyro, accelerometer);
+    // updateRobotState(config, jnt_vel, torque_r, torque_l, f_r, f_l, gyro, accelerometer);
 
     int traj_index = findTrajIndex(trajSizes_, trajSizes_.size(), iter);
 
-    if(!bumpSensorCalibrated_ && robotPhase_[iter] == 0){
-        bumpBiasR_ = 0.25 * (bump_r[0] + bump_r[1] + bump_r[2] + bump_r[3]);
-        bumpBiasL_ = 0.25 * (bump_l[0] + bump_l[1] + bump_l[2] + bump_l[3]);
-    }
+    // if(!bumpSensorCalibrated_ && robotPhase_[iter] == 0){
+    //     bumpBiasR_ = 0.25 * (bump_r[0] + bump_r[1] + bump_r[2] + bump_r[3]);
+    //     bumpBiasL_ = 0.25 * (bump_l[0] + bump_l[1] + bump_l[2] + bump_l[3]);
+    // }
 
     if(robotControlState_[traj_index] == Robot::WALK){
         bumpSensorCalibrated_ = true;
-        runFootLenController(iter, f_l, f_r, traj_index);
+        // runFootLenController(iter, f_l, f_r, traj_index);
         
-        runBumpFootOrientController(iter, bump_r, bump_l);
+        // runBumpFootOrientController(iter, bump_r, bump_l);
         
-        runEarlyContactController(iter, bump_r, bump_l);
+        // runEarlyContactController(iter, bump_r, bump_l);
 
         // runFootOrientController();
 
@@ -120,12 +120,16 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
         ;
     }
 
-    if(ankleColide_->checkColission(lAnklePos_[iter], rAnklePos_[iter], lAnkleRot_[iter], rAnkleRot_[iter])){
+    if(ankleColide_->checkColission(_lAnklePos_[iter], _rAnklePos_[iter], _lAnkleRot_[iter], _rAnkleRot_[iter])){
         status = 1;
         cout << "Collision Detected in Ankles!" << endl;
     }
 
-    doIK(CoMPos_[iter], CoMRot_[iter], lAnklePos_[iter], lAnkleRot_[iter], rAnklePos_[iter], rAnkleRot_[iter]);
+    cout << _CoMPos_[iter](0) << ", " << _CoMPos_[iter](1) << ", " << _CoMPos_[iter](2) << ", ";
+    cout << _lAnklePos_[iter](0) << ", " << _lAnklePos_[iter](1) << ", " << _lAnklePos_[iter](2) << ", ";
+    cout << _rAnklePos_[iter](0) << ", " << _rAnklePos_[iter](1) << ", " << _rAnklePos_[iter](2) << endl;
+
+    doIK(_CoMPos_[iter], _CoMRot_[iter], _lAnklePos_[iter], _lAnkleRot_[iter], _rAnklePos_[iter], _rAnkleRot_[iter]);
 
     for(int i = 0; i < 12; i++)
         joint_angles[i] = joints_[i];     // right leg(0-5) & left leg(6-11)
@@ -645,117 +649,128 @@ bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double
     use_file_ = use_file;
     dt_ = dt;
     double init_COM_height = thigh_ + shank_;
-    
-    DCMPlanner* trajectoryPlanner = new DCMPlanner(CoM_height_, t_step, t_double_support, dt_, step_count + 2, alpha, theta);
-    Ankle* anklePlanner = new Ankle(t_step, t_double_support, ankle_height, alpha, step_count, dt_, theta);
-    Vector3d* dcm_rf = new Vector3d[step_count + 2];  // DCM rF
-    Vector3d* ankle_rf = new Vector3d[step_count + 2]; // Ankle rF
-    int sign;
 
-    if(theta == 0.0){   // Straight or Diagonal Walk
-        int sign;
-        if (step_width == 0){sign = 1;}
-        else{sign = (step_width/abs(step_width));}
+    planFootSteps();
 
-        ankle_rf[0] << 0.0, (torso_ + 0.0) * sign, 0.0;
-        ankle_rf[1] << 0.0, (torso_ + 0.0) * -sign, 0.0;
-        dcm_rf[0] << 0.0, 0.0, 0.0;
-        dcm_rf[1] << 0.0, torso_ * -sign, 0.0;
+    planCoMTraj();
 
-        for(int i = 2; i <= step_count + 1; i ++){
-            if (i == 2 || i == step_count + 1){
-                ankle_rf[i] = ankle_rf[i-2] + Vector3d(step_length, step_width, step_height);
-                dcm_rf[i] << ankle_rf[i-2] + Vector3d(step_length, step_width, step_height);
-            }else{
-                ankle_rf[i] = ankle_rf[i-2] + Vector3d(2 * step_length, step_width, step_height);
-                dcm_rf[i] << ankle_rf[i-2] + Vector3d(2 * step_length, step_width, step_height);
-            }
-        }
+    planAnkleTraj();
 
-        dcm_rf[step_count + 1] = 0.5 * (ankle_rf[step_count] + ankle_rf[step_count + 1]);
-        ankle_rf[0] << 0.0, torso_ * sign, 0.0;
-        ankle_rf[1] << 0.0, torso_ * -sign, 0.0;
-    }
-    else{   //Turning Walk
-        double r = abs(step_length/theta);
-        sign = abs(step_length) / step_length;
-        ankle_rf[0] = Vector3d(0.0, -sign * torso_, 0.0);
-        dcm_rf[0] = Vector3d::Zero(3);
-        ankle_rf[step_count + 1] = (r + pow(-1, step_count) * torso_) * Vector3d(sin(theta * (step_count-1)), sign * cos(theta * (step_count-1)), 0.0) + 
-                                    Vector3d(0.0, -sign * r, 0.0);
-        for (int i = 1; i <= step_count; i ++){
-            ankle_rf[i] = (r + pow(-1, i-1) * torso_) * Vector3d(sin(theta * (i-1)), sign * cos(theta * (i-1)), 0.0) + 
-                                    Vector3d(0.0, -sign * r, 0.0);
-            dcm_rf[i] = ankle_rf[i];
-        }
-        dcm_rf[step_count + 1] = 0.5 * (ankle_rf[step_count] + ankle_rf[step_count + 1]);
-    }
-
-    trajectoryPlanner->setFoot(dcm_rf, -sign);
-    xiDesired_ = trajectoryPlanner->getXiTrajectory();
-    zmpd_ = trajectoryPlanner->getZMP();
-    xiDot_ = trajectoryPlanner->getXiDot();
-    delete[] dcm_rf;
-    anklePlanner->updateFoot(ankle_rf, -sign);
-    anklePlanner->generateTrajectory();
-    delete[] ankle_rf;
-    onlineWalk_->setDt(dt);
-    estimator_->setDt(dt);
-    onlineWalk_->setBaseHeight(COM_height);
-    onlineWalk_->setBaseIdle(shank_ + thigh_);
-    onlineWalk_->setBaseLowHeight(0.65);
-    onlineWalk_->setInitCoM(Vector3d(0.0,0.0,CoM_height_));
-
-    if (dataSize_ != 0){
-        dataSize_ += trajectory_size;
-
-        CoMPos_ = appendTrajectory<Vector3d>(CoMPos_, trajectoryPlanner->getCoM(), dataSize_ - trajectory_size, trajectory_size);
-        lAnklePos_ = appendTrajectory<Vector3d>(lAnklePos_, anklePlanner->getTrajectoryL(), dataSize_ - trajectory_size, trajectory_size);
-        rAnklePos_ = appendTrajectory<Vector3d>(rAnklePos_, anklePlanner->getTrajectoryR(), dataSize_ - trajectory_size, trajectory_size);
-        robotPhase_ = appendTrajectory<int>(robotPhase_, anklePlanner->getRobotState(), dataSize_ - trajectory_size, trajectory_size);
-
-        CoMRot_ = appendTrajectory<Matrix3d>(CoMRot_, trajectoryPlanner->yawRotGen(), dataSize_ - trajectory_size, trajectory_size);
-        lAnkleRot_ = appendTrajectory<Matrix3d>(lAnkleRot_, anklePlanner->getRotTrajectoryL(), dataSize_ - trajectory_size, trajectory_size);
-        rAnkleRot_ = appendTrajectory<Matrix3d>(rAnkleRot_, anklePlanner->getRotTrajectoryR(), dataSize_ - trajectory_size, trajectory_size);      
-
-        delete[] FKBase_;
-        delete[] FKCoM_;
-        delete[] FKCoMDot_;
-        delete[] FKCoMDotP_;
-        delete[] FKBaseDot_;
-        delete[] realXi_;
-        delete[] realZMP_;
-        delete[] rSoles_;
-        delete[] lSoles_;
-        
-    }else{
-        dataSize_ += trajectory_size;
-
-        CoMPos_ = trajectoryPlanner->getCoM();
-        lAnklePos_ = anklePlanner->getTrajectoryL();
-        rAnklePos_ = anklePlanner->getTrajectoryR();
-        robotPhase_ = anklePlanner->getRobotState();
-
-        CoMRot_ = trajectoryPlanner->yawRotGen();
-        lAnkleRot_ = anklePlanner->getRotTrajectoryR();
-        rAnkleRot_ = anklePlanner->getRotTrajectoryL();
-    }
-    CoMDot_ = trajectoryPlanner->get_CoMDot();
+    dataSize_ = _CoMPos_.size();
     trajSizes_.push_back(dataSize_);
     robotControlState_.push_back(Robot::WALK);
     isTrajAvailable_ = true;
-
-    FKBase_ = new Vector3d[dataSize_];
-    FKCoM_ = new Vector3d[dataSize_];
-    FKCoMDot_ = new Vector3d[dataSize_];
-    FKCoMDotP_ = new double[dataSize_];
-    FKCoMDotP_[0] = 2.0;
-    FKBaseDot_ = new Vector3d[dataSize_];
-    realXi_ = new Vector3d[dataSize_];
-    realZMP_ = new Vector3d[dataSize_];
-    rSoles_ = new Vector3d[dataSize_];
-    lSoles_ = new Vector3d[dataSize_];
+    
     return true;
+    // DCMPlanner* trajectoryPlanner = new DCMPlanner(CoM_height_, t_step, t_double_support, dt_, step_count + 2, alpha, theta);
+    // Ankle* anklePlanner = new Ankle(t_step, t_double_support, ankle_height, alpha, step_count, dt_, theta);
+    // Vector3d* dcm_rf = new Vector3d[step_count + 2];  // DCM rF
+    // Vector3d* ankle_rf = new Vector3d[step_count + 2]; // Ankle rF
+    // int sign;
+
+    // if(theta == 0.0){   // Straight or Diagonal Walk
+    //     int sign;
+    //     if (step_width == 0){sign = 1;}
+    //     else{sign = (step_width/abs(step_width));}
+
+    //     ankle_rf[0] << 0.0, (torso_ + 0.0) * sign, 0.0;
+    //     ankle_rf[1] << 0.0, (torso_ + 0.0) * -sign, 0.0;
+    //     dcm_rf[0] << 0.0, 0.0, 0.0;
+    //     dcm_rf[1] << 0.0, torso_ * -sign, 0.0;
+
+    //     for(int i = 2; i <= step_count + 1; i ++){
+    //         if (i == 2 || i == step_count + 1){
+    //             ankle_rf[i] = ankle_rf[i-2] + Vector3d(step_length, step_width, step_height);
+    //             dcm_rf[i] << ankle_rf[i-2] + Vector3d(step_length, step_width, step_height);
+    //         }else{
+    //             ankle_rf[i] = ankle_rf[i-2] + Vector3d(2 * step_length, step_width, step_height);
+    //             dcm_rf[i] << ankle_rf[i-2] + Vector3d(2 * step_length, step_width, step_height);
+    //         }
+    //     }
+
+    //     dcm_rf[step_count + 1] = 0.5 * (ankle_rf[step_count] + ankle_rf[step_count + 1]);
+    //     ankle_rf[0] << 0.0, torso_ * sign, 0.0;
+    //     ankle_rf[1] << 0.0, torso_ * -sign, 0.0;
+    // }
+    // else{   //Turning Walk
+    //     double r = abs(step_length/theta);
+    //     sign = abs(step_length) / step_length;
+    //     ankle_rf[0] = Vector3d(0.0, -sign * torso_, 0.0);
+    //     dcm_rf[0] = Vector3d::Zero(3);
+    //     ankle_rf[step_count + 1] = (r + pow(-1, step_count) * torso_) * Vector3d(sin(theta * (step_count-1)), sign * cos(theta * (step_count-1)), 0.0) + 
+    //                                 Vector3d(0.0, -sign * r, 0.0);
+    //     for (int i = 1; i <= step_count; i ++){
+    //         ankle_rf[i] = (r + pow(-1, i-1) * torso_) * Vector3d(sin(theta * (i-1)), sign * cos(theta * (i-1)), 0.0) + 
+    //                                 Vector3d(0.0, -sign * r, 0.0);
+    //         dcm_rf[i] = ankle_rf[i];
+    //     }
+    //     dcm_rf[step_count + 1] = 0.5 * (ankle_rf[step_count] + ankle_rf[step_count + 1]);
+    // }
+
+    // trajectoryPlanner->setFoot(dcm_rf, -sign);
+    // xiDesired_ = trajectoryPlanner->getXiTrajectory();
+    // zmpd_ = trajectoryPlanner->getZMP();
+    // xiDot_ = trajectoryPlanner->getXiDot();
+    // delete[] dcm_rf;
+    // anklePlanner->updateFoot(ankle_rf, -sign);
+    // anklePlanner->generateTrajectory();
+    // delete[] ankle_rf;
+    // onlineWalk_->setDt(dt);
+    // estimator_->setDt(dt);
+    // onlineWalk_->setBaseHeight(COM_height);
+    // onlineWalk_->setBaseIdle(shank_ + thigh_);
+    // onlineWalk_->setBaseLowHeight(0.65);
+    // onlineWalk_->setInitCoM(Vector3d(0.0,0.0,CoM_height_));
+
+    // if (dataSize_ != 0){
+    //     dataSize_ += trajectory_size;
+
+    //     CoMPos_ = appendTrajectory<Vector3d>(CoMPos_, trajectoryPlanner->getCoM(), dataSize_ - trajectory_size, trajectory_size);
+    //     lAnklePos_ = appendTrajectory<Vector3d>(lAnklePos_, anklePlanner->getTrajectoryL(), dataSize_ - trajectory_size, trajectory_size);
+    //     rAnklePos_ = appendTrajectory<Vector3d>(rAnklePos_, anklePlanner->getTrajectoryR(), dataSize_ - trajectory_size, trajectory_size);
+    //     robotPhase_ = appendTrajectory<int>(robotPhase_, anklePlanner->getRobotState(), dataSize_ - trajectory_size, trajectory_size);
+
+    //     CoMRot_ = appendTrajectory<Matrix3d>(CoMRot_, trajectoryPlanner->yawRotGen(), dataSize_ - trajectory_size, trajectory_size);
+    //     lAnkleRot_ = appendTrajectory<Matrix3d>(lAnkleRot_, anklePlanner->getRotTrajectoryL(), dataSize_ - trajectory_size, trajectory_size);
+    //     rAnkleRot_ = appendTrajectory<Matrix3d>(rAnkleRot_, anklePlanner->getRotTrajectoryR(), dataSize_ - trajectory_size, trajectory_size);      
+
+    //     delete[] FKBase_;
+    //     delete[] FKCoM_;
+    //     delete[] FKCoMDot_;
+    //     delete[] FKCoMDotP_;
+    //     delete[] FKBaseDot_;
+    //     delete[] realXi_;
+    //     delete[] realZMP_;
+    //     delete[] rSoles_;
+    //     delete[] lSoles_;
+        
+    // }else{
+    //     dataSize_ += trajectory_size;
+
+    //     CoMPos_ = trajectoryPlanner->getCoM();
+    //     lAnklePos_ = anklePlanner->getTrajectoryL();
+    //     rAnklePos_ = anklePlanner->getTrajectoryR();
+    //     robotPhase_ = anklePlanner->getRobotState();
+
+    //     CoMRot_ = trajectoryPlanner->yawRotGen();
+    //     lAnkleRot_ = anklePlanner->getRotTrajectoryR();
+    //     rAnkleRot_ = anklePlanner->getRotTrajectoryL();
+    // }
+    // CoMDot_ = trajectoryPlanner->get_CoMDot();
+    // trajSizes_.push_back(dataSize_);
+    // robotControlState_.push_back(Robot::WALK);
+    // isTrajAvailable_ = true;
+
+    // FKBase_ = new Vector3d[dataSize_];
+    // FKCoM_ = new Vector3d[dataSize_];
+    // FKCoMDot_ = new Vector3d[dataSize_];
+    // FKCoMDotP_ = new double[dataSize_];
+    // FKCoMDotP_[0] = 2.0;
+    // FKBaseDot_ = new Vector3d[dataSize_];
+    // realXi_ = new Vector3d[dataSize_];
+    // realZMP_ = new Vector3d[dataSize_];
+    // rSoles_ = new Vector3d[dataSize_];
+    // lSoles_ = new Vector3d[dataSize_];
 }
 
 bool Robot::generalTrajGen(double dt, double time, double init_com_pos[3], double final_com_pos[3], double init_com_orient[3], double final_com_orient[3],
@@ -764,7 +779,7 @@ bool Robot::generalTrajGen(double dt, double time, double init_com_pos[3], doubl
 {
     dt_ = dt;
     GeneralMotion* motion_planner = new GeneralMotion(dt_);
-    motion_planner->changeInPlace(Vector3d(init_com_pos[0], init_com_pos[1], init_com_pos[2]), 
+    motion_planner->_changeInPlace(Vector3d(init_com_pos[0], init_com_pos[1], init_com_pos[2]), 
                                   Vector3d(final_com_pos[0], final_com_pos[1], final_com_pos[2]), 
                                   Vector3d(init_com_orient[0], init_com_orient[1], init_com_orient[2]), 
                                   Vector3d(final_com_orient[0], final_com_orient[1], final_com_orient[2]),
@@ -779,61 +794,85 @@ bool Robot::generalTrajGen(double dt, double time, double init_com_pos[3], doubl
                                   time);
     int trajectory_size = motion_planner->getLength();
 
-    onlineWalk_->setDt(dt);
-    estimator_->setDt(dt);
-    onlineWalk_->setBaseIdle(shank_ + thigh_);
-    onlineWalk_->setBaseLowHeight(0.65);
-    onlineWalk_->setInitCoM(Vector3d(0.0,0.0,CoM_height_));
+    vector<Vector3d> com_pos = motion_planner->_getCoMPos();
+    _CoMPos_.insert(_CoMPos_.end(), com_pos.begin(), com_pos.end());
+    vector<Matrix3d> com_rot = motion_planner->_getCoMOrient();
+    _CoMRot_.insert(_CoMRot_.end(), com_rot.begin(), com_rot.end());
 
-    if (dataSize_ != 0){
-        dataSize_ += trajectory_size;
+    vector<Vector3d> lank = motion_planner->_getLAnklePos();
+    _lAnklePos_.insert(_lAnklePos_.end(), lank.begin(), lank.end());
+    vector<Matrix3d> lank_rot = motion_planner->_getLAnkleOrient();
+    _lAnkleRot_.insert(_lAnkleRot_.end(), lank_rot.begin(), lank_rot.end());
 
-        CoMPos_ = appendTrajectory<Vector3d>(CoMPos_, motion_planner->getCOMPos(), dataSize_ - trajectory_size, trajectory_size);
-        lAnklePos_ = appendTrajectory<Vector3d>(lAnklePos_, motion_planner->getLAnklePos(), dataSize_ - trajectory_size, trajectory_size);
-        rAnklePos_ = appendTrajectory<Vector3d>(rAnklePos_, motion_planner->getRAnklePos(), dataSize_ - trajectory_size, trajectory_size);
-        robotPhase_ = appendTrajectory<int>(robotPhase_, motion_planner->getRobotState(), dataSize_ - trajectory_size, trajectory_size);
+    vector<Vector3d> rank = motion_planner->_getRAnklePos();
+    _rAnklePos_.insert(_rAnklePos_.end(), rank.begin(), rank.end());
+    vector<Matrix3d> rank_rot = motion_planner->_getRAnkleOrient();
+    _rAnkleRot_.insert(_rAnkleRot_.end(), rank_rot.begin(), rank_rot.end());
 
-        CoMRot_ = appendTrajectory<Matrix3d>(CoMRot_, motion_planner->getCOMOrient(), dataSize_ - trajectory_size, trajectory_size);
-        lAnkleRot_ = appendTrajectory<Matrix3d>(lAnkleRot_, motion_planner->getLAnkleOrient(), dataSize_ - trajectory_size, trajectory_size);
-        rAnkleRot_ = appendTrajectory<Matrix3d>(rAnkleRot_, motion_planner->getRAnkleOrient(), dataSize_ - trajectory_size, trajectory_size);      
+    vector<int> robot_state = motion_planner->_getRobotState();
+    robotState_.insert(robotState_.end(), robot_state.begin(), robot_state.end());  
 
-        delete[] FKBase_;
-        delete[] FKCoM_;
-        delete[] FKCoMDot_;
-        delete[] FKCoMDotP_;
-        delete[] FKBaseDot_;
-        delete[] realXi_;
-        delete[] realZMP_;
-        delete[] rSoles_;
-        delete[] lSoles_;
-        
-    }else{
-        dataSize_ += trajectory_size;
-
-        CoMPos_ = motion_planner->getCOMPos();
-        lAnklePos_ = motion_planner->getLAnklePos();
-        rAnklePos_ = motion_planner->getRAnklePos();
-        robotPhase_ = motion_planner->getRobotState();
-
-        CoMRot_ = motion_planner->getCOMOrient();
-        lAnkleRot_ = motion_planner->getLAnkleOrient();
-        rAnkleRot_ = motion_planner->getRAnkleOrient();
-    }
-
-    trajSizes_.push_back(dataSize_);
+    dataSize_ += trajectory_size;
     robotControlState_.push_back(Robot::IDLE);
+    trajSizes_.push_back(dataSize_);
     isTrajAvailable_ = true;
-    FKBase_ = new Vector3d[dataSize_];
-    FKCoM_ = new Vector3d[dataSize_];
-    FKCoMDot_ = new Vector3d[dataSize_];
-    FKCoMDotP_ = new double[dataSize_];
-    FKCoMDotP_[0] = 2.0;
-    FKBaseDot_ = new Vector3d[dataSize_];
-    realXi_ = new Vector3d[dataSize_];
-    realZMP_ = new Vector3d[dataSize_];
-    rSoles_ = new Vector3d[dataSize_];
-    lSoles_ = new Vector3d[dataSize_];
+
     return true;
+    // onlineWalk_->setDt(dt);
+    // estimator_->setDt(dt);
+    // onlineWalk_->setBaseIdle(shank_ + thigh_);
+    // onlineWalk_->setBaseLowHeight(0.65);
+    // onlineWalk_->setInitCoM(Vector3d(0.0,0.0,CoM_height_));
+
+    // if (dataSize_ != 0){
+    //     dataSize_ += trajectory_size;
+
+    //     CoMPos_ = appendTrajectory<Vector3d>(CoMPos_, motion_planner->getCOMPos(), dataSize_ - trajectory_size, trajectory_size);
+    //     lAnklePos_ = appendTrajectory<Vector3d>(lAnklePos_, motion_planner->getLAnklePos(), dataSize_ - trajectory_size, trajectory_size);
+    //     rAnklePos_ = appendTrajectory<Vector3d>(rAnklePos_, motion_planner->getRAnklePos(), dataSize_ - trajectory_size, trajectory_size);
+    //     robotPhase_ = appendTrajectory<int>(robotPhase_, motion_planner->getRobotState(), dataSize_ - trajectory_size, trajectory_size);
+
+    //     CoMRot_ = appendTrajectory<Matrix3d>(CoMRot_, motion_planner->getCOMOrient(), dataSize_ - trajectory_size, trajectory_size);
+    //     lAnkleRot_ = appendTrajectory<Matrix3d>(lAnkleRot_, motion_planner->getLAnkleOrient(), dataSize_ - trajectory_size, trajectory_size);
+    //     rAnkleRot_ = appendTrajectory<Matrix3d>(rAnkleRot_, motion_planner->getRAnkleOrient(), dataSize_ - trajectory_size, trajectory_size);      
+
+    //     delete[] FKBase_;
+    //     delete[] FKCoM_;
+    //     delete[] FKCoMDot_;
+    //     delete[] FKCoMDotP_;
+    //     delete[] FKBaseDot_;
+    //     delete[] realXi_;
+    //     delete[] realZMP_;
+    //     delete[] rSoles_;
+    //     delete[] lSoles_;
+        
+    // }else{
+    //     dataSize_ += trajectory_size;
+
+    //     CoMPos_ = motion_planner->getCOMPos();
+    //     lAnklePos_ = motion_planner->getLAnklePos();
+    //     rAnklePos_ = motion_planner->getRAnklePos();
+    //     robotPhase_ = motion_planner->getRobotState();
+
+    //     CoMRot_ = motion_planner->getCOMOrient();
+    //     lAnkleRot_ = motion_planner->getLAnkleOrient();
+    //     rAnkleRot_ = motion_planner->getRAnkleOrient();
+    // }
+
+    // trajSizes_.push_back(dataSize_);
+    // robotControlState_.push_back(Robot::IDLE);
+    // isTrajAvailable_ = true;
+    // FKBase_ = new Vector3d[dataSize_];
+    // FKCoM_ = new Vector3d[dataSize_];
+    // FKCoMDot_ = new Vector3d[dataSize_];
+    // FKCoMDotP_ = new double[dataSize_];
+    // FKCoMDotP_[0] = 2.0;
+    // FKBaseDot_ = new Vector3d[dataSize_];
+    // realXi_ = new Vector3d[dataSize_];
+    // realZMP_ = new Vector3d[dataSize_];
+    // rSoles_ = new Vector3d[dataSize_];
+    // lSoles_ = new Vector3d[dataSize_];
+    // return true;
 }
 
 bool Robot::getJointAngs(int iter, double config[12], double jnt_vel[12], double right_ft[3],
@@ -847,7 +886,6 @@ bool Robot::getJointAngs(int iter, double config[12], double jnt_vel[12], double
     if (isTrajAvailable_)
     {
         index_ = iter;
-        double jnt_angs[12];
         Vector3d right_torque(right_ft[1], right_ft[2], 0.0);
         Vector3d left_torque(left_ft[1], left_ft[2], 0.0);
         double robot_config[13];

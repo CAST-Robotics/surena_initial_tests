@@ -574,13 +574,15 @@ class RobotManager{
             
             int i = 0;
             // ROS_INFO("walking started!");
-            int final_iter = req.t_step * (req.step_count + 2) + 4;
-            // int final_iter = req.t_step + 4;
+            // int final_iter = rate * (req.t_step * (req.step_count + 2) + 4);
+            // int final_iter = rate * (req.t_step + 4);
+            int final_iter = robot->getTrajSize();
+            cout << final_iter << endl;
             
             double jnt_command[12];
             int status;
             
-            while(i < rate * (final_iter)){
+            while(i < final_iter){
                 double config[12];
                 double jnt_vel[12];
                 double left_ft[3] = {-currentLFT_[0], -currentLFT_[2], -currentLFT_[1]};
@@ -601,10 +603,10 @@ class RobotManager{
                     cout << "Node was shut down due to Ankle Collision!" << endl;
                     return false;
                 }
-                cout << jnt_command[0] << ',' << jnt_command[1] << ','<< jnt_command[2] << ','
-                << jnt_command[3] << ','<< jnt_command[4] << ','<< jnt_command[5] << ','
-                << jnt_command[6] << ','<< jnt_command[7] << ','<< jnt_command[8] << ','
-                << jnt_command[9] << ','<< jnt_command[10] << ','<< jnt_command[11] << endl;
+                // cout << jnt_command[0] << ',' << jnt_command[1] << ','<< jnt_command[2] << ','
+                // << jnt_command[3] << ','<< jnt_command[4] << ','<< jnt_command[5] << ','
+                // << jnt_command[6] << ','<< jnt_command[7] << ','<< jnt_command[8] << ','
+                // << jnt_command[9] << ','<< jnt_command[10] << ','<< jnt_command[11] << endl;
                 for(int j=0; j < 12; j++){
                     double dif = 0;
                     if(this->checkAngle(j, jnt_command[j], dif)){

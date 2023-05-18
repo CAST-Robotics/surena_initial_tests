@@ -572,15 +572,13 @@ class RobotManager{
             auto stop = high_resolution_clock::now();
             auto duration = duration_cast<microseconds>(stop - start);
             
-            int i = 0;
-            // ROS_INFO("walking started!");
             // int final_iter = rate * (req.t_step * (req.step_count + 2) + 4);
             // int final_iter = rate * (req.t_step + 4);
             int final_iter = robot->getTrajSize();
-            cout << final_iter << endl;
             
             double jnt_command[12];
             int status;
+            int i = 0;
             
             while(i < final_iter){
                 double config[12];

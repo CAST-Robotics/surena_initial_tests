@@ -909,23 +909,23 @@ bool Robot::getJointAngs(int iter, double config[12], double jnt_vel[12], double
 
 bool Robot::resetTraj()
 {
-    delete[] CoMPos_;
-    delete[] robotPhase_;
-    delete[] lAnklePos_;
-    delete[] rAnklePos_;
-    delete[] CoMRot_;
-    delete[] lAnkleRot_;
-    delete[] rAnkleRot_;
+    // delete[] CoMPos_;
+    // delete[] robotPhase_;
+    // delete[] lAnklePos_;
+    // delete[] rAnklePos_;
+    // delete[] CoMRot_;
+    // delete[] lAnkleRot_;
+    // delete[] rAnkleRot_;
 
-    delete[] FKBase_;
-    delete[] FKCoM_;
-    delete[] FKCoMDot_;
-    delete[] FKCoMDotP_;
-    delete[] FKBaseDot_;
-    delete[] realXi_;
-    delete[] realZMP_;
-    delete[] rSoles_;
-    delete[] lSoles_;
+    // delete[] FKBase_;
+    // delete[] FKCoM_;
+    // delete[] FKCoMDot_;
+    // delete[] FKCoMDotP_;
+    // delete[] FKBaseDot_;
+    // delete[] realXi_;
+    // delete[] realZMP_;
+    // delete[] rSoles_;
+    // delete[] lSoles_;
 
     trajSizes_.clear();
     robotControlState_.clear();

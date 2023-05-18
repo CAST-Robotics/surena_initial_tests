@@ -17,6 +17,8 @@
 #include "Ankle.h"
 #include "MinJerk.h"
 #include "GeneralMotion.h"
+#include "QuatEKF.h"
+#include "LieEKF.h"
 #include "Collision.h"
 #include "Estimator.h"
 #include "PreviewTraj.h"

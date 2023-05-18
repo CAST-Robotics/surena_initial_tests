@@ -1,6 +1,9 @@
+bool use_file
 float64 alpha
+float64 t_init_double_support
 float64 t_double_support
 float64 t_step
+float64 t_final_double_support
 float64 step_length
 float64 step_width
 float64 COM_height
@@ -10,4 +13,5 @@ float64 dt
 float64 theta
 float64 step_height
 ---
+int32 traj_size
 bool result

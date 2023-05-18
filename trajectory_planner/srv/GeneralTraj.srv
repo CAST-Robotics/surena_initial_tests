@@ -13,4 +13,4 @@ float64[3] final_rankle_orient
 float64 time
 float64 dt
 ---
-int32 duration
+int32 traj_size

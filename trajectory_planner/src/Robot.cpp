@@ -106,18 +106,18 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
 
     if(robotControlState_[traj_index] == Robot::WALK){
         bumpSensorCalibrated_ = true;
-        // runFootLenController(iter, f_l, f_r, traj_index);
+        runFootLenController(iter, f_l, f_r, traj_index);
         
         // runBumpFootOrientController(iter, bump_r, bump_l);
         
-        // runEarlyContactController(iter, bump_r, bump_l);
+        runEarlyContactController(iter, bump_r, bump_l);
 
         // runFootOrientController();
 
         // runZMPAdmitanceController();
     }
     else if(robotControlState_[traj_index] == Robot::IDLE){
-        ;
+        runFootLenController(iter, f_l, f_r, traj_index);
     }
 
     if(ankleColide_->checkColission(_lAnklePos_[iter], _rAnklePos_[iter], _lAnkleRot_[iter], _rAnkleRot_[iter])){
@@ -140,12 +140,12 @@ void Robot::runFootLenController(int iter, double f_l, double f_r, int traj_inde
     Vector3d r_wrench;
     double deltaFd = 0;
     if(robotControlState_[traj_index] == Robot::WALK){
-        distributeFT(zmpd_[iter - trajSizes_[0]], rAnklePos_[iter], lAnklePos_[iter], r_wrench, l_wrench);
+        distributeFT(_ZMPD_[iter - trajSizes_[0]], _rAnklePos_[iter], _lAnklePos_[iter], r_wrench, l_wrench);
         deltaFd = floor((l_wrench(0) - r_wrench(0)) * 10) / 10;
     }
-    double delta_z = onlineWalk_->footLenController(deltaFd, floor((f_l - f_r) * 10) / 10, 0.00002, 0.0, 1.0);
-    lAnklePos_[iter](2) -= 0.5 * delta_z;
-    rAnklePos_[iter](2) += 0.5 * delta_z;
+    double delta_z = onlineWalk_->footLenController(deltaFd, floor((f_l - f_r) * 10) / 10, 0.00006, 0.0, 1.0);
+    _lAnklePos_[iter](2) -= 0.5 * delta_z;
+    _rAnklePos_[iter](2) += 0.5 * delta_z;
     // cout << delta_z << ',' << f_r << ',' << f_l << ',' << floor((f_l - f_r) * 10) / 10 << endl;
 }
 
@@ -174,8 +174,8 @@ void Robot::runBumpFootOrientController(int iter, int bump_r[], int bump_l[])
     delta_rot_r = AngleAxisd(delta_theta_r(2), Vector3d::UnitZ()) * AngleAxisd(delta_theta_r(1), Vector3d::UnitY()) * AngleAxisd(delta_theta_r(0), Vector3d::UnitX());
     delta_rot_l = AngleAxisd(delta_theta_l(2), Vector3d::UnitZ()) * AngleAxisd(delta_theta_l(1), Vector3d::UnitY()) * AngleAxisd(delta_theta_l(0), Vector3d::UnitX());
     
-    rAnkleRot_[iter] = rAnkleRot_[iter] * delta_rot_r;
-    lAnkleRot_[iter] = lAnkleRot_[iter] * delta_rot_l;
+    _rAnkleRot_[iter] = _rAnkleRot_[iter] * delta_rot_r;
+    _lAnkleRot_[iter] = _lAnkleRot_[iter] * delta_rot_l;
 }
 
 void Robot::runEarlyContactController(int iter, int bump_r[], int bump_l[]){
@@ -183,17 +183,17 @@ void Robot::runEarlyContactController(int iter, int bump_r[], int bump_l[]){
     double l_mean_bump = 0.25 * (bump_l[0] + bump_l[1] + bump_l[2] + bump_l[3]);
 
     double r_bump_d, l_bump_d;
-    distributeBump(rAnklePos_[iter](2), lAnklePos_[iter](2), r_bump_d, l_bump_d);
+    distributeBump(_rAnklePos_[iter](2), _rAnklePos_[iter](2), r_bump_d, l_bump_d);
     
     Vector3d delta_r_foot(0, 0, 0);
     Vector3d delta_l_foot(0, 0, 0);
     
-    if(r_mean_bump < -20 && rAnklePos_[iter](2) < rAnklePos_[iter - 1](2))
+    if(r_mean_bump < -20 && _rAnklePos_[iter](2) < _rAnklePos_[iter - 1](2))
         delta_r_foot = onlineWalk_->earlyContactController(bump_r, r_bump_d, 0.004, 3, true);
     else
         delta_r_foot = onlineWalk_->earlyContactController(bump_r, r_bump_d, 0.0, 3, true);
 
-    if(l_mean_bump < -20 && lAnklePos_[iter](2) < lAnklePos_[iter - 1](2))
+    if(l_mean_bump < -20 && _lAnklePos_[iter](2) < _lAnklePos_[iter - 1](2))
         delta_l_foot = onlineWalk_->earlyContactController(bump_l, l_bump_d, 0.004, 3, false);
     else
         delta_l_foot = onlineWalk_->earlyContactController(bump_l, l_bump_d, 0.0, 3, false);
@@ -201,8 +201,9 @@ void Robot::runEarlyContactController(int iter, int bump_r[], int bump_l[]){
     //Vector3d delta_r_foot = onlineWalk_->earlyContactController(bump_r, r_bump_d, 0.007, 5, true);
     //Vector3d delta_l_foot = onlineWalk_->earlyContactController(bump_l, l_bump_d, 0.007, 5, false);
 
-    rAnklePos_[iter] = rAnklePos_[iter] + delta_r_foot;
-    lAnklePos_[iter] = lAnklePos_[iter] + delta_l_foot;
+    _rAnklePos_[iter] = _rAnklePos_[iter] + delta_r_foot;
+    _lAnklePos_[iter] = _lAnklePos_[iter] + delta_l_foot;
+    // cout << _rAnklePos_[iter](2) << _lAnklePos_[iter](2) << endl;
     // rAnklePos_[iter] = rAnklePos_[iter] + (0.5 * delta_r_foot - 0.5 * delta_l_foot);
     // lAnklePos_[iter] = lAnklePos_[iter] + (-0.5 * delta_r_foot + 0.5 * delta_l_foot);
 }
@@ -577,6 +578,8 @@ void Robot::planFootSteps() {
     zmp_planner.planInitialDSPZMP();
     zmp_planner.planStepsZMP();
     zmp_planner.planFinalDSPZMP();
+    vector<Vector3d> zmp = zmp_planner.getZMPTraj();
+    _ZMPD_.insert(_ZMPD_.end(), zmp.begin(), zmp.end());
     ZMPPlanner_ = zmp_planner;
 }
 
@@ -649,6 +652,7 @@ bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double
     use_file_ = use_file;
     dt_ = dt;
     double init_COM_height = thigh_ + shank_;
+    onlineWalk_->setDt(dt_);
 
     planFootSteps();
 
@@ -778,6 +782,7 @@ bool Robot::generalTrajGen(double dt, double time, double init_com_pos[3], doubl
                            double init_rankle_pos[3], double final_rankle_pos[3], double init_rankle_orient[3], double final_rankle_orient[3])
 {
     dt_ = dt;
+    onlineWalk_->setDt(dt_);
     GeneralMotion* motion_planner = new GeneralMotion(dt_);
     motion_planner->_changeInPlace(Vector3d(init_com_pos[0], init_com_pos[1], init_com_pos[2]), 
                                   Vector3d(final_com_pos[0], final_com_pos[1], final_com_pos[2]), 
@@ -929,6 +934,13 @@ bool Robot::resetTraj()
 
     trajSizes_.clear();
     robotControlState_.clear();
+    _CoMPos_.clear();
+    _CoMRot_.clear();
+    _lAnklePos_.clear();
+    _lAnkleRot_.clear();
+    _rAnklePos_.clear();
+    _rAnkleRot_.clear();
+    _ZMPD_.clear();
     dataSize_ = 0;
     rSole_ << 0.0, -torso_, 0.0;
     lSole_ << 0.0, torso_, 0.0; 

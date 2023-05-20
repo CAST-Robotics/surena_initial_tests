@@ -74,7 +74,7 @@ class Robot{
         void getInitCondition(Vector3d& x0, Vector3d& y0);
         void planAnkleTraj();
 
-        inline int getTrajSize(){return dataSize_;}
+        inline int getTrajSize(){return _CoMPos_.size();}
 
     private:
         enum ControlState {
@@ -144,6 +144,7 @@ class Robot{
         vector<Matrix3d> _rAnkleRot_;
         vector<Matrix3d> _lAnkleRot_;
         vector<int> robotState_;
+        vector<Vector3d> _ZMPD_;
         
         Vector3d* CoMPos_;
         Matrix3d* CoMRot_;

@@ -106,11 +106,11 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
 
     if(robotControlState_[traj_index] == Robot::WALK){
         bumpSensorCalibrated_ = true;
-        runFootLenController(iter, f_l, f_r, traj_index);
+        // runFootLenController(iter, f_l, f_r, traj_index);
         
-        runBumpFootOrientController(iter, bump_r, bump_l);
+        // runBumpFootOrientController(iter, bump_r, bump_l);
         
-        runEarlyContactController(iter, bump_r, bump_l);
+        // runEarlyContactController(iter, bump_r, bump_l);
 
         // runFootOrientController();
 
@@ -126,7 +126,10 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
     }
 
     doIK(CoMPos_[iter], CoMRot_[iter], lAnklePos_[iter], lAnkleRot_[iter], rAnklePos_[iter], rAnkleRot_[iter]);
-
+    Vector3d Rrpy = rAnkleRot_[iter].eulerAngles(2, 1, 0); 
+    cout << Rrpy(0) << ", " << Rrpy(1) << ", " << Rrpy(2) << ", ";
+    Vector3d Lrpy = lAnkleRot_[iter].eulerAngles(2, 1, 0); 
+    cout << Lrpy(0) << ", " << Lrpy(1) << ", " << Lrpy(2) << endl;
     for(int i = 0; i < 12; i++)
         joint_angles[i] = joints_[i];     // right leg(0-5) & left leg(6-11)
 }
@@ -553,7 +556,7 @@ void Robot::distributeBump(double r_foot_z, double l_foot_z, double &r_bump, dou
 
 bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double_support,
                             double COM_height, double step_length, double step_width, double dt,
-                            double theta, double ankle_height, double step_height)
+                            double theta, double ankle_height, double step_height, double slope)
 {
     /*
         ROS service for generating robot COM & ankles trajectories
@@ -569,7 +572,7 @@ bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double
     double init_COM_height = thigh_ + shank_;  // SURENA IV initial height 
     
     DCMPlanner* trajectoryPlanner = new DCMPlanner(COM_height_, t_s, t_ds, dt_, num_step + 2, alpha, theta);
-    Ankle* anklePlanner = new Ankle(t_s, t_ds, swing_height, alpha, num_step, dt_, theta);
+    Ankle* anklePlanner = new Ankle(t_s, t_ds, swing_height, alpha, num_step, dt_, theta, slope);
     Vector3d* dcm_rf = new Vector3d[num_step + 2];  // DCM rF
     Vector3d* ankle_rf = new Vector3d[num_step + 2]; // Ankle rF
     int sign;

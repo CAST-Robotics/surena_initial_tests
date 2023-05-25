@@ -558,14 +558,14 @@ class RobotManager{
         // generalTrajectory_.call(general_traj);
 
         robot->trajGen(req.step_count, req.t_step, req.alpha, req.t_double_support, req.COM_height,
-                       req.step_length, req.step_width, req.dt, req.theta, req.ankle_height, req.step_height);
+                       req.step_length, req.step_width, req.dt, req.theta, req.ankle_height, req.step_height, -0.2);
         //if(traj_srv.response.result){
            
-        init_com_pos[2] = req.COM_height;
-        final_com_pos[2] = 0.71;
-        robot->generalTrajGen(req.dt, 2, init_com_pos, final_com_pos, init_com_orient, final_com_orient,
-                              init_lankle_pos, final_lankle_pos, init_lankle_orient, final_lankle_orient,
-                              init_rankle_pos, final_rankle_pos, init_rankle_orient, final_rankle_orient);
+        // init_com_pos[2] = req.COM_height;
+        // final_com_pos[2] = 0.71;
+        // robot->generalTrajGen(req.dt, 2, init_com_pos, final_com_pos, init_com_orient, final_com_orient,
+        //                       init_lankle_pos, final_lankle_pos, init_lankle_orient, final_lankle_orient,
+        //                       init_rankle_pos, final_rankle_pos, init_rankle_orient, final_rankle_orient);
         if(true){
             auto start = high_resolution_clock::now();
             auto stop = high_resolution_clock::now();
@@ -573,7 +573,7 @@ class RobotManager{
             
             int i = 0;
             // ROS_INFO("walking started!");
-            int final_iter = req.t_step * (req.step_count + 2) + 4;
+            int final_iter = req.t_step * (req.step_count + 2) + 2;
             // int final_iter = req.t_step + 4;
             
             double jnt_command[12];
@@ -600,10 +600,10 @@ class RobotManager{
                     cout << "Node was shut down due to Ankle Collision!" << endl;
                     return false;
                 }
-                cout << jnt_command[0] << ',' << jnt_command[1] << ','<< jnt_command[2] << ','
-                << jnt_command[3] << ','<< jnt_command[4] << ','<< jnt_command[5] << ','
-                << jnt_command[6] << ','<< jnt_command[7] << ','<< jnt_command[8] << ','
-                << jnt_command[9] << ','<< jnt_command[10] << ','<< jnt_command[11] << endl;
+                // cout << jnt_command[0] << ',' << jnt_command[1] << ','<< jnt_command[2] << ','
+                // << jnt_command[3] << ','<< jnt_command[4] << ','<< jnt_command[5] << ','
+                // << jnt_command[6] << ','<< jnt_command[7] << ','<< jnt_command[8] << ','
+                // << jnt_command[9] << ','<< jnt_command[10] << ','<< jnt_command[11] << endl;
                 for(int j=0; j < 12; j++){
                     double dif = 0;
                     if(this->checkAngle(j, jnt_command[j], dif)){

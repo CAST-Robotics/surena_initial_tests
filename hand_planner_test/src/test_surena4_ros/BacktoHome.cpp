@@ -21,8 +21,8 @@ int main(int argc, char **argv) {
             {   
                 home_data.data.clear();
                 if (a[i]>0){
-                    a[i]=a[i]-500;
-                    b[i] = b[i]-500;
+                    a[i]=a[i]-200;
+                    b[i] = b[i]-200;
                     if (a[i]<0){
                         break;
                     }
@@ -34,8 +34,8 @@ int main(int argc, char **argv) {
                     //ROS_INFO("ok1");
                     }
                 else{
-                    a[i]=a[i]+500;
-                    b[i] = b[i]+500;
+                    a[i]=a[i]+200;
+                    b[i] = b[i]+200;
                     if (a[i]>0){
                         break;
                     }

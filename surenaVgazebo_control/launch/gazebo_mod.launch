@@ -1,0 +1,35 @@
+<launch>
+<include file="$(find gazebo_ros)/launch/empty_world.launch" />
+ 
+ <arg name="model" default="$(find surenaVgazebo)/urdf/surenaVgazebo.xacro"/>
+
+<!--<param name="robot_description" command="$(find xacro)/xacro.py $(arg model)" />-->
+<param name="robot_description" command="$(find xacro)/xacro --inorder $(arg model)" />
+
+
+<!-- push robot_description to factory and spawn robot in gazebo -->
+<node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model"
+      args="-z 0 -unpause -urdf -model robot -param robot_description" respawn="false" output="screen" />
+
+
+
+
+
+    
+  <!-- Load joint controller configurations from YAML file to parameter server -->
+  <rosparam file="$(find surenaVgazebo_control)/config/robotjoints.yaml" command="load"/>
+   
+  <!-- load the controllers -->
+  <node name="controller_spawner" pkg="controller_manager" type="spawner" respawn="false"
+    output="screen" ns="/surenaVgazebo" args="joint1_position_controller joint2_position_controller joint3_position_controller joint4_position_controller joint5_position_controller joint6_position_controller joint7_position_controller joint8_position_controller joint9_position_controller joint10_position_controller joint11_position_controller joint12_position_controller joint13_position_controller joint14_position_controller joint15_position_controller joint16_position_controller joint17_position_controller joint18_position_controller joint19_position_controller joint20_position_controller joint21_position_controller joint22_position_controller joint23_position_controller joint24_position_controller joint25_position_controller joint26_position_controller joint27_position_controller joint28_position_controller joint29_position_controller joint_state_controller"/>
+
+  <!-- convert joint states to TF transforms for rviz, etc -->
+<node pkg="robot_state_publisher" type="robot_state_publisher"  name="robot_state_publisher">
+  <param name="publish_frequency" type="double" value="30.0" />
+</node>
+  
+
+</launch>
+
+
+

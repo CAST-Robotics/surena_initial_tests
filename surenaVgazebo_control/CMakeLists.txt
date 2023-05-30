@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.0.2)
-project(hand_planner_test)
+project(surenaVgazebo_control)
 
 ## Compile as C++11, supported in ROS Kinetic and newer
 # add_compile_options(-std=c++11)
@@ -11,9 +11,6 @@ find_package(catkin REQUIRED COMPONENTS
   controller_manager
   joint_state_controller
   robot_state_publisher
-  roscpp
-  rospy
-  std_msgs
 )
 
 ## System dependencies are found with CMake's conventions
@@ -73,7 +70,7 @@ find_package(catkin REQUIRED COMPONENTS
 ## Generate added messages and services with any dependencies listed here
 # generate_messages(
 #   DEPENDENCIES
-#   std_msgs
+#   std_msgs  # Or other packages containing msgs
 # )
 
 ################################################
@@ -107,8 +104,8 @@ find_package(catkin REQUIRED COMPONENTS
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
 #  INCLUDE_DIRS include
-#  LIBRARIES hand_planner_test
-#  CATKIN_DEPENDS controller_manager joint_state_controller robot_state_publisher roscpp rospy std_msgs
+#  LIBRARIES surenaVgazebo_control
+#  CATKIN_DEPENDS controller_manager joint_state_controller robot_state_publisher
 #  DEPENDS system_lib
 )
 
@@ -125,7 +122,7 @@ include_directories(
 
 ## Declare a C++ library
 # add_library(${PROJECT_NAME}
-#   src/${PROJECT_NAME}/hand_planner_test.cpp
+#   src/${PROJECT_NAME}/surenaVgazebo_control.cpp
 # )
 
 ## Add cmake target dependencies of the library
@@ -136,26 +133,7 @@ include_directories(
 ## Declare a C++ executable
 ## With catkin_make all packages are built within a single CMake context
 ## The recommended prefix ensures that target names across packages don't collide
-# add_executable(${PROJECT_NAME}_node src/hand_planner_test_node.cpp)
-
-add_executable(home_node_cpp src/test_surena4_ros/BacktoHome.cpp)
-target_link_libraries( home_node_cpp  ${catkin_LIBRARIES} )
-
-#add_executable(new src/surena5/new.cpp src/surena5/S5mod_right_hand.cpp src/surena5/MinimumJerkInterpolation.cpp)
-#target_link_libraries( new  ${catkin_LIBRARIES} )
-
-add_executable(test_node_cpp src/test_surena4_ros/target_robot_test_RH.cpp src/test_surena4_ros/S5mod_right_hand.cpp src/test_surena4_ros/MinimumJerkInterpolation.cpp)
-
-#add_executable(test_node_cpp src/test_surena4_ros/target_robot_test_LH.cpp src/test_surena4_ros/S5mod_left_hand.cpp src/test_surena4_ros/MinimumJerkInterpolation.cpp)
-
-#add_executable(test_node_cpp src/test_surena4_ros/target_robot_both.cpp src/test_surena4_ros/S5mod_right_hand.cpp src/test_surena4_ros/S5mod_left_hand.cpp src/test_surena4_ros/MinimumJerkInterpolation.cpp)
-
-#add_executable(test_node_cpp src/surena5/target_robot_test.cpp src/surena5/S5mod_left_hand.cpp src/surena5/S5mod_right_hand.cpp src/surena5/MinimumJerkInterpolation.cpp)
-
-#add_executable(test_node_cpp src/surena5/move2pose_robot_test.cpp src/surena5/S5mod_right_hand.cpp)
-target_link_libraries( test_node_cpp  ${catkin_LIBRARIES} ) 
-
-#add_executable( test_node_cpp src/surena4/s5Version2_test_r.cpp src/surena4/S5mod_right_hand.cpp src/surena4/MinimumJerkInterpolation.cpp)
+# add_executable(${PROJECT_NAME}_node src/surenaVgazebo_control_node.cpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the
@@ -219,7 +197,7 @@ target_link_libraries( test_node_cpp  ${catkin_LIBRARIES} )
 #############
 
 ## Add gtest based cpp test target and link libraries
-# catkin_add_gtest(${PROJECT_NAME}-test test/test_hand_planner_test.cpp)
+# catkin_add_gtest(${PROJECT_NAME}-test test/test_surenaVgazebo_control.cpp)
 # if(TARGET ${PROJECT_NAME}-test)
 #   target_link_libraries(${PROJECT_NAME}-test ${PROJECT_NAME})
 # endif()

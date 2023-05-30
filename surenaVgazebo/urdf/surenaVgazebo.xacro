@@ -1,0 +1,2063 @@
+<?xml version="1.0" encoding="utf-8"?>
+
+<robot name="surenaVgazebo" xmlns:xacro="http://www.ros.org/wiki/xacro">
+
+<!-- This URDF was automatically created by SolidWorks to URDF Exporter! Originally created by Stephen Brawner (brawner@gmail.com) 
+     Commit Version: 1.5.1-0-g916b5db  Build Version: 1.5.7152.31018
+     For more information, please see http://wiki.ros.org/sw_urdf_exporter -->
+
+  <link
+    name="pelvis">
+    <inertial>
+      <origin
+        xyz="-0.00217545783729715 0.000224163902766084 0.931395016004982"
+        rpy="0 0 0" />
+      <mass
+        value="30" />
+      <inertia
+        ixx="0.0344409751913919"
+        ixy="0.000203000704156372"
+        ixz="-0.000402443503216186"
+        iyy="0.0459468264001583"
+        iyz="-0.00410422593827533"
+        izz="0.0404358469485904" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/pelvis.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/pelvis.STL" />
+      </geometry>
+    </collision>
+  </link>
+  
+  
+  <link
+    name="RL_hip_yaw">
+    <inertial>
+      <origin
+        xyz="-0.0762252739169794 0.000125508839245739 -0.0899852155691174"
+        rpy="0 0 0" />
+      <mass
+        value="2.50321784932644" />
+      <inertia
+        ixx="0.0344409751913919"
+        ixy="0.000203000704156372"
+        ixz="-0.000402443503216186"
+        iyy="0.0459468264001583"
+        iyz="-0.00410422593827533"
+        izz="0.0404358469485904" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/RL_hip_yaw.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/RL_hip_yaw.STL" />
+      </geometry>
+    </collision>
+  </link>
+  
+  
+  <joint
+    name="RJ_hip_yaw"
+    type="continuous">
+    <origin
+      xyz="0.017863 -0.1 0.87612"
+      rpy="0 0 0" />
+    <parent
+      link="pelvis" />
+    <child
+      link="RL_hip_yaw" />
+    <axis
+      xyz="0 0 1" />
+    <limit effort="300.0" lower="-1000" upper="1000" velocity="0.5"/>
+    <dynamics damping="10" friction="20"/>
+  </joint>
+  <transmission name="J1t">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="motor1">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="RJ_hip_yaw">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+  </transmission>
+  
+  
+  <link
+    name="RL_hip_roll">
+    <inertial>
+      <origin
+        xyz="2.22785334344708E-05 0.0247755120756775 -0.000135346544264198"
+        rpy="0 0 0" />
+      <mass
+        value="5" />
+      <inertia
+        ixx="0.0344409751913919"
+        ixy="0.000203000704156372"
+        ixz="-0.000402443503216186"
+        iyy="0.0459468264001583"
+        iyz="-0.00410422593827533"
+        izz="0.0404358469485904" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/RL_hip_roll.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/RL_hip_roll.STL" />
+      </geometry>
+    </collision>
+  </link>
+  
+  
+  <joint
+    name="RJ_hip_roll"
+    type="continuous">
+    <origin
+      xyz="0 0 -0.1113"
+      rpy="0 0 0" />
+    <parent
+      link="RL_hip_yaw" />
+    <child
+      link="RL_hip_roll" />
+    <axis
+      xyz="1 0 0" />
+    <limit effort="300.0" lower="-1000" upper="1000" velocity="0.5"/>
+    <dynamics damping="10" friction="20"/>
+  </joint>
+  <transmission name="J2t">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="motor2">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="RJ_hip_roll">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+  </transmission>
+  
+  
+  <link
+    name="RL_hip_pitch">
+    <inertial>
+      <origin
+        xyz="-0.00045821623227639 0.0171178148193481 -0.183238234233956"
+        rpy="0 0 0" />
+      <mass
+        value="2.50321784932644" />
+      <inertia
+        ixx="0.0344409751913919"
+        ixy="0.000203000704156372"
+        ixz="-0.000402443503216186"
+        iyy="0.0459468264001583"
+        iyz="-0.00410422593827533"
+        izz="0.0404358469485904" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/RL_hip_pitch.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/RL_hip_pitch.STL" />
+      </geometry>
+    </collision>
+  </link>
+  
+  
+  <joint
+    name="RJ_hip_pitch"
+    type="continuous">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="RL_hip_roll" />
+    <child
+      link="RL_hip_pitch" />
+    <axis
+      xyz="0 1 0" />
+    <limit effort="300.0" lower="-1000" upper="1000" velocity="0.5"/>
+    <dynamics damping="10" friction="20"/>
+  </joint>
+  <transmission name="J3t">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="motor3">
+      <mechanicalReduction>1</mechanicalReduction>      
+    </actuator>
+    <joint name="RJ_hip_pitch">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+  </transmission>
+  
+  
+  <link
+    name="RL_knee_pitch">
+    <inertial>
+      <origin
+        xyz="0.0017899880065982 0.00329834413534699 -0.0646835033521056"
+        rpy="0 0 0" />
+      <mass
+        value="2.50321784932644" />
+      <inertia
+        ixx="0.0344409751913919"
+        ixy="0.000203000704156372"
+        ixz="-0.000402443503216186"
+        iyy="0.0459468264001583"
+        iyz="-0.00410422593827533"
+        izz="0.0404358469485904" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/RL_knee_pitch.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/RL_knee_pitch.STL" />
+      </geometry>
+    </collision>
+  </link>
+  
+  
+  <joint
+    name="RJ_knee_pitch"
+    type="continuous">
+    <origin
+      xyz="0 0 -0.35988"
+      rpy="0 0 0" />
+    <parent
+      link="RL_hip_pitch" />
+    <child
+      link="RL_knee_pitch" />
+    <axis
+      xyz="0 1 0" />
+    <limit effort="300.0" lower="-1000" upper="1000" velocity="0.5"/>
+    <dynamics damping="10" friction="20"/>
+  </joint>
+  <transmission name="J4t">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="motor4">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="RJ_knee_pitch">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+  </transmission>
+  
+  <link
+    name="RL_ankle_pitch">
+    <inertial>
+      <origin
+        xyz="-0.00489721000961184 0.00473538525417702 -0.000766172453700364"
+        rpy="0 0 0" />
+      <mass
+        value="2.50321784932644" />
+      <inertia
+        ixx="0.0344409751913919"
+        ixy="0.000203000704156372"
+        ixz="-0.000402443503216186"
+        iyy="0.0459468264001583"
+        iyz="-0.00410422593827533"
+        izz="0.0404358469485904" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/RL_ankle_pitch.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/RL_ankle_pitch.STL" />
+      </geometry>
+    </collision>
+  </link>
+  
+  
+  <joint
+    name="RJ_ankle_pitch"
+    type="continuous">
+    <origin
+      xyz="0 0 -0.34999"
+      rpy="0 0 0" />
+    <parent
+      link="RL_knee_pitch" />
+    <child
+      link="RL_ankle_pitch" />
+    <axis
+      xyz="0 1 0" />
+    <limit effort="300.0" lower="-1000" upper="1000" velocity="0.5"/>
+    <dynamics damping="10" friction="20"/>
+  </joint>
+  <transmission name="J5t">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="motor5">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="RJ_ankle_pitch">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+  </transmission>
+  
+  
+  <link
+    name="RL_ankle_roll">
+    <inertial>
+      <origin
+        xyz="0.0251782639001623 0.00293879309636647 -0.0400976969392328"
+        rpy="0 0 0" />
+      <mass
+        value="2.50321784932644" />
+      <inertia
+        ixx="0.0344409751913919"
+        ixy="0.000203000704156372"
+        ixz="-0.000402443503216186"
+        iyy="0.0459468264001583"
+        iyz="-0.00410422593827533"
+        izz="0.0404358469485904" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/RL_ankle_roll.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/RL_ankle_roll.STL" />
+      </geometry>
+    </collision>
+    <surface>
+          <friction>
+            <ode>
+              <mu>1</mu>
+              <mu2>1</mu2>
+              <fdir1>0 0 1</fdir1>
+              <slip1>0.0</slip1>
+              <slip2>0.0</slip2>
+            </ode>
+          </friction>
+          <contact>
+               <ode>
+                  <min_depth>5</min_depth>
+                   <kp>1e8</kp>
+               </ode>
+          </contact>
+    </surface>
+  </link>
+  
+  
+  <joint
+    name="RJ_ankle_roll"
+    type="continuous">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="RL_ankle_pitch" />
+    <child
+      link="RL_ankle_roll" />
+    <axis
+      xyz="1 0 0" />
+    <limit effort="300.0" lower="-1000" upper="1000" velocity="0.5"/>
+    <dynamics damping="10" friction="20"/>
+  </joint>
+  <transmission name="J6t">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="motor6">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="RJ_ankle_roll">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+  </transmission>
+  
+  
+  <link
+    name="LL_hip_yaw">
+    <inertial>
+      <origin
+        xyz="-0.0757112957097321 9.50188478069242E-05 -0.0900035578707153"
+        rpy="0 0 0" />
+      <mass
+        value="2.50321784932644" />
+      <inertia
+        ixx="0.0344409751913919"
+        ixy="0.000203000704156372"
+        ixz="-0.000402443503216186"
+        iyy="0.0459468264001583"
+        iyz="-0.00410422593827533"
+        izz="0.0404358469485904" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/LL_hip_yaw.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/LL_hip_yaw.STL" />
+      </geometry>
+    </collision>
+  </link>
+  
+  
+  <joint
+    name="LJ_hip_yaw"
+    type="continuous">
+    <origin
+      xyz="0.017863 0.1 0.87612"
+      rpy="0 0 0" />
+    <parent
+      link="pelvis" />
+    <child
+      link="LL_hip_yaw" />
+    <axis
+      xyz="0 0 1" />
+    <limit effort="300.0" lower="-1000" upper="1000" velocity="0.5"/>
+    <dynamics damping="10" friction="20"/>
+  </joint>
+  <transmission name="J7t">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="motor7">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="LJ_hip_yaw">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+  </transmission>
+  
+  
+  <link
+    name="LL_hip_roll">
+    <inertial>
+      <origin
+        xyz="1.77858666269431E-05 -0.0247753062593557 6.5147281054917E-05"
+        rpy="0 0 0" />
+      <mass
+        value="2.50321784932644" />
+      <inertia
+        ixx="0.0344409751913919"
+        ixy="0.000203000704156372"
+        ixz="-0.000402443503216186"
+        iyy="0.0459468264001583"
+        iyz="-0.00410422593827533"
+        izz="0.0404358469485904" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/LL_hip_roll.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/LL_hip_roll.STL" />
+      </geometry>
+    </collision>
+  </link>
+  
+  
+  <joint
+    name="LJ_hip_roll"
+    type="continuous">
+    <origin
+      xyz="0 0 -0.1113"
+      rpy="0 0 0" />
+    <parent
+      link="LL_hip_yaw" />
+    <child
+      link="LL_hip_roll" />
+    <axis
+      xyz="1 0 0" />
+    <limit effort="300.0" lower="-1000" upper="1000" velocity="0.5"/>
+    <dynamics damping="10" friction="20"/>
+  </joint>
+  <transmission name="J8t">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="motor8">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="LJ_hip_roll">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+  </transmission>
+  
+  
+  <link
+    name="LL_hip_pitch">
+    <inertial>
+      <origin
+        xyz="-0.000372227589193863 -0.0144742792764355 -0.18073438160189"
+        rpy="0 0 0" />
+      <mass
+        value="2.50321784932644" />
+      <inertia
+        ixx="0.0344409751913919"
+        ixy="0.000203000704156372"
+        ixz="-0.000402443503216186"
+        iyy="0.0459468264001583"
+        iyz="-0.00410422593827533"
+        izz="0.0404358469485904" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/LL_hip_pitch.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/LL_hip_pitch.STL" />
+      </geometry>
+    </collision>
+  </link>
+  
+  
+  <joint
+    name="LJ_hip_pitch"
+    type="continuous">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="LL_hip_roll" />
+    <child
+      link="LL_hip_pitch" />
+    <axis
+      xyz="0 1 0" />
+    <limit effort="300.0" lower="-1000" upper="1000" velocity="0.5"/>
+    <dynamics damping="10" friction="20"/>
+  </joint>
+  <transmission name="J9t">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="motor9">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="LJ_hip_pitch">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+  </transmission>
+  
+  
+  <link
+    name="LL_knee_pitch">
+    <inertial>
+      <origin
+        xyz="0.00197693520479513 -0.00329834983098574 -0.0646889527916195"
+        rpy="0 0 0" />
+      <mass
+        value="2.50321784932644" />
+      <inertia
+        ixx="0.0344409751913919"
+        ixy="0.000203000704156372"
+        ixz="-0.000402443503216186"
+        iyy="0.0459468264001583"
+        iyz="-0.00410422593827533"
+        izz="0.0404358469485904" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/LL_knee_pitch.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/LL_knee_pitch.STL" />
+      </geometry>
+    </collision>
+  </link>
+  
+  
+  <joint
+    name="LJ_knee_pitch"
+    type="continuous">
+    <origin
+      xyz="4.0696E-05 0 -0.35988"
+      rpy="0 0 0" />
+    <parent
+      link="LL_hip_pitch" />
+    <child
+      link="LL_knee_pitch" />
+    <axis
+      xyz="0 1 0" />
+    <limit effort="300.0" lower="-1000" upper="1000" velocity="0.5"/>
+    <dynamics damping="10" friction="20"/>
+  </joint>
+  <transmission name="J10t">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="motor10">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="LJ_knee_pitch">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+  </transmission>
+  
+  
+  <link
+    name="LL_ankle_pitch">
+    <inertial>
+      <origin
+        xyz="-0.00489721000960469 -0.00473538525416781 -0.000766172453700364"
+        rpy="0 0 0" />
+      <mass
+        value="2.50321784932644" />
+      <inertia
+        ixx="0.0344409751913919"
+        ixy="0.000203000704156372"
+        ixz="-0.000402443503216186"
+        iyy="0.0459468264001583"
+        iyz="-0.00410422593827533"
+        izz="0.0404358469485904" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/LL_ankle_pitch.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/LL_ankle_pitch.STL" />
+      </geometry>
+    </collision>
+  </link>
+  
+  
+  <joint
+    name="LJ_ankle_pitch"
+    type="continuous">
+    <origin
+      xyz="0 0 -0.34999"
+      rpy="0 0 0" />
+    <parent
+      link="LL_knee_pitch" />
+    <child
+      link="LL_ankle_pitch" />
+    <axis
+      xyz="0 1 0" />
+    <limit effort="300.0" lower="-1000" upper="1000" velocity="0.5"/>
+    <dynamics damping="10" friction="20"/>
+  </joint>
+  <transmission name="J11t">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="motor11">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="LJ_ankle_pitch">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+  </transmission>
+  
+  
+  <link
+    name="LL_ankle_roll">
+    <inertial>
+      <origin
+        xyz="0.0251696573984807 -0.00266108764646895 -0.04011942471265"
+        rpy="0 0 0" />
+      <mass
+        value="2.50321784932644" />
+      <inertia
+        ixx="0.0344409751913919"
+        ixy="0.000203000704156372"
+        ixz="-0.000402443503216186"
+        iyy="0.0459468264001583"
+        iyz="-0.00410422593827533"
+        izz="0.0404358469485904" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/LL_ankle_roll.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/LL_ankle_roll.STL" />
+      </geometry>
+    </collision>
+    <surface>
+          <friction>
+            <ode>
+              <mu>1</mu>
+              <mu2>1</mu2>
+              <fdir1>0 0 1</fdir1>
+              <slip1>0.0</slip1>
+              <slip2>0.0</slip2>
+            </ode>
+          </friction>
+          <contact>
+               <ode>
+                  <min_depth>5</min_depth>
+                   <kp>1e8</kp>
+               </ode>
+          </contact>
+    </surface>
+  </link>
+  
+  
+  <joint
+    name="LJ_ankle_roll"
+    type="continuous">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="LL_ankle_pitch" />
+    <child
+      link="LL_ankle_roll" />
+    <axis
+      xyz="1 0 0" />
+    <limit effort="300.0" lower="-1000" upper="1000" velocity="0.5"/>
+    <dynamics damping="10" friction="20"/>
+  </joint>
+  <transmission name="J12t">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="motor12">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="LJ_ankle_roll">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+  </transmission>
+  
+  
+  <link
+    name="L_waist_yaw">
+    <inertial>
+      <origin
+        xyz="0.0336149996090985 1.5189227452618E-09 0.0248920105646678"
+        rpy="0 0 0" />
+      <mass
+        value="2.50321784932644" />
+      <inertia
+        ixx="0.0344409751913919"
+        ixy="0.000203000704156372"
+        ixz="-0.000402443503216186"
+        iyy="0.0459468264001583"
+        iyz="-0.00410422593827533"
+        izz="0.0404358469485904" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/L_waist_yaw.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/L_waist_yaw.STL" />
+      </geometry>
+    </collision>
+  </link>
+  
+  
+  <joint
+    name="J_waist_yaw"
+    type="continuous">
+    <origin
+      xyz="-0.025149 0 0.95712"
+      rpy="0 0 0" />
+    <parent
+      link="pelvis" />
+    <child
+      link="L_waist_yaw" />
+    <axis
+      xyz="0 0 1" />
+    <limit effort="300.0" lower="-1000" upper="1000" velocity="0.5"/>
+    <dynamics damping="10" friction="20"/>
+  </joint>
+  <transmission name="J13t">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="motor13">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="J_waist_yaw">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+  </transmission>
+  
+  
+  <link
+    name="L_waist_pitch">
+    <inertial>
+      <origin
+        xyz="-0.0444302421333388 -0.0080448098592892 -0.00604390988131424"
+        rpy="0 0 0" />
+      <mass
+        value="2.50321784932644" />
+      <inertia
+        ixx="0.0344409751913919"
+        ixy="0.000203000704156372"
+        ixz="-0.000402443503216186"
+        iyy="0.0459468264001583"
+        iyz="-0.00410422593827533"
+        izz="0.0404358469485904" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/L_waist_pitch.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/L_waist_pitch.STL" />
+      </geometry>
+    </collision>
+  </link>
+  
+  
+  <joint
+    name="J_waist_pitch"
+    type="continuous">
+    <origin
+      xyz="0.044 0 0.051414"
+      rpy="0 0 0" />
+    <parent
+      link="L_waist_yaw" />
+    <child
+      link="L_waist_pitch" />
+    <axis
+      xyz="0 1 0" />
+    <limit effort="300.0" lower="-1000" upper="1000" velocity="0.5"/>
+    <dynamics damping="10" friction="20"/>
+  </joint>
+  <transmission name="J14t">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="motor14">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="J_waist_pitch">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+  </transmission>
+  
+  
+  <link
+    name="L_waist_roll">
+    <inertial>
+      <origin
+        xyz="0.00828259484101014 -0.00215026232182087 0.157273647916395"
+        rpy="0 0 0" />
+      <mass
+        value="2.50321784932644" />
+      <inertia
+        ixx="0.0344409751913919"
+        ixy="0.000203000704156372"
+        ixz="-0.000402443503216186"
+        iyy="0.0459468264001583"
+        iyz="-0.00410422593827533"
+        izz="0.0404358469485904" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/L_waist_roll.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/L_waist_roll.STL" />
+      </geometry>
+    </collision>
+  </link>
+  
+  
+  <joint
+    name="J_waist_roll"
+    type="continuous">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="L_waist_pitch" />
+    <child
+      link="L_waist_roll" />
+    <axis
+      xyz="1 0 0" />
+    <limit effort="300.0" lower="-1000" upper="1000" velocity="0.5"/>
+    <dynamics damping="10" friction="20"/>
+  </joint>
+  <transmission name="J15t">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="motor15">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="J_waist_roll">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+  </transmission>
+  
+  
+  <link
+    name="RL_sh_pitch">
+    <inertial>
+      <origin
+        xyz="-0.00548080540929836 -0.0393054889284084 -3.31441572187785E-07"
+        rpy="0 0 0" />
+      <mass
+        value="2.50321784932644" />
+      <inertia
+        ixx="0.0344409751913919"
+        ixy="0.000203000704156372"
+        ixz="-0.000402443503216186"
+        iyy="0.0459468264001583"
+        iyz="-0.00410422593827533"
+        izz="0.0404358469485904" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/RL_sh_pitch.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/RL_sh_pitch.STL" />
+      </geometry>
+    </collision>
+  </link>
+  
+  
+  <joint
+    name="RJ_sh_pitch"
+    type="continuous">
+    <origin
+      xyz="0.006 -0.18503 0.28128"
+      rpy="-0.1776 0 0" />
+    <parent
+      link="L_waist_roll" />
+    <child
+      link="RL_sh_pitch" />
+    <axis
+      xyz="0 1 0" />
+    <limit effort="300.0" lower="-1000" upper="1000" velocity="0.5"/>
+    <dynamics damping="10" friction="20"/>
+  </joint>
+  <transmission name="J16t">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="motor16">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="RJ_sh_pitch">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+  </transmission>
+  
+  
+  <link
+    name="RL_sh_roll">
+    <inertial>
+      <origin
+        xyz="0.00637438049641992 0.00338309535467607 -0.0794620533767267"
+        rpy="0 0 0" />
+      <mass
+        value="2.50321784932644" />
+      <inertia
+        ixx="0.0344409751913919"
+        ixy="0.000203000704156372"
+        ixz="-0.000402443503216186"
+        iyy="0.0459468264001583"
+        iyz="-0.00410422593827533"
+        izz="0.0404358469485904" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/RL_sh_roll.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/RL_sh_roll.STL" />
+      </geometry>
+    </collision>
+  </link>
+  
+  
+  <joint
+    name="RJ_sh_roll"
+    type="continuous">
+    <origin
+      xyz="0 -0.05 0"
+      rpy="0.17412 0 0" />
+    <parent
+      link="RL_sh_pitch" />
+    <child
+      link="RL_sh_roll" />
+    <axis
+      xyz="1 0 0" />
+    <limit effort="300.0" lower="-1000" upper="1000" velocity="0.5"/>
+    <dynamics damping="10" friction="20"/>
+  </joint>
+  <transmission name="J17t">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="motor17">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="RJ_sh_roll">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+  </transmission>
+  
+  
+  <link
+    name="RL_sh_yaw">
+    <inertial>
+      <origin
+        xyz="-0.000441981553929639 -0.0053189268563322 -0.0904566768350916"
+        rpy="0 0 0" />
+      <mass
+        value="2.50321784932644" />
+      <inertia
+        ixx="0.0344409751913919"
+        ixy="0.000203000704156372"
+        ixz="-0.000402443503216186"
+        iyy="0.0459468264001583"
+        iyz="-0.00410422593827533"
+        izz="0.0404358469485904" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/RL_sh_yaw.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/RL_sh_yaw.STL" />
+      </geometry>
+    </collision>
+  </link>
+  
+  
+  <joint
+    name="RJ_sh_yaw"
+    type="continuous">
+    <origin
+      xyz="-0.0020041 0.0030573 -0.10984"
+      rpy="0 0 0" />
+    <parent
+      link="RL_sh_roll" />
+    <child
+      link="RL_sh_yaw" />
+    <axis
+      xyz="0 0 1" />
+    <limit effort="300.0" lower="-1000" upper="1000" velocity="0.5"/>
+    <dynamics damping="10" friction="20"/>
+  </joint>
+  <transmission name="J18t">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="motor18">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="RJ_sh_yaw">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+  </transmission>
+  
+  
+  <link
+    name="RL_elbow_pitch">
+    <inertial>
+      <origin
+        xyz="0.00493022613233483 -0.0102551314554704 -0.0365558337927716"
+        rpy="0 0 0" />
+      <mass
+        value="2.50321784932644" />
+      <inertia
+        ixx="0.0344409751913919"
+        ixy="0.000203000704156372"
+        ixz="-0.000402443503216186"
+        iyy="0.0459468264001583"
+        iyz="-0.00410422593827533"
+        izz="0.0404358469485904" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/RL_elbow_pitch.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/RL_elbow_pitch.STL" />
+      </geometry>
+    </collision>
+  </link>
+  
+  
+  <joint
+    name="RJ_elbow_pitch"
+    type="continuous">
+    <origin
+      xyz="0 0 -0.14696"
+      rpy="0 0 0" />
+    <parent
+      link="RL_sh_yaw" />
+    <child
+      link="RL_elbow_pitch" />
+    <axis
+      xyz="0 1 0" />
+    <limit effort="300.0" lower="-1000" upper="1000" velocity="0.5"/>
+    <dynamics damping="10" friction="20"/>
+  </joint>
+  <transmission name="J19t">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="motor19">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="RJ_elbow_pitch">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+  </transmission>
+  
+  
+  <link
+    name="RL_wrist_yaw">
+    <inertial>
+      <origin
+        xyz="-0.000452327054415461 -0.00574138438323057 -0.0768990443011348"
+        rpy="0 0 0" />
+      <mass
+        value="2.50321784932644" />
+      <inertia
+        ixx="0.0344409751913919"
+        ixy="0.000203000704156372"
+        ixz="-0.000402443503216186"
+        iyy="0.0459468264001583"
+        iyz="-0.00410422593827533"
+        izz="0.0404358469485904" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/RL_wrist_yaw.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/RL_wrist_yaw.STL" />
+      </geometry>
+    </collision>
+  </link>
+  
+  
+  <joint
+    name="RJ_wrist_yaw"
+    type="continuous">
+    <origin
+      xyz="0.011503 -0.00275 -0.065234"
+      rpy="0 -0.17453 0" />
+    <parent
+      link="RL_elbow_pitch" />
+    <child
+      link="RL_wrist_yaw" />
+    <axis
+      xyz="0 0 1" />
+    <limit effort="300.0" lower="-1000" upper="1000" velocity="0.5"/>
+    <dynamics damping="10" friction="20"/>
+  </joint>
+  <transmission name="J20t">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="motor20">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="RJ_wrist_yaw">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+  </transmission>
+  
+  
+  <link
+    name="RL_wrist_roll">
+    <inertial>
+      <origin
+        xyz="2.24084724766427E-05 5.55111512312578E-17 0"
+        rpy="0 0 0" />
+      <mass
+        value="2.50321784932644" />
+      <inertia
+        ixx="0.0344409751913919"
+        ixy="0.000203000704156372"
+        ixz="-0.000402443503216186"
+        iyy="0.0459468264001583"
+        iyz="-0.00410422593827533"
+        izz="0.0404358469485904" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/RL_wrist_roll.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/RL_wrist_roll.STL" />
+      </geometry>
+    </collision>
+  </link>
+  
+  
+  <joint
+    name="RJ_wrist_roll"
+    type="continuous">
+    <origin
+      xyz="0 -0.0081642 -0.15377"
+      rpy="0 0 0" />
+    <parent
+      link="RL_wrist_yaw" />
+    <child
+      link="RL_wrist_roll" />
+    <axis
+      xyz="1 0 0" />
+    <limit effort="300.0" lower="-1000" upper="1000" velocity="0.5"/>
+    <dynamics damping="10" friction="20"/>
+  </joint>
+  <transmission name="J21t">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="motor21">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="RJ_wrist_roll">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+  </transmission>
+  
+  
+  <link
+    name="RL_wrist_pitch">
+    <inertial>
+      <origin
+        xyz="0.0068750358519937 0.00109265722849203 -0.0142564717400067"
+        rpy="0 0 0" />
+      <mass
+        value="2.50321784932644" />
+      <inertia
+        ixx="0.0344409751913919"
+        ixy="0.000203000704156372"
+        ixz="-0.000402443503216186"
+        iyy="0.0459468264001583"
+        iyz="-0.00410422593827533"
+        izz="0.0404358469485904" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/RL_wrist_pitch.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/RL_wrist_pitch.STL" />
+      </geometry>
+    </collision>
+  </link>
+  
+  
+  <joint
+    name="RJ_wrist_pitch"
+    type="continuous">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="RL_wrist_roll" />
+    <child
+      link="RL_wrist_pitch" />
+    <axis
+      xyz="0 1 0" />
+    <limit effort="300.0" lower="-1000" upper="1000" velocity="0.5"/>
+    <dynamics damping="10" friction="20"/>
+  </joint>
+  <transmission name="J22t">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="motor22">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="RJ_wrist_pitch">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+  </transmission>
+  
+  
+  <link
+    name="LL_sh_pitch">
+    <inertial>
+      <origin
+        xyz="-0.00548633483261682 0.0600743829134472 5.25073914235397E-05"
+        rpy="0 0 0" />
+      <mass
+        value="2.50321784932644" />
+      <inertia
+        ixx="0.0344409751913919"
+        ixy="0.000203000704156372"
+        ixz="-0.000402443503216186"
+        iyy="0.0459468264001583"
+        iyz="-0.00410422593827533"
+        izz="0.0404358469485904" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/LL_sh_pitch.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/LL_sh_pitch.STL" />
+      </geometry>
+    </collision>
+  </link>
+  
+  
+  <joint
+    name="LJ_sh_pitch"
+    type="continuous">
+    <origin
+      xyz="0.006 0.1616 0.27647"
+      rpy="0.17063 0 0" />
+    <parent
+      link="L_waist_roll" />
+    <child
+      link="LL_sh_pitch" />
+    <axis
+      xyz="0 1 0" />
+    <limit effort="300.0" lower="-1000" upper="1000" velocity="0.5"/>
+    <dynamics damping="10" friction="20"/>
+  </joint>
+  <transmission name="J23t">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="motor23">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="LJ_sh_pitch">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+  </transmission>
+  
+  
+  <link
+    name="LL_sh_roll">
+    <inertial>
+      <origin
+        xyz="-0.00274002778898313 0.000375740747527387 -0.0789243721610676"
+        rpy="0 0 0" />
+      <mass
+        value="2.50321784932644" />
+      <inertia
+        ixx="0.0344409751913919"
+        ixy="0.000203000704156372"
+        ixz="-0.000402443503216186"
+        iyy="0.0459468264001583"
+        iyz="-0.00410422593827533"
+        izz="0.0404358469485904" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/LL_sh_roll.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/LL_sh_roll.STL" />
+      </geometry>
+    </collision>
+  </link>
+  
+  
+  <joint
+    name="LJ_sh_roll"
+    type="continuous">
+    <origin
+      xyz="0 0.067662 0"
+      rpy="-0.17412 0 0" />
+    <parent
+      link="LL_sh_pitch" />
+    <child
+      link="LL_sh_roll" />
+    <axis
+      xyz="1 0 0" />
+    <limit effort="300.0" lower="-1000" upper="1000" velocity="0.5"/>
+    <dynamics damping="10" friction="20"/>
+  </joint>
+  <transmission name="J24t">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="motor24">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="LJ_sh_roll">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+  </transmission>
+  
+  
+  <link
+    name="LL_sh_yaw">
+    <inertial>
+      <origin
+        xyz="-0.000441986475438423 0.00529696344135744 -0.0925285653311854"
+        rpy="0 0 0" />
+      <mass
+        value="2.50321784932644" />
+      <inertia
+        ixx="0.0344409751913919"
+        ixy="0.000203000704156372"
+        ixz="-0.000402443503216186"
+        iyy="0.0459468264001583"
+        iyz="-0.00410422593827533"
+        izz="0.0404358469485904" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/LL_sh_yaw.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/LL_sh_yaw.STL" />
+      </geometry>
+    </collision>
+  </link>
+  
+  
+  <joint
+    name="LJ_sh_yaw"
+    type="continuous">
+    <origin
+      xyz="-0.0020041 0 -0.10734"
+      rpy="0 0 0" />
+    <parent
+      link="LL_sh_roll" />
+    <child
+      link="LL_sh_yaw" />
+    <axis
+      xyz="0 0 1" />
+    <limit effort="300.0" lower="-1000" upper="1000" velocity="0.5"/>
+    <dynamics damping="10" friction="20"/>
+  </joint>
+  <transmission name="J25t">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="motor25">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="LJ_sh_yaw">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+  </transmission>
+  
+  
+  <link
+    name="LL_elbow_pitch">
+    <inertial>
+      <origin
+        xyz="0.00493082849665792 0.00825513190873167 -0.0365592499706316"
+        rpy="0 0 0" />
+      <mass
+        value="2.50321784932644" />
+      <inertia
+        ixx="0.0344409751913919"
+        ixy="0.000203000704156372"
+        ixz="-0.000402443503216186"
+        iyy="0.0459468264001583"
+        iyz="-0.00410422593827533"
+        izz="0.0404358469485904" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/LL_elbow_pitch.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/LL_elbow_pitch.STL" />
+      </geometry>
+    </collision>
+  </link>
+  
+  
+  <joint
+    name="LJ_elbow_pitch"
+    type="continuous">
+    <origin
+      xyz="0 0 -0.14909"
+      rpy="0 0 0" />
+    <parent
+      link="LL_sh_yaw" />
+    <child
+      link="LL_elbow_pitch" />
+    <axis
+      xyz="0 1 0" />
+    <limit effort="300.0" lower="-1000" upper="1000" velocity="0.5"/>
+    <dynamics damping="10" friction="20"/>
+  </joint>
+  <transmission name="J26t">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="motor26">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="LJ_elbow_pitch">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+  </transmission>
+  
+  
+  <link
+    name="LL_wrist_yaw">
+    <inertial>
+      <origin
+        xyz="0.000376786409590622 0.00589152969072584 -0.0841183653702996"
+        rpy="0 0 0" />
+      <mass
+        value="2.50321784932644" />
+      <inertia
+        ixx="0.0344409751913919"
+        ixy="0.000203000704156372"
+        ixz="-0.000402443503216186"
+        iyy="0.0459468264001583"
+        iyz="-0.00410422593827533"
+        izz="0.0404358469485904" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/LL_wrist_yaw.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.752941176470588 0.752941176470588 0.752941176470588 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/LL_wrist_yaw.STL" />
+      </geometry>
+    </collision>
+  </link>
+  
+  
+  <joint
+    name="JL_wrist_yaw"
+    type="continuous">
+    <origin
+      xyz="0.010249 0.00075 -0.058128"
+      rpy="0 -0.17453 0" />
+    <parent
+      link="LL_elbow_pitch" />
+    <child
+      link="LL_wrist_yaw" />
+    <axis
+      xyz="0 0 1" />
+    <limit effort="300.0" lower="-1000" upper="1000" velocity="0.5"/>
+    <dynamics damping="10" friction="20"/>
+  </joint>
+  <transmission name="J27t">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="motor27">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="JL_wrist_yaw">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+  </transmission>
+  
+  
+  <link
+    name="LL_wrist_roll">
+    <inertial>
+      <origin
+        xyz="2.24084724764137E-05 -2.77555756156289E-17 2.77555756156289E-17"
+        rpy="0 0 0" />
+      <mass
+        value="2.50321784932644" />
+      <inertia
+        ixx="0.0344409751913919"
+        ixy="0.000203000704156372"
+        ixz="-0.000402443503216186"
+        iyy="0.0459468264001583"
+        iyz="-0.00410422593827533"
+        izz="0.0404358469485904" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/LL_wrist_roll.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/LL_wrist_roll.STL" />
+      </geometry>
+    </collision>
+  </link>
+  
+  
+  <joint
+    name="LJ_wrist_roll"
+    type="continuous">
+    <origin
+      xyz="0 0.00083577 -0.16099"
+      rpy="0 0 0" />
+    <parent
+      link="LL_wrist_yaw" />
+    <child
+      link="LL_wrist_roll" />
+    <axis
+      xyz="1 0 0" />
+    <limit effort="300.0" lower="-1000" upper="1000" velocity="0.5"/>
+    <dynamics damping="10" friction="20"/>
+  </joint>
+  <transmission name="J28t">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="motor28">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="LJ_wrist_roll">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+  </transmission>
+  
+  
+  <link
+    name="LL_wrist_pitch">
+    <inertial>
+      <origin
+        xyz="0.00688083909182573 9.3353250767092E-05 -0.0146721529892506"
+        rpy="0 0 0" />
+      <mass
+        value="2.50321784932644" />
+      <inertia
+        ixx="0.0344409751913919"
+        ixy="0.000203000704156372"
+        ixz="-0.000402443503216186"
+        iyy="0.0459468264001583"
+        iyz="-0.00410422593827533"
+        izz="0.0404358469485904" />
+    </inertial>
+    <visual>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/LL_wrist_pitch.STL" />
+      </geometry>
+      <material
+        name="">
+        <color
+          rgba="0.792156862745098 0.819607843137255 0.933333333333333 1" />
+      </material>
+    </visual>
+    <collision>
+      <origin
+        xyz="0 0 0"
+        rpy="0 0 0" />
+      <geometry>
+        <mesh
+          filename="package://surenaVgazebo/meshes/LL_wrist_pitch.STL" />
+      </geometry>
+    </collision>
+  </link>
+  
+  
+  <joint
+    name="LJ_wrist_pitch"
+    type="continuous">
+    <origin
+      xyz="0 0 0"
+      rpy="0 0 0" />
+    <parent
+      link="LL_wrist_roll" />
+    <child
+      link="LL_wrist_pitch" />
+    <axis
+      xyz="0 1 0" />
+    <limit effort="300.0" lower="-1000" upper="1000" velocity="0.5"/>
+    <dynamics damping="10" friction="20"/>
+  </joint>
+  <transmission name="J29t">
+    <type>transmission_interface/SimpleTransmission</type>
+    <actuator name="motor29">
+      <mechanicalReduction>1</mechanicalReduction>
+    </actuator>
+    <joint name="LJ_wrist_pitch">
+      <hardwareInterface>hardware_interface/EffortJointInterface</hardwareInterface>
+    </joint>
+  </transmission>
+  
+  
+<!-- Gazebo plugin for ROS Control -->
+<gazebo>
+  <plugin name="gazebo_ros_control" filename="libgazebo_ros_control.so">
+    <robotNamespace>/surenaVgazebo</robotNamespace>
+  </plugin>
+</gazebo>
+
+</robot>

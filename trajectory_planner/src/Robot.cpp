@@ -106,18 +106,18 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
 
     if(robotControlState_[traj_index] == Robot::WALK){
         bumpSensorCalibrated_ = true;
-        // runFootLenController(iter, f_l, f_r, traj_index);
+        runFootLenController(iter, f_l, f_r, traj_index);
         
         // runBumpFootOrientController(iter, bump_r, bump_l);
         
-        // runEarlyContactController(iter, bump_r, bump_l);
+        runEarlyContactController(iter, bump_r, bump_l);
 
         // runFootOrientController();
 
         // runZMPAdmitanceController();
     }
     else if(robotControlState_[traj_index] == Robot::IDLE){
-        ;
+        runFootLenController(iter, f_l, f_r, traj_index);
     }
 
     if(ankleColide_->checkColission(lAnklePos_[iter], rAnklePos_[iter], lAnkleRot_[iter], rAnkleRot_[iter])){
@@ -127,9 +127,9 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
 
     doIK(CoMPos_[iter], CoMRot_[iter], lAnklePos_[iter], lAnkleRot_[iter], rAnklePos_[iter], rAnkleRot_[iter]);
     Vector3d Rrpy = rAnkleRot_[iter].eulerAngles(2, 1, 0); 
-    cout << Rrpy(0) << ", " << Rrpy(1) << ", " << Rrpy(2) << ", ";
+    // cout << Rrpy(0) << ", " << Rrpy(1) << ", " << Rrpy(2) << ", ";
     Vector3d Lrpy = lAnkleRot_[iter].eulerAngles(2, 1, 0); 
-    cout << Lrpy(0) << ", " << Lrpy(1) << ", " << Lrpy(2) << endl;
+    // cout << Lrpy(0) << ", " << Lrpy(1) << ", " << Lrpy(2) << endl;
     for(int i = 0; i < 12; i++)
         joint_angles[i] = joints_[i];     // right leg(0-5) & left leg(6-11)
 }
@@ -234,28 +234,28 @@ void Robot::runFootOrientController(){
 
 void Robot::runZMPAdmitanceController()
 {
-    // Matrix3d kp = Vector3d(1.5, 1, 0).asDiagonal();
-    // Matrix3d kc = Vector3d(4.5, 4, 0).asDiagonal();
-    // if(robotPhase_[iter] == 2){
-    //     Vector3d  temp = onlineWalk_->ZMPAdmitanceComtroller_(CoMPos_[iter], FKBase_[iter], rZMP_, Vector3d(0.02, 0, 0), kp, kc);
-    //     CoMPos_[iter] += temp;
-    //     // cout << temp(0) << "," << temp(1)  << "," << temp(2)  << "," << rZMP_(0) << "," << rZMP_(1)  << "," << rZMP_(2)  << "," << CoMPos_[iter](0) << "," << CoMPos_[iter](1)  << "," << FKBase_[iter](0) << "," << FKBase_[iter](1)  << ","; 
-    // }
-    // else if (robotPhase_[iter] == 3){
-    //     Vector3d  temp = onlineWalk_->ZMPAdmitanceComtroller_(CoMPos_[iter], FKBase_[iter], lZMP_, Vector3d(0.02, 0, 0), kp, kc);
-    //     CoMPos_[iter] += temp;
-    //     // cout << temp(0) << "," << temp(1)  << "," << temp(2)  << "," << lZMP_(0) << "," << lZMP_(1)  << "," << lZMP_(2)  << "," << CoMPos_[iter](0) << "," << CoMPos_[iter](1)  << "," << FKBase_[iter](0) << "," << FKBase_[iter](1)  << ","; 
-    // }
-    // else if (robotPhase_[iter] == 1){
-    //     Vector3d  temp = onlineWalk_->ZMPAdmitanceComtroller_(CoMPos_[iter], CoMPos_[iter], Vector3d(0, 0, 0), Vector3d(0, 0, 0), kp, kc);
-    //     CoMPos_[iter] += temp;
-    //     // cout << temp(0) << "," << temp(1)  << "," << temp(2)  << "," << 0 << "," << 0  << "," << 0  << "," << CoMPos_[iter](0) << "," << CoMPos_[iter](1)  << "," << FKBase_[iter](0) << "," << FKBase_[iter](1)  << ","; 
-    // }
-    // else {
-    //     Vector3d  temp = onlineWalk_->ZMPAdmitanceComtroller_(CoMPos_[iter], FKBase_[iter], realZMP_[iter], Vector3d(0, 0, 0), kp, kc);
-    //     CoMPos_[iter] += temp;
-    //     // cout << temp(0) << "," << temp(1)  << "," << temp(2)  << "," << realZMP_[iter](0) << "," << realZMP_[iter](1) << "," << 0 << "," << CoMPos_[iter](0) << "," << CoMPos_[iter](1)  << "," << FKBase_[iter](0) << "," << FKBase_[iter](1)  << ","; 
-    // }
+    Matrix3d kp = Vector3d(1.5, 1, 0).asDiagonal();
+    Matrix3d kc = Vector3d(4.5, 4, 0).asDiagonal();
+    if(robotPhase_[index_] == 2){
+        Vector3d  temp = onlineWalk_->ZMPAdmitanceComtroller_(CoMPos_[index_], FKBase_[index_], rZMP_, Vector3d(0.02, 0, 0), kp, kc);
+        CoMPos_[index_] += temp;
+        // cout << temp(0) << "," << temp(1)  << "," << temp(2)  << "," << rZMP_(0) << "," << rZMP_(1)  << "," << rZMP_(2)  << "," << CoMPos_[index_](0) << "," << CoMPos_[index_](1)  << "," << FKBase_[index_](0) << "," << FKBase_[index_](1)  << ","; 
+    }
+    else if (robotPhase_[index_] == 3){
+        Vector3d  temp = onlineWalk_->ZMPAdmitanceComtroller_(CoMPos_[index_], FKBase_[index_], lZMP_, Vector3d(0.02, 0, 0), kp, kc);
+        CoMPos_[index_] += temp;
+        // cout << temp(0) << "," << temp(1)  << "," << temp(2)  << "," << lZMP_(0) << "," << lZMP_(1)  << "," << lZMP_(2)  << "," << CoMPos_[index_](0) << "," << CoMPos_[index_](1)  << "," << FKBase_[index_](0) << "," << FKBase_[index_](1)  << ","; 
+    }
+    else if (robotPhase_[index_] == 1){
+        Vector3d  temp = onlineWalk_->ZMPAdmitanceComtroller_(CoMPos_[index_], CoMPos_[index_], Vector3d(0, 0, 0), Vector3d(0, 0, 0), kp, kc);
+        CoMPos_[index_] += temp;
+        // cout << temp(0) << "," << temp(1)  << "," << temp(2)  << "," << 0 << "," << 0  << "," << 0  << "," << CoMPos_[index_](0) << "," << CoMPos_[index_](1)  << "," << FKBase_[index_](0) << "," << FKBase_[index_](1)  << ","; 
+    }
+    else {
+        Vector3d  temp = onlineWalk_->ZMPAdmitanceComtroller_(CoMPos_[index_], FKBase_[index_], realZMP_[index_], Vector3d(0, 0, 0), kp, kc);
+        CoMPos_[index_] += temp;
+        // cout << temp(0) << "," << temp(1)  << "," << temp(2)  << "," << realZMP_[index_](0) << "," << realZMP_[index_](1) << "," << 0 << "," << CoMPos_[index_](0) << "," << CoMPos_[index_](1)  << "," << FKBase_[index_](0) << "," << FKBase_[index_](1)  << ","; 
+    }
 }
 
 void Robot::updateRobotState(double config[], double jnt_vel[], Vector3d torque_r, Vector3d torque_l, double f_r, double f_l, Vector3d gyro, Vector3d accelerometer){

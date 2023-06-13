@@ -8,7 +8,7 @@ Controller::Controller(Matrix3d K_p, Matrix3d K_i, Matrix3d K_zmp, Matrix3d K_co
     setK_com_(K_com);
     
     xiErrorInt << 0.0, 0.0, 0.0;
-    double deltaZ_ = 0.0;
+    deltaZ_ = 0.0;
     uOrientR_ << 0, 0, 0;
     uOrientL_ << 0, 0, 0;
     uBumpOrientR_ << 0, 0, 0;

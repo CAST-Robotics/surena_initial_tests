@@ -108,7 +108,7 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
         bumpSensorCalibrated_ = true;
         runFootLenController(iter, f_l, f_r, traj_index);
         
-        // runBumpFootOrientController(iter, bump_r, bump_l);
+        runBumpFootOrientController(iter, bump_r, bump_l);
         
         runEarlyContactController(iter, bump_r, bump_l);
 
@@ -117,7 +117,7 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
         // runZMPAdmitanceController();
     }
     else if(robotControlState_[traj_index] == Robot::IDLE){
-        runFootLenController(iter, f_l, f_r, traj_index);
+        // runFootLenController(iter, f_l, f_r, traj_index);
     }
 
     if(ankleColide_->checkColission(lAnklePos_[iter], rAnklePos_[iter], lAnkleRot_[iter], rAnkleRot_[iter])){

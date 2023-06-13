@@ -58,7 +58,7 @@ class RobotManager{
 
         qcInitialBool_ = true;
         int temp_ratio[12] = {100, 100, 50, 80, 100, 100, 50, 80, 120, 120, 120, 120};
-        int temp_home_abs[12] = {122570, 139874, 137321, 8735, 131448, 129963, 140545, 145183, 122054, 18816, 131690, 140432};
+        int temp_home_abs[12] = {122570, 139874, 137321, 8735, 131448, 129963, 145545, 145183, 122054, 18816, 131690, 140432};
         int temp_abs_high[12] = {108426, 119010, 89733, 136440, 71608, 102443, 119697, 82527, 168562, 131334, 191978, 111376};
         int temp_abs_low[12] = {145354, 183778, 194153, 7000, 203256, 160491, 150225, 180000, 61510, 16500, 61482, 172752};
         int temp_abs2inc_dir[12] = {1, 1, -1, -1, -1, 1, 1, 1, -1, 1, 1, 1};
@@ -138,8 +138,8 @@ class RobotManager{
     bool home(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res){
         
         //ankleHome(false);
-        //setPos(6, homeAbs_[6]);
-        //setPos(0, homeAbs_[0]);
+        setPos(6, homeAbs_[6]);
+        setPos(0, homeAbs_[0]);
         setPos(1, homeAbs_[1] - 20000);
         setPos(7, homeAbs_[7] + 20000);
         ankleHome(false, homeAbs_[5], homeAbs_[4]);

@@ -14,6 +14,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   rospy
   std_msgs
+  message_generation
 )
 
 ## System dependencies are found with CMake's conventions
@@ -57,11 +58,11 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate services in the 'srv' folder
-# add_service_files(
-#   FILES
-#   Service1.srv
-#   Service2.srv
-# )
+ add_service_files(
+   FILES
+   move_hand_single.srv
+   move_hand_both.srv
+ )
 
 ## Generate actions in the 'action' folder
 # add_action_files(
@@ -71,10 +72,10 @@ find_package(catkin REQUIRED COMPONENTS
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs
-# )
+ generate_messages(
+   DEPENDENCIES
+   std_msgs
+ )
 
 ################################################
 ## Declare ROS dynamic reconfigure parameters ##
@@ -138,24 +139,21 @@ include_directories(
 ## The recommended prefix ensures that target names across packages don't collide
 # add_executable(${PROJECT_NAME}_node src/hand_planner_test_node.cpp)
 
-add_executable(home_node_cpp src/test_surena4_ros/BacktoHome.cpp)
-target_link_libraries( home_node_cpp  ${catkin_LIBRARIES} )
-
-#add_executable(new src/surena5/new.cpp src/surena5/S5mod_right_hand.cpp src/surena5/MinimumJerkInterpolation.cpp)
-#target_link_libraries( new  ${catkin_LIBRARIES} )
-
-add_executable(test_node_cpp src/test_surena4_ros/target_robot_test_RH.cpp src/test_surena4_ros/S5mod_right_hand.cpp src/test_surena4_ros/MinimumJerkInterpolation.cpp)
-
-#add_executable(test_node_cpp src/test_surena4_ros/target_robot_test_LH.cpp src/test_surena4_ros/S5mod_left_hand.cpp src/test_surena4_ros/MinimumJerkInterpolation.cpp)
-
-#add_executable(test_node_cpp src/test_surena4_ros/target_robot_both.cpp src/test_surena4_ros/S5mod_right_hand.cpp src/test_surena4_ros/S5mod_left_hand.cpp src/test_surena4_ros/MinimumJerkInterpolation.cpp)
-
+#add_executable(home_node_cpp src/surena5/BacktoHome.cpp)
+#target_link_libraries( home_node_cpp  ${catkin_LIBRARIES} )
+#add_executable(test_node_cpp src/test_surena4_ros/target_robot_test_RH.cpp src/test_surena4_ros/S5mod_right_hand.cpp src/test_surena4_ros/MinimumJerkInterpolation.cpp)
+add_executable(test_node_cpp src/test_surena4_ros/test_forgotten.cpp src/test_surena4_ros/S5mod_right_hand.cpp src/test_surena4_ros/S5mod_left_hand.cpp src/test_surena4_ros/MinimumJerkInterpolation.cpp)
+#add_executable(test_node_cpp src/surena5/target_robot_test_RH.cpp src/surena5/S5mod_right_hand.cpp src/surena5/MinimumJerkInterpolation.cpp)
+#add_executable(test_node_cpp src/surena5/target_robot_test_LH.cpp src/surena5/S5mod_left_hand.cpp src/surena5/MinimumJerkInterpolation.cpp)
 #add_executable(test_node_cpp src/surena5/target_robot_test.cpp src/surena5/S5mod_left_hand.cpp src/surena5/S5mod_right_hand.cpp src/surena5/MinimumJerkInterpolation.cpp)
-
 #add_executable(test_node_cpp src/surena5/move2pose_robot_test.cpp src/surena5/S5mod_right_hand.cpp)
 target_link_libraries( test_node_cpp  ${catkin_LIBRARIES} ) 
 
 #add_executable( test_node_cpp src/surena4/s5Version2_test_r.cpp src/surena4/S5mod_right_hand.cpp src/surena4/MinimumJerkInterpolation.cpp)
+
+add_executable(hand_trajectory src/test_surena4_ros/test_forgotten_srv.cpp src/test_surena4_ros/S5mod_right_hand.cpp src/test_surena4_ros/S5mod_left_hand.cpp src/test_surena4_ros/MinimumJerkInterpolation.cpp)
+target_link_libraries(hand_trajectory ${catkin_LIBRARIES})
+add_dependencies(hand_trajectory hand_planner_test_gencpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the

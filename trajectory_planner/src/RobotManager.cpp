@@ -138,8 +138,8 @@ class RobotManager{
     bool home(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res){
         
         //ankleHome(false);
-        setPos(6, homeAbs_[6]);
-        setPos(0, homeAbs_[0]);
+        // setPos(6, homeAbs_[6]);
+        // setPos(0, homeAbs_[0]);
         setPos(1, homeAbs_[1] - 20000);
         setPos(7, homeAbs_[7] + 20000);
         ankleHome(false, homeAbs_[5], homeAbs_[4]);

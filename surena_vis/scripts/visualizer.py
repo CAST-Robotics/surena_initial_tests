@@ -1,48 +1,44 @@
 #!/usr/bin/env python3
 import matplotlib.pyplot as plt
 import numpy as np
+import random
+
 import rospy
-from geometry_msgs.msg import Point
-from geometry_msgs.msg import Twist
+from sensor_msgs.msg import JointState
+from collections import deque
 
-
-class Visualize:
+class RobotVisualizer:
     def __init__(self, dt):
+        rospy.init_node('robot_visualizer', anonymous=True)
+        self.zmpSub_ = rospy.Subscriber("/surena/inc_joint_state", JointState, self.incJointCallback)
+        self.dt_ = dt
+        self.iter = 0
+        self.rate_ = rospy.Rate(int(1 / self.dt_))
+        self.fig_, self.ax_ = plt.subplots()
+        self.incJointData_ = deque(maxlen=100)
         plt.ion()
-        self.dt = dt
-        self.zmp = np.array([0, 0, 0])
-        self.fig, self.ax = plt.subplots(3,1)
-        print('done')
+        plt.show()
 
-    def zmpCallback(self, data):
-        self.zmp = np.vstack([self.zmp, np.array([data.x, data.y, data.z])])
-        #print(self.zmp.shape)
-        self.ax[0].plot(np.arange(self.zmp.shape[0]-1)*self.dt, self.zmp[1:, 0], color='blue')
-        self.ax[0].plot(np.arange(self.zmp.shape[0]-1)*self.dt, self.zmp[1:, 1], color='red')
-        self.ax[0].plot(np.arange(self.zmp.shape[0]-1)*self.dt, self.zmp[1:, 2], color='green')
+    def incJointCallback(self, data):
+        self.incJointData_.append((data.header.stamp.to_sec(), data.position[0] + random.random()))
+        print(data.header.stamp.to_sec())
 
-        # self.ax[0].scatter((self.zmp.shape[0]-1)*self.dt, self.zmp[-1, 0], color='blue')
-        # self.ax[0].scatter((self.zmp.shape[0]-1)*self.dt, self.zmp[-1, 1], color='green')
-        # self.ax[0].scatter((self.zmp.shape[0]-1)*self.dt, self.zmp[-1, 2], color='red')
+    def updatePlot(self):
+        self.ax_.clear()
+        self.ax_.plot([t for t, inc in self.incJointData_], [inc for t, inc in self.incJointData_], label='inc_joint')
 
-        self.spin()
-
-    def comCallback(self, data):
-        pass
-
-    def xiCallback(self, data):
-        pass
+        self.ax_.legend()
+        self.fig_.canvas.draw()
+        self.fig_.canvas.flush_events()
 
     def spin(self):
-        rospy.init_node('visualizer', anonymous=True)
-        self.zmpSub = rospy.Subscriber("/zmp_position", Point, self.zmpCallback)
-        self.comSub = rospy.Subscriber("/com_data", Twist, self.comCallback)
-        self.xiSub = rospy.Subscriber("/xi_data", Twist, self.xiCallback)
-        plt.show(block=True)
+        while not rospy.is_shutdown():
+            self.updatePlot()
+            self.rate_.sleep()
     
     def close(self):
         plt.close()
 
 if __name__ == '__main__':
-    vis = Visualize(0.005)
+    vis = RobotVisualizer(0.005)
     vis.spin()

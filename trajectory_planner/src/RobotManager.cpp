@@ -166,7 +166,7 @@ class RobotManager{
 
         if (qcInitialBool_){
 
-            for (int i = 0; i <= 31; ++i) {
+            for (int i = 0; i < 20; ++i) {
                 homeOffset_[i]=int(msg.position[i+1]);
                 motorCommand_.data.push_back(homeOffset_[i]);
             }
@@ -281,7 +281,7 @@ class RobotManager{
     bool emptyCommand(){
         ros::spinOnce();
         ros::Rate rate_(200);
-        for(int i=0; i<32; i++)
+        for(int i=0; i<20; i++)
             motorCommand_.data[i] = incData_[i];
 
         motorCommand_.data[0] += 1;
@@ -709,7 +709,11 @@ class RobotManager{
                         cout<< "joint " << j << " out of workspace in iteration "<< i << ", angle difference: " << dif << endl ;
                         return false;
                     }
-                }    
+                }
+                for(int j=12; j<20; j++)
+                {
+                    motorCommand_.data[j] = incData_[j];
+                }
                 stop = high_resolution_clock::now();
                 duration = duration_cast<microseconds>(stop - start);
                 //cout << duration.count()/1000000.0 << endl;

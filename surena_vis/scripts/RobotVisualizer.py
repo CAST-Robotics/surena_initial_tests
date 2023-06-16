@@ -13,8 +13,8 @@ from collections import deque
 class RobotVisualizer:
     def __init__(self, dt):
         self.dt_ = dt
-        self.footWidth_ = 0.1
-        self.footHeight_ = 0.2
+        self.footWidth_ = 0.17
+        self.footHeight_ = 0.25
 
         rospy.init_node('robot_visualizer', anonymous=True)
         self.rate_ = rospy.Rate(int(1 / self.dt_))
@@ -46,6 +46,9 @@ class RobotVisualizer:
             rectangle = Rectangle((x - self.footHeight_/2, y - self.footWidth_/2), self.footHeight_, self.footWidth_, fill=False)
             self.ax_.add_patch(rectangle)
 
+        self.ax_.set_xlim(-0.2, 1.3)
+        self.ax_.set_ylim(-0.2, 0.2)
+
         self.ax_.legend()
         self.fig_.canvas.draw()
         self.fig_.canvas.flush_events()
@@ -54,7 +57,3 @@ class RobotVisualizer:
         while not rospy.is_shutdown():
             self.updatePlot()
             self.rate_.sleep()
-
-if __name__ == '__main__':
-    vis = RobotVisualizer(0.005)
-    vis.spin()

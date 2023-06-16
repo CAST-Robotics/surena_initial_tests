@@ -2,3 +2,4 @@
 *.out
 *.csv
 *.STL
+__pycache__

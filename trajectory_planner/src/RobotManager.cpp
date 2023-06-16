@@ -69,6 +69,9 @@ class RobotManager{
 
         collision_ = false;
 
+        for(int i=0; i<20; i++)
+            motorCommandArray_[i] = 0;
+
         for (int i=0; i<12; i++){
             harmonicRatio_[i] = temp_ratio[i];
             homeAbs_[i] = temp_home_abs[i];
@@ -106,7 +109,15 @@ class RobotManager{
             currentRFT_[i] = temp[i];
         }
 
-    }   
+    }
+
+    bool sendCommand(){
+        motorCommand_.data.clear();
+            for(int  i = 0; i < 20; i++)
+                motorCommand_.data.push_back(motorCommandArray_[i]);
+
+        motorDataPub_.publish(motorCommand_);
+    }
 
     bool setPos(int jointID, int dest){
         // this function is used for changing the position of all joint except ankle joints.
@@ -119,16 +130,16 @@ class RobotManager{
         while(abs(abs(absData_[temp_roll]) - dest) > 100){
             if (abs(absData_[temp_roll]) < 262144){
                     if (abs(absData_[temp_roll]) > dest){
-                        motorCommand_.data[temp_roll] -= abs2incDir_[jointID]*(4096*4*0.01);
+                        motorCommandArray_[temp_roll] -= abs2incDir_[jointID]*(4096*4*0.01);
                         //cout << "!!!!!!!" << abs(absData_[temp_roll]) - dest << endl;
                     }
                     else{
-                        motorCommand_.data[temp_roll] += abs2incDir_[jointID]*(4096*4*0.01);
+                        motorCommandArray_[temp_roll] += abs2incDir_[jointID]*(4096*4*0.01);
                         //cout << "@@@@@@" << abs(absData_[temp_roll]) - dest << endl;
 
                 }
             }
-            motorDataPub_.publish(motorCommand_);
+            sendCommand();
             ros::spinOnce();
             rate_.sleep();
         } 
@@ -168,7 +179,7 @@ class RobotManager{
 
             for (int i = 0; i < 20; ++i) {
                 homeOffset_[i]=int(msg.position[i+1]);
-                motorCommand_.data.push_back(homeOffset_[i]);
+                motorCommandArray_[i] = homeOffset_[i];
             }
             qcInitialBool_=false;
             //ROS_INFO("Offset=%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t%d\t\n",
@@ -282,13 +293,13 @@ class RobotManager{
         ros::spinOnce();
         ros::Rate rate_(200);
         for(int i=0; i<20; i++)
-            motorCommand_.data[i] = incData_[i];
+            motorCommandArray_[i] = incData_[i];
 
-        motorCommand_.data[0] += 1;
-        motorDataPub_.publish(motorCommand_);
+        motorCommandArray_[0] += 1;
+        sendCommand();
         rate_.sleep();
-        motorCommand_.data[0] -= 1;
-        motorDataPub_.publish(motorCommand_);
+        motorCommandArray_[0] -= 1;
+        sendCommand();
         rate_.sleep();
         return true;
     }
@@ -312,13 +323,13 @@ class RobotManager{
             double inner_delta_inc = inner_inc - incData_[5];
             double outer_delta_inc = outer_inc - incData_[4];
             
-            motorCommand_.data[4] = incData_[4];
-            motorCommand_.data[5] = incData_[5];
+            motorCommandArray_[4] = incData_[4];
+            motorCommandArray_[5] = incData_[5];
 
             for (int i = 0; i < 100; i++){
-                motorCommand_.data[4] += outer_delta_inc / 100;
-                motorCommand_.data[5] +=  inner_delta_inc / 100;
-                motorDataPub_.publish(motorCommand_);
+                motorCommandArray_[4] += outer_delta_inc / 100;
+                motorCommandArray_[5] +=  inner_delta_inc / 100;
+                sendCommand();
                 ros::spinOnce();
                 rate_.sleep();
             }
@@ -337,13 +348,13 @@ class RobotManager{
             double inner_delta_inc = inner_inc - incData_[5];
             double outer_delta_inc = outer_inc - incData_[4];
             
-            motorCommand_.data[4] = incData_[4];
-            motorCommand_.data[5] = incData_[5];
+            motorCommandArray_[4] = incData_[4];
+            motorCommandArray_[5] = incData_[5];
 
             for (int i = 0; i < 100; i++){
-                motorCommand_.data[4] += outer_delta_inc / 100;
-                motorCommand_.data[5] +=  inner_delta_inc / 100;
-                motorDataPub_.publish(motorCommand_);
+                motorCommandArray_[4] += outer_delta_inc / 100;
+                motorCommandArray_[5] +=  inner_delta_inc / 100;
+                sendCommand();
                 ros::spinOnce();
                 rate_.sleep();
             }
@@ -362,13 +373,13 @@ class RobotManager{
             double inner_delta_inc = inner_inc - incData_[11];
             double outer_delta_inc = outer_inc - incData_[10];
             
-            motorCommand_.data[10] = incData_[10];
-            motorCommand_.data[11] = incData_[11];
+            motorCommandArray_[10] = incData_[10];
+            motorCommandArray_[11] = incData_[11];
 
             for (int i = 0; i < 100; i++){
-                motorCommand_.data[10] += outer_delta_inc / 100;
-                motorCommand_.data[11] +=  inner_delta_inc / 100;
-                motorDataPub_.publish(motorCommand_);
+                motorCommandArray_[10] += outer_delta_inc / 100;
+                motorCommandArray_[11] +=  inner_delta_inc / 100;
+                sendCommand();
                 ros::spinOnce();
                 rate_.sleep();
             }
@@ -387,13 +398,13 @@ class RobotManager{
             double inner_delta_inc = inner_inc - incData_[11];
             double outer_delta_inc = outer_inc - incData_[10];
             
-            motorCommand_.data[10] = incData_[10];
-            motorCommand_.data[11] = incData_[11];
+            motorCommandArray_[10] = incData_[10];
+            motorCommandArray_[11] = incData_[11];
 
             for (int i = 0; i < 100; i++){
-                motorCommand_.data[10] += outer_delta_inc / 100;
-                motorCommand_.data[11] +=  inner_delta_inc / 100;
-                motorDataPub_.publish(motorCommand_);
+                motorCommandArray_[10] += outer_delta_inc / 100;
+                motorCommandArray_[11] +=  inner_delta_inc / 100;
+                sendCommand();
                 ros::spinOnce();
                 rate_.sleep();
             }
@@ -403,8 +414,8 @@ class RobotManager{
             double yaw_inc =  motorDir_[0] * theta * 4096 * 4 * 100 / 2 / M_PI;
             cout << theta << ": theta" << endl;
             for (int i = 0; i < 100; i++){
-                motorCommand_.data[0] += yaw_inc / 100;
-                motorDataPub_.publish(motorCommand_);
+                motorCommandArray_[0] += yaw_inc / 100;
+                sendCommand();
                 ros::spinOnce();
                 rate_.sleep();
             }
@@ -413,16 +424,16 @@ class RobotManager{
             this->yawMechanism(theta, req.angle, 0.03435, 0.088, true);
             double yaw_inc = motorDir_[6] * theta * 4096 * 4 * 100 / 2 / M_PI;
             for (int i = 0; i < 100; i++){
-                motorCommand_.data[6] += yaw_inc / 100;
-                motorDataPub_.publish(motorCommand_);
+                motorCommandArray_[6] += yaw_inc / 100;
+                sendCommand();
                 ros::spinOnce();
                 rate_.sleep();
             }           
         } else{
             double inc = motorDir_[req.motor_id] * req.angle * 4096 * 4 * 160 / 2 / M_PI;
             for (int i = 0; i < int(abs(inc)) / 100; i++){
-                motorCommand_.data[req.motor_id] += sgn(inc) * 100;
-                motorDataPub_.publish(motorCommand_);
+                motorCommandArray_[req.motor_id] += sgn(inc) * 100;
+                sendCommand();
                 ros::spinOnce();
                 rate_.sleep();
             }           
@@ -481,18 +492,18 @@ class RobotManager{
             if (abs(absData_[inner]) < 262144){
 
                 if (abs(absData_[inner]) > roll_dest){
-                    motorCommand_.data[outer] -= (4096*4*0.01); //
-                    motorCommand_.data[inner] -= (4096*4*0.01);//
+                    motorCommandArray_[outer] -= (4096*4*0.01); //
+                    motorCommandArray_[inner] -= (4096*4*0.01);//
                     //cout << "roll-if:" << abs(absData_[inner]) - roll_dest << endl;
                 }
                 else{
-                    motorCommand_.data[outer] += (4096*4*0.01);//
-                    motorCommand_.data[inner] += (4096*4*0.01);//
+                    motorCommandArray_[outer] += (4096*4*0.01);//
+                    motorCommandArray_[inner] += (4096*4*0.01);//
                     //cout << "roll-else:" << abs(absData_[inner]) - roll_dest << endl;
 
                 }
             }
-            motorDataPub_.publish(motorCommand_);
+            sendCommand();
             ros::spinOnce();
             rate_.sleep();
         }
@@ -501,17 +512,17 @@ class RobotManager{
             if (abs(absData_[outer]) < 262144){
 
                 if (abs(absData_[outer]) > pitch_dest){
-                    motorCommand_.data[outer] -= (4096*4*0.01);//+
-                    motorCommand_.data[inner] += (4096*4*0.01);//-
+                    motorCommandArray_[outer] -= (4096*4*0.01);//+
+                    motorCommandArray_[inner] += (4096*4*0.01);//-
                     //cout << "pitch-if:" << abs(absData_[outer]) - pitch_dest << endl;
                 }
                 else{
-                    motorCommand_.data[outer] += (4096*4*0.01);
-                    motorCommand_.data[inner] -= (4096*4*0.01);
+                    motorCommandArray_[outer] += (4096*4*0.01);
+                    motorCommandArray_[inner] -= (4096*4*0.01);
                     //cout << "pitch-else:" << abs(absData_[outer]) - pitch_dest << endl;
                 } 
             }
-            motorDataPub_.publish(motorCommand_);
+            sendCommand();
             ros::spinOnce();
             rate_.sleep();
             
@@ -620,15 +631,14 @@ class RobotManager{
                             
                         case 0:
                             this->yawMechanism(theta, jnt_command[j], 0.03435, 0.088, false);
-                            motorCommand_.data[j] =  motorDir_[j] * theta * 4096 * 4 * 100 / 2 / M_PI + homeOffset_[j];
-                            //motorCommand_.data[j] =  motorDir_[1] * jnt_command[1] * 4096 * 4 * 160 / 2 / M_PI + homeOffset_[j];
+                            motorCommandArray_[j] =  motorDir_[j] * theta * 4096 * 4 * 100 / 2 / M_PI + homeOffset_[j];
                             
                             yawMechanismFK(alpha,inc2rad(incData_[0] - homeOffset_[0]) / 100, 0.03435, 0.088, false);
                             commandConfig_[2][j] = alpha;
                             break;
                         case 6:
                             this->yawMechanism(theta, jnt_command[j], 0.03435, 0.088, true);
-                            motorCommand_.data[j] = motorDir_[j] * theta * 4096 * 4 * 100 / 2 / M_PI + homeOffset_[j];
+                            motorCommandArray_[j] = motorDir_[j] * theta * 4096 * 4 * 100 / 2 / M_PI + homeOffset_[j];
                             yawMechanismFK(alpha,inc2rad(motorDir_[j] * (incData_[j] - homeOffset_[j])) / 100, 0.03435, 0.088, true);
                             commandConfig_[2][j] =  alpha;
                             break;
@@ -638,8 +648,8 @@ class RobotManager{
                             this->ankleMechanism(theta_inner, theta_outer, desired_pitch, desired_roll, false);
                             inner_inc = motorDir_[5] * theta_inner * 4096 * 4 * 100 * 1.5 / 2 / M_PI + homeOffset_[5];
                             outer_inc = motorDir_[4] * theta_outer * 4096 * 4 * 100 * 1.5 / 2 / M_PI + homeOffset_[4];                            
-                            motorCommand_.data[4] = outer_inc;
-                            motorCommand_.data[5] = inner_inc;
+                            motorCommandArray_[4] = outer_inc;
+                            motorCommandArray_[5] = inner_inc;
                             //commandConfig_[2][j] = jnt_command[4];
                             commandConfig_[2][j] = absDir_[j] * abs2rad(absData_[j] - homeAbs_[j]);
                             break;
@@ -649,8 +659,8 @@ class RobotManager{
                             this->ankleMechanism(theta_inner, theta_outer, desired_pitch, desired_roll, false);
                             inner_inc = motorDir_[5] * theta_inner * 4096 * 4 * 100 * 1.5 / 2 / M_PI + homeOffset_[5];
                             outer_inc = motorDir_[4] * theta_outer * 4096 * 4 * 100 * 1.5 / 2 / M_PI + homeOffset_[4];                            
-                            motorCommand_.data[4] = outer_inc;
-                            motorCommand_.data[5] = inner_inc;
+                            motorCommandArray_[4] = outer_inc;
+                            motorCommandArray_[5] = inner_inc;
                             //commandConfig_[2][j] = jnt_command[j];
                             commandConfig_[2][j] = absDir_[j] * abs2rad(absData_[j] - homeAbs_[j]);
                             break;
@@ -660,8 +670,8 @@ class RobotManager{
                             this->ankleMechanism(theta_inner, theta_outer, desired_pitch, desired_roll, true);
                             inner_inc = motorDir_[11] * theta_inner * 4096 * 4 * 100 * 1.5 / 2 / M_PI + homeOffset_[11];
                             outer_inc = motorDir_[10] * theta_outer * 4096 * 4 * 100 * 1.5 / 2 / M_PI + homeOffset_[10];                            
-                            motorCommand_.data[10] = outer_inc;
-                            motorCommand_.data[11] = inner_inc;
+                            motorCommandArray_[10] = outer_inc;
+                            motorCommandArray_[11] = inner_inc;
                             //commandConfig_[2][j] = jnt_command[j];
                             commandConfig_[2][j] = absDir_[j] * abs2rad(absData_[j] - homeAbs_[j]);
                             break;
@@ -671,13 +681,13 @@ class RobotManager{
                             this->ankleMechanism(theta_inner, theta_outer, desired_pitch, desired_roll, true);
                             inner_inc = motorDir_[11] * theta_inner * 4096 * 4 * 100 * 1.5 / 2 / M_PI + homeOffset_[11];
                             outer_inc = motorDir_[10] * theta_outer * 4096 * 4 * 100 * 1.5 / 2 / M_PI + homeOffset_[10];                            
-                            motorCommand_.data[10] = outer_inc;
-                            motorCommand_.data[11] = inner_inc;
+                            motorCommandArray_[10] = outer_inc;
+                            motorCommandArray_[11] = inner_inc;
                             //commandConfig_[2][j] = jnt_command[j];
                             commandConfig_[2][j] = absDir_[j] * abs2rad(absData_[j] - homeAbs_[j]);
                             break;
                         default:
-                            motorCommand_.data[j] = motorDir_[j] * jnt_command[j] * 4096 * 4 * 160 / 2 / M_PI + homeOffset_[j];
+                            motorCommandArray_[j] = motorDir_[j] * jnt_command[j] * 4096 * 4 * 160 / 2 / M_PI + homeOffset_[j];
                             commandConfig_[2][j] = motorDir_[j] * inc2rad(incData_[j] - homeOffset_[j]) / 160;
                             break;
                         }
@@ -712,12 +722,12 @@ class RobotManager{
                 }
                 for(int j=12; j<20; j++)
                 {
-                    motorCommand_.data[j] = incData_[j];
+                    motorCommandArray_[j] = incData_[j];
                 }
                 stop = high_resolution_clock::now();
                 duration = duration_cast<microseconds>(stop - start);
                 //cout << duration.count()/1000000.0 << endl;
-                motorDataPub_.publish(motorCommand_);
+                sendCommand();
                 ros::spinOnce();
                 rate_.sleep();
                 start = high_resolution_clock::now();
@@ -848,6 +858,7 @@ private:
     bool qcInitialBool_;
     int homeOffset_[32];
     std_msgs::Int32MultiArray motorCommand_;
+    double motorCommandArray_[20];
     int harmonicRatio_[12];
     float absData_[32];
     int incData_[32];

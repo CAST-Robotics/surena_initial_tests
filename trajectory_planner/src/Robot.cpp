@@ -38,6 +38,7 @@ Robot::Robot(ros::NodeHandle* nh, std::string config_path): nh_(nh),robotConfigP
 }
 
 void Robot::initROSCommunication() {
+    footStepPub_ = nh_->advertise<geometry_msgs::Point>("/surena/foot_steps", 100);
     zmpDataPub_ = nh_->advertise<geometry_msgs::Point>("/zmp_position", 100);
     comDataPub_ = nh_->advertise<geometry_msgs::Twist>("/com_data", 100);
     xiDataPub_ = nh_->advertise<geometry_msgs::Twist>("/xi_data", 100);
@@ -614,6 +615,13 @@ bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double
             dcm_rf[i] = ankle_rf[i];
         }
         dcm_rf[num_step + 1] = 0.5 * (ankle_rf[num_step] + ankle_rf[num_step + 1]);
+    }
+    geometry_msgs::Point foot_step;
+    for(int i = 0; i < num_step + 2; i++)
+    {
+        foot_step.x = ankle_rf[i](0);
+        foot_step.y = ankle_rf[i](1);
+        footStepPub_.publish(foot_step);
     }
 
     trajectoryPlanner->setFoot(dcm_rf, -sign);

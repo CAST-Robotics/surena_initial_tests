@@ -160,6 +160,7 @@ class Robot{
         geometry_msgs::Point zmpPosition_;
         ros::Publisher comDataPub_;
         ros::Publisher xiDataPub_;
+        ros::Publisher footStepPub_;
         bool isTrajAvailable_;
         bool useController_;
 

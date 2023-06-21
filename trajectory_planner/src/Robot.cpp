@@ -40,7 +40,7 @@ Robot::Robot(ros::NodeHandle* nh, std::string config_path): nh_(nh),robotConfigP
 void Robot::initROSCommunication() {
     footStepPub_ = nh_->advertise<geometry_msgs::Point>("/surena/foot_steps", 100);
     zmpDataPub_ = nh_->advertise<geometry_msgs::Point>("/zmp_position", 100);
-    comDataPub_ = nh_->advertise<geometry_msgs::Twist>("/com_data", 100);
+    comDataPub_ = nh_->advertise<geometry_msgs::PoseStamped>("/surena/com_pose", 100);
     xiDataPub_ = nh_->advertise<geometry_msgs::Twist>("/xi_data", 100);
 }
 
@@ -125,6 +125,13 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
         status = 1;
         cout << "Collision Detected in Ankles!" << endl;
     }
+
+    geometry_msgs::PoseStamped com_pose;
+    com_pose.header.stamp = ros::Time::now();
+    com_pose.pose.position.x = CoMPos_[iter](0);
+    com_pose.pose.position.y = CoMPos_[iter](1);
+    com_pose.pose.position.z = CoMPos_[iter](2);
+    comDataPub_.publish(com_pose);
 
     doIK(CoMPos_[iter], CoMRot_[iter], lAnklePos_[iter], lAnkleRot_[iter], rAnklePos_[iter], rAnkleRot_[iter]);
     Vector3d Rrpy = rAnkleRot_[iter].eulerAngles(2, 1, 0); 

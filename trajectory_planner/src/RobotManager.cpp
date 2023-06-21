@@ -571,6 +571,12 @@ class RobotManager{
         robot->trajGen(req.step_count, req.t_step, req.alpha, req.t_double_support, req.COM_height,
                        req.step_length, req.step_width, req.dt, req.theta, req.ankle_height, req.step_height, 0);
         //if(traj_srv.response.result){
+
+        // init_com_pos[2] = req.COM_height;
+        // final_com_pos[2] = req.COM_height;
+        // robot->generalTrajGen(req.dt, req.t_step, init_com_pos, final_com_pos, init_com_orient, final_com_orient,
+        //                       init_lankle_pos, final_lankle_pos, init_lankle_orient, final_lankle_orient,
+        //                       init_rankle_pos, final_rankle_pos, init_rankle_orient, final_rankle_orient);
            
         init_com_pos[2] = req.COM_height;
         final_com_pos[2] = 0.71;

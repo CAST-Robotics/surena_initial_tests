@@ -4,6 +4,7 @@
 #include <ros/console.h>
 #include <std_srvs/Empty.h>
 #include <geometry_msgs/Point.h>
+#include <geometry_msgs/PoseStamped.h>
 #include <geometry_msgs/Twist.h>
 #include "trajectory_planner/JntAngs.h"
 #include "trajectory_planner/Trajectory.h"

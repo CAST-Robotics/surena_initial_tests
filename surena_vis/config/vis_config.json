@@ -2,12 +2,8 @@
   "plot": [
     {
       "Data": "com",
-      "type": "xy"
-    }
-  ],
-  "write": [
-    {
-      "Data": "footstep"
+      "type": "tx",
+      "write": true
     }
   ]
 }

@@ -22,12 +22,19 @@ class RobotVisualizer:
         rospy.Subscriber("/surena/foot_steps", Point, self.footStepCallback)
         rospy.Subscriber("/surena/com_pose", PoseStamped, self.CoMCallback)
 
-        self.incJointData_ = deque(maxlen=1000)
-        self.CoMData_ = deque(maxlen=1000)
+        self.incJointData_ = []
+        self.incJointDataFile_ = None
+
+        self.CoMData_ = []
+        self.CoMDataFile_ = None
+
         self.footStepData_ = []
+        self.footStepDataFile_ = None
 
         self.plots = list()
-        self.configPath_ = RosPack().get_path("surena_vis") + "/config/vis_config.json"
+        self.pkgPath_ = RosPack().get_path("surena_vis")
+        self.configPath_ = self.pkgPath_ + "/config/vis_config.json"
+        self.logPath_ = self.pkgPath_ + "/log/"
         self.parseConfig()
 
     def incJointCallback(self, data):
@@ -39,8 +46,15 @@ class RobotVisualizer:
         self.footStepData_.append(data)
 
     def CoMCallback(self, data):
-        self.CoMData_.append((data.header.stamp.to_sec(), data.pose.position.x,
-                                   data.pose.position.y, data.pose.position.z))
+        time = data.header.stamp.to_sec()
+        x_pos = data.pose.position.x
+        y_pos = data.pose.position.y
+        z_pos = data.pose.position.z
+        self.CoMData_.append((time, x_pos, y_pos, z_pos))
+        if self.CoMDataFile_:
+            data_str = str(time) + ', ' + str(x_pos) + ', ' + str(y_pos) + ', ' + str(z_pos) + '\n'
+            self.CoMDataFile_.write(data_str)
+        
 
     def parseConfig(self):
         with open(self.configPath_) as f:
@@ -49,7 +63,9 @@ class RobotVisualizer:
         for plot in config['plot']:
             plot_data = plot['Data']
             if plot_data == "com":
-                self.plots.append((PosePlot("CoMPosePlot", "tz"), self.CoMData_))
+                self.plots.append((PosePlot("CoMPosePlot", plot['type']), self.CoMData_))
+                if plot['write']:
+                    self.CoMDataFile_ = open(self.logPath_ + f"{plot_data}" + ".csv", 'w')
 
     def updatePlots(self):
         for plot, data in self.plots:

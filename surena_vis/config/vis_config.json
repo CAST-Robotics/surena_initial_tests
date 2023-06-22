@@ -1,0 +1,13 @@
+{
+  "plot": [
+    {
+      "Data": "com",
+      "type": "xy"
+    }
+  ],
+  "write": [
+    {
+      "Data": "footstep"
+    }
+  ]
+}

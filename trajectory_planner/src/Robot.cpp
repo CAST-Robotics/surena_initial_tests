@@ -126,12 +126,7 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
         cout << "Collision Detected in Ankles!" << endl;
     }
 
-    geometry_msgs::PoseStamped com_pose;
-    com_pose.header.stamp = ros::Time::now();
-    com_pose.pose.position.x = CoMPos_[iter](0);
-    com_pose.pose.position.y = CoMPos_[iter](1);
-    com_pose.pose.position.z = CoMPos_[iter](2);
-    comDataPub_.publish(com_pose);
+    this->publishCoMPose(iter);
 
     doIK(CoMPos_[iter], CoMRot_[iter], lAnklePos_[iter], lAnkleRot_[iter], rAnklePos_[iter], rAnkleRot_[iter]);
     Vector3d Rrpy = rAnkleRot_[iter].eulerAngles(2, 1, 0); 
@@ -562,6 +557,15 @@ void Robot::distributeBump(double r_foot_z, double l_foot_z, double &r_bump, dou
     l_bump = max(bumpBiasL_, min(0.0, (bumpBiasL_ / 0.02) * (0.02 - l_foot_z)));
 }
 
+void Robot::publishCoMPose(int iter){
+    geometry_msgs::PoseStamped com_pose;
+    com_pose.header.stamp = ros::Time::now();
+    com_pose.pose.position.x = CoMPos_[iter](0);
+    com_pose.pose.position.y = CoMPos_[iter](1);
+    com_pose.pose.position.z = CoMPos_[iter](2);
+    comDataPub_.publish(com_pose);
+}
+
 bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double_support,
                             double COM_height, double step_length, double step_width, double dt,
                             double theta, double ankle_height, double step_height, double slope)
@@ -570,67 +574,24 @@ bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double
         ROS service for generating robot COM & ankles trajectories
     */
     int trajectory_size = int(((step_count + 2) * t_step) / dt);
-    double t_ds = t_double_support;
-    double t_s = t_step;
     COM_height_ = COM_height;
-    double step_len = step_length;
-    int num_step = step_count;
     dt_ = dt;
-    double swing_height = ankle_height;
-    double init_COM_height = thigh_ + shank_;  // SURENA IV initial height 
     
-    DCMPlanner* trajectoryPlanner = new DCMPlanner(COM_height_, t_s, t_ds, dt_, num_step + 2, alpha, theta);
-    Ankle* anklePlanner = new Ankle(t_s, t_ds, swing_height, alpha, num_step, dt_, theta, slope);
-    Vector3d* dcm_rf = new Vector3d[num_step + 2];  // DCM rF
-    Vector3d* ankle_rf = new Vector3d[num_step + 2]; // Ankle rF
-    int sign;
+    DCMPlanner* trajectoryPlanner = new DCMPlanner(COM_height_, t_step, t_double_support, dt_, step_count + 2, alpha, theta);
+    Ankle* anklePlanner = new Ankle(t_step, t_double_support, ankle_height, alpha, step_count, dt_, theta, slope);
+    Vector3d* dcm_rf = new Vector3d[step_count + 2];  // DCM rF
+    Vector3d* ankle_rf = new Vector3d[step_count + 2]; // Ankle rF
 
     if(theta == 0.0){   // Straight or Diagonal Walk
-        int sign;
-        if (step_width == 0){sign = 1;}
-        else{sign = (step_width/abs(step_width));}
-
-        ankle_rf[0] << 0.0, (torso_ + 0.0) * sign, 0.0;
-        ankle_rf[1] << 0.0, (torso_ + 0.0) * -sign, 0.0;
-        dcm_rf[0] << 0.0, 0.0, 0.0;
-        dcm_rf[1] << 0.0, torso_ * -sign, 0.0;
-
-        for(int i = 2; i <= num_step + 1; i ++){
-            if (i == 2 || i == num_step + 1){
-                ankle_rf[i] = ankle_rf[i-2] + Vector3d(step_len, step_width, step_height);
-                dcm_rf[i] << ankle_rf[i-2] + Vector3d(step_len, step_width, step_height);
-            }else{
-                ankle_rf[i] = ankle_rf[i-2] + Vector3d(2 * step_len, step_width, step_height);
-                dcm_rf[i] << ankle_rf[i-2] + Vector3d(2 * step_len, step_width, step_height);
-            }
-        }
-
-        dcm_rf[num_step + 1] = 0.5 * (ankle_rf[num_step] + ankle_rf[num_step + 1]);
-        ankle_rf[0] << 0.0, torso_ * sign, 0.0;
-        ankle_rf[1] << 0.0, torso_ * -sign, 0.0;
+        generateStraightFootStep(ankle_rf, dcm_rf, step_width, step_length, step_height, step_count);
     }
     else{   //Turning Walk
-        double r = abs(step_len/theta);
-        sign = abs(step_len) / step_len;
-        ankle_rf[0] = Vector3d(0.0, -sign * torso_, 0.0);
-        dcm_rf[0] = Vector3d::Zero(3);
-        ankle_rf[num_step + 1] = (r + pow(-1, num_step) * torso_) * Vector3d(sin(theta * (num_step-1)), sign * cos(theta * (num_step-1)), 0.0) + 
-                                    Vector3d(0.0, -sign * r, 0.0);
-        for (int i = 1; i <= num_step; i ++){
-            ankle_rf[i] = (r + pow(-1, i-1) * torso_) * Vector3d(sin(theta * (i-1)), sign * cos(theta * (i-1)), 0.0) + 
-                                    Vector3d(0.0, -sign * r, 0.0);
-            dcm_rf[i] = ankle_rf[i];
-        }
-        dcm_rf[num_step + 1] = 0.5 * (ankle_rf[num_step] + ankle_rf[num_step + 1]);
-    }
-    geometry_msgs::Point foot_step;
-    for(int i = 0; i < num_step + 2; i++)
-    {
-        foot_step.x = ankle_rf[i](0);
-        foot_step.y = ankle_rf[i](1);
-        footStepPub_.publish(foot_step);
+        generateTurnFootStep(ankle_rf, dcm_rf, step_length, step_height, step_count, theta);
     }
 
+    publishFootStep(ankle_rf, step_count);
+
+    int sign = abs(step_length) / step_length;
     trajectoryPlanner->setFoot(dcm_rf, -sign);
     xiDesired_ = trajectoryPlanner->getXiTrajectory();
     zmpd_ = trajectoryPlanner->getZMP();
@@ -696,6 +657,63 @@ bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double
     rSoles_ = new Vector3d[dataSize_];
     lSoles_ = new Vector3d[dataSize_];
     return true;
+}
+
+void Robot::generateStraightFootStep(Vector3d* ankle_rf, Vector3d* dcm_rf, const double& step_width,
+                                     const double& step_length, const double& step_height, const int& step_count)
+{
+    int lateral_sign;
+    if (step_width == 0)
+        lateral_sign = 1;
+    else
+        lateral_sign = (step_width/abs(step_width));
+
+    ankle_rf[0] << 0.0, (torso_ + 0.0) * lateral_sign, 0.0;
+    ankle_rf[1] << 0.0, (torso_ + 0.0) * -lateral_sign, 0.0;
+    dcm_rf[0] << 0.0, 0.0, 0.0;
+    dcm_rf[1] << 0.0, torso_ * -lateral_sign, 0.0;
+
+    for(int i = 2; i <= step_count + 1; i ++){
+        if (i == 2 || i == step_count + 1){
+            ankle_rf[i] = ankle_rf[i-2] + Vector3d(step_length, step_width, step_height);
+            dcm_rf[i] << ankle_rf[i-2] + Vector3d(step_length, step_width, step_height);
+        }else{
+            ankle_rf[i] = ankle_rf[i-2] + Vector3d(2 * step_length, step_width, step_height);
+            dcm_rf[i] << ankle_rf[i-2] + Vector3d(2 * step_length, step_width, step_height);
+        }
+    }
+
+    dcm_rf[step_count + 1] = 0.5 * (ankle_rf[step_count] + ankle_rf[step_count + 1]);
+    ankle_rf[0] << 0.0, torso_ * lateral_sign, 0.0;
+    ankle_rf[1] << 0.0, torso_ * -lateral_sign, 0.0;
+}
+
+void Robot::generateTurnFootStep(Vector3d* ankle_rf, Vector3d* dcm_rf, const double& step_length,
+                                   const double& step_height, const int& step_count, const double& theta)
+{
+    double r = abs(step_length/theta);
+    int turn_sign = abs(step_length) / step_length;
+    ankle_rf[0] = Vector3d(0.0, -turn_sign * torso_, 0.0);
+    dcm_rf[0] = Vector3d::Zero(3);
+    ankle_rf[step_count + 1] = (r + pow(-1, step_count) * torso_) * Vector3d(sin(theta * (step_count-1)), turn_sign * cos(theta * (step_count-1)), 0.0) + 
+                                Vector3d(0.0, -turn_sign * r, 0.0);
+    for (int i = 1; i <= step_count; i ++){
+        ankle_rf[i] = (r + pow(-1, i-1) * torso_) * Vector3d(sin(theta * (i-1)), turn_sign * cos(theta * (i-1)), 0.0) + 
+                                Vector3d(0.0, -turn_sign * r, 0.0);
+        dcm_rf[i] = ankle_rf[i];
+    }
+    dcm_rf[step_count + 1] = 0.5 * (ankle_rf[step_count] + ankle_rf[step_count + 1]);
+}
+
+void Robot::publishFootStep(Vector3d* ankle_rf, const int& step_count)
+{
+    geometry_msgs::Point foot_step;
+    for(int i = 0; i < step_count + 2; i++)
+    {
+        foot_step.x = ankle_rf[i](0);
+        foot_step.y = ankle_rf[i](1);
+        footStepPub_.publish(foot_step);
+    }
 }
 
 bool Robot::generalTrajGen(double dt, double time, double init_com_pos[3], double final_com_pos[3], double init_com_orient[3], double final_com_orient[3],

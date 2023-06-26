@@ -58,10 +58,19 @@ class Robot{
                             double init_rankle_pos[3], double final_rankle_pos[3], double init_rankle_orient[3], double final_rankle_orient[3]);
         bool resetTraj();
 
+        void generateStraightFootStep(Vector3d* ankle_rf, Vector3d* dcm_rf, const double& step_width,
+                                      const double& step_length, const double& step_height, const int& step_count);
+        
+        void generateTurnFootStep(Vector3d* ankle_rf, Vector3d* dcm_rf, const double& step_length,
+                                   const double& step_height, const int& step_count, const double& theta);
+
         int findTrajIndex(vector<int> arr, int n, int K);
 
         void distributeFT(Vector3d zmp_y, Vector3d r_foot_y,Vector3d l_foot_y, Vector3d &r_wrench, Vector3d &l_wrench);
         void distributeBump(double r_foot_z, double l_foot_z, double &r_bump, double &l_bump);
+
+        void publishCoMPose(int iter);
+        void publishFootStep(Vector3d* ankle_rf, const int& step_count);
 
     private:
         enum ControlState {

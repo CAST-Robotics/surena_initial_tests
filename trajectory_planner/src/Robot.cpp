@@ -126,7 +126,7 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
         cout << "Collision Detected in Ankles!" << endl;
     }
 
-    this->publishCoMPose(iter);
+    // this->publishCoMPose(iter);
 
     doIK(CoMPos_[iter], CoMRot_[iter], lAnklePos_[iter], lAnkleRot_[iter], rAnklePos_[iter], rAnkleRot_[iter]);
     Vector3d Rrpy = rAnkleRot_[iter].eulerAngles(2, 1, 0); 
@@ -589,7 +589,7 @@ bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double
         generateTurnFootStep(ankle_rf, dcm_rf, step_length, step_height, step_count, theta);
     }
 
-    publishFootStep(ankle_rf, step_count);
+    // publishFootStep(ankle_rf, step_count);
 
     int sign = abs(step_length) / step_length;
     trajectoryPlanner->setFoot(dcm_rf, -sign);

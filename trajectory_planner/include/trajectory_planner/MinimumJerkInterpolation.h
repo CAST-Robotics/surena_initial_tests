@@ -14,10 +14,10 @@ class MinimumJerkInterpolation
 public:
     MinimumJerkInterpolation();
     MatrixXd Coefficient(MatrixXd time, MatrixXd p, MatrixXd dp, MatrixXd dpp);
-void PrintArray(MatrixXd array, string filename);
+    void PrintArray(MatrixXd array, string filename);
     MatrixXd diff(MatrixXd E);
     int length(MatrixXd in);
-    vector<int> findIsinf(MatrixXd in,bool inf);
+    vector<int> findIsinf(MatrixXd in, bool inf);
     MatrixXd MatrixIndex(MatrixXd in, vector<int> indexes);
     MatrixXd AddtoIndexes(MatrixXd in, MatrixXd val, vector<int> indexes);
     MatrixXd Coefficient1(MatrixXd xp, MatrixXd ord, MatrixXd con, double fig_res);

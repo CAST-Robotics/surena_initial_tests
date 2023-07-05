@@ -43,7 +43,7 @@ class test_forgotten_srv{
             }
             else if (scenario=="Respect"){
                 r_middle_r<<0.3,-0.1,-0.3  ; //respect
-                r_target_r<<0.3,0.1,-0.3;
+                r_target_r<<0.23,0.12,-0.3;
                 R_target_r=hand_func_R.rot(2,-80*M_PI/180,3)*hand_func_R.rot(1,60*M_PI/180,3);
             }
             else if (scenario=="byebye"){
@@ -63,6 +63,7 @@ class test_forgotten_srv{
             }
                 if (i==0){
                     if (ee_ini_pos=="init") {
+                        //q_ra<<-12.3*M_PI/180,-5*M_PI/180,38*M_PI/180,-5*M_PI/180,0,0,0; // initial condition
                         q_ra<<10*M_PI/180,-10*M_PI/180,0,-25*M_PI/180,0,0,0; // initial condition
                         q_init_r = q_ra;
                         // define right_hand objs
@@ -113,7 +114,7 @@ class test_forgotten_srv{
             }
             else if (scenario=="Respect"){
                 r_middle_l<<0.3,0.1,-0.3  ; //respect
-                r_target_l<<0.3,-0.1,-0.3;
+                r_target_l<<0.23,-0.12,-0.3;
                 R_target_l=hand_func_L.rot(2,-80*M_PI/180,3)*hand_func_L.rot(1,-60*M_PI/180,3);
             }
             else if (scenario=="byebye"){
@@ -133,6 +134,7 @@ class test_forgotten_srv{
             }
                 if (i==0){
                     if (ee_ini_pos=="init") {
+                        //q_la<<-12.3*M_PI/180,5*M_PI/180,-38*M_PI/180,-5*M_PI/180,0,0,0; // initial condition
                         q_la<<10*M_PI/180, 10*M_PI/180,0,-25*M_PI/180,0,0,0; // initial condition
                         q_init_l = q_la;
                         // define right_hand objs
@@ -610,7 +612,8 @@ class test_forgotten_srv{
         double T = 0.005; 
 
         VectorXd q_end;
-        MatrixXd qref_r; MatrixXd qref_l;
+        MatrixXd qref_r; 
+        MatrixXd qref_l;
         double time_r;
         left_hand hand_func_L;
         right_hand hand_func_R;

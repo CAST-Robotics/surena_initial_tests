@@ -64,6 +64,8 @@ add_service_files(
   command.srv
   Trajectory.srv
   GeneralTraj.srv
+  move_hand_single.srv
+  move_hand_both.srv
 )
 
 ## Generate actions in the 'action' folder

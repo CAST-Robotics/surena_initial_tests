@@ -144,7 +144,7 @@ include_directories(
 #add_executable(test_node_cpp src/test_surena4_ros/target_robot_test_RH.cpp src/test_surena4_ros/S5mod_right_hand.cpp src/test_surena4_ros/MinimumJerkInterpolation.cpp)
 add_executable(test_node_cpp src/test_surena4_ros/test_forgotten.cpp src/test_surena4_ros/S5mod_right_hand.cpp src/test_surena4_ros/S5mod_left_hand.cpp src/test_surena4_ros/MinimumJerkInterpolation.cpp)
 #add_executable(test_node_cpp src/surena5/target_robot_test_RH.cpp src/surena5/S5mod_right_hand.cpp src/surena5/MinimumJerkInterpolation.cpp)
-#add_executable(test_node_cpp src/surena5/target_robot_test_LH.cpp src/surena5/S5mod_left_hand.cpp src/surena5/MinimumJerkInterpolation.cpp)
+#add_executable(test_node_cpp src/sura5/target_robot_test_LH.cpp src/surena5/S5mod_left_hand.cpp src/surena5/MinimumJerkInterpolation.cpp)
 #add_executable(test_node_cpp src/surena5/target_robot_test.cpp src/surena5/S5mod_left_hand.cpp src/surena5/S5mod_right_hand.cpp src/surena5/MinimumJerkInterpolation.cpp)
 #add_executable(test_node_cpp src/surena5/move2pose_robot_test.cpp src/surena5/S5mod_right_hand.cpp)
 target_link_libraries( test_node_cpp  ${catkin_LIBRARIES} ) 

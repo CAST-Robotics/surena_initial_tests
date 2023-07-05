@@ -233,7 +233,7 @@ private:
     VectorXd q_init_l;
     MatrixXd qref;
     MatrixXd ee_pos;
-    vector<double> q_motor;
+    // vector<double> q_motor;
     vector<double> q_gazebo;
 
     double sum_r = 0;

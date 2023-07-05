@@ -169,7 +169,7 @@ void RobotManager::qcInitial(const sensor_msgs::JointState &msg)
     if (qcInitialBool_)
     {
 
-        for (int i = 0; i < 20; ++i)
+        for (int i = 0; i < 12; ++i)
         {
             homeOffset_[i] = int(msg.position[i + 1]);
             motorCommandArray_[i] = homeOffset_[i];
@@ -303,7 +303,7 @@ bool RobotManager::emptyCommand()
 {
     ros::spinOnce();
     ros::Rate rate_(200);
-    for (int i = 0; i < 20; i++)
+    for (int i = 0; i < 12; i++)
         motorCommandArray_[i] = incData_[i];
 
     motorCommandArray_[0] += 1;
@@ -778,10 +778,6 @@ bool RobotManager::walk(trajectory_planner::Trajectory::Request &req,
                     cout << "joint " << j << " out of workspace in iteration " << i << ", angle difference: " << dif << endl;
                     return false;
                 }
-            }
-            for (int j = 12; j < 20; j++)
-            {
-                motorCommandArray_[j] = incData_[j];
             }
             // cout << duration.count()/1000000.0 << endl;
             sendCommand();
@@ -1335,7 +1331,7 @@ bool RobotManager::single(trajectory_planner::move_hand_single::Request &req,
     ros::Rate rate_(rate);
     M = req.t_total / T;
     ee_pos.resize(3, 1);
-    q_motor.resize(29, 0);
+    // q_motor.resize(29, 0);
     q_gazebo.resize(29, 0);
     int id = 0;
     if (req.mode == "righthand")
@@ -1384,25 +1380,25 @@ bool RobotManager::single(trajectory_planner::move_hand_single::Request &req,
         {
             if (req.mode == "righthand")
             {
-                q_motor[12] = int(qref_r(0, id) * encoderResolution[0] * harmonicRatio[0] / M_PI / 2);  // be samte jelo
-                q_motor[13] = -int(qref_r(1, id) * encoderResolution[0] * harmonicRatio[1] / M_PI / 2); // be samte birun
-                q_motor[14] = int(qref_r(2, id) * encoderResolution[1] * harmonicRatio[2] / M_PI / 2);  // be samte birun
-                q_motor[15] = -int(qref_r(3, id) * encoderResolution[1] * harmonicRatio[3] / M_PI / 2); // be samte bala
-                cout << q_motor[12] << ',' << q_motor[13] << ',' << q_motor[14] << ',' << q_motor[15] << endl;
+                motorCommandArray_[12] = int(qref_r(0, id) * encoderResolution[0] * harmonicRatio[0] / M_PI / 2);  // be samte jelo
+                motorCommandArray_[13] = -int(qref_r(1, id) * encoderResolution[0] * harmonicRatio[1] / M_PI / 2); // be samte birun
+                motorCommandArray_[14] = int(qref_r(2, id) * encoderResolution[1] * harmonicRatio[2] / M_PI / 2);  // be samte birun
+                motorCommandArray_[15] = -int(qref_r(3, id) * encoderResolution[1] * harmonicRatio[3] / M_PI / 2); // be samte bala
+                cout << motorCommandArray_[12] << ',' << motorCommandArray_[13] << ',' << motorCommandArray_[14] << ',' << motorCommandArray_[15] << endl;
             }
             else if (req.mode == "lefthand")
             {
-                q_motor[16] = -int(qref_l(0, id) * encoderResolution[0] * harmonicRatio[0] / M_PI / 2);
-                q_motor[17] = -int(qref_l(1, id) * encoderResolution[0] * harmonicRatio[1] / M_PI / 2);
-                q_motor[18] = int(qref_l(2, id) * encoderResolution[1] * harmonicRatio[2] / M_PI / 2);
-                q_motor[19] = int(qref_l(3, id) * encoderResolution[1] * harmonicRatio[3] / M_PI / 2);
-                cout << q_motor[16] << ',' << q_motor[17] << ',' << q_motor[18] << ',' << q_motor[19] << endl;
+                motorCommandArray_[16] = -int(qref_l(0, id) * encoderResolution[0] * harmonicRatio[0] / M_PI / 2);
+                motorCommandArray_[17] = -int(qref_l(1, id) * encoderResolution[0] * harmonicRatio[1] / M_PI / 2);
+                motorCommandArray_[18] = int(qref_l(2, id) * encoderResolution[1] * harmonicRatio[2] / M_PI / 2);
+                motorCommandArray_[19] = int(qref_l(3, id) * encoderResolution[1] * harmonicRatio[3] / M_PI / 2);
+                cout << motorCommandArray_[16] << ',' << motorCommandArray_[17] << ',' << motorCommandArray_[18] << ',' << motorCommandArray_[19] << endl;
             }
 
             motorCommand_.data.clear();
             for (int i = 0; i < 20; i++)
             {
-                motorCommand_.data.push_back(q_motor[i]);
+                motorCommand_.data.push_back(motorCommandArray_[i]);
             }
             motorDataPub_.publish(motorCommand_);
             ros::spinOnce();
@@ -1435,7 +1431,7 @@ bool RobotManager::both(trajectory_planner::move_hand_both::Request &req,
     M = req.t_total / T;
     MatrixXd result_(12, 3);
     ee_pos.resize(3, 2);
-    q_motor.resize(29, 0);
+    // q_motor.resize(29, 0);
     q_gazebo.resize(29, 0);
     int id = 0;
 
@@ -1469,19 +1465,19 @@ bool RobotManager::both(trajectory_planner::move_hand_both::Request &req,
 
         else
         {
-            q_motor[12] = int(qref_r(0, id) * encoderResolution[0] * harmonicRatio[0] / M_PI / 2);  // be samte jelo
-            q_motor[13] = -int(qref_r(1, id) * encoderResolution[0] * harmonicRatio[1] / M_PI / 2); // be samte birun
-            q_motor[14] = int(qref_r(2, id) * encoderResolution[1] * harmonicRatio[2] / M_PI / 2);  // be samte birun
-            q_motor[15] = -int(qref_r(3, id) * encoderResolution[1] * harmonicRatio[3] / M_PI / 2); // be samte bala
-            q_motor[16] = -int(qref_l(0, id) * encoderResolution[0] * harmonicRatio[0] / M_PI / 2);
-            q_motor[17] = -int(qref_l(1, id) * encoderResolution[0] * harmonicRatio[1] / M_PI / 2);
-            q_motor[18] = int(qref_l(2, id) * encoderResolution[1] * harmonicRatio[2] / M_PI / 2);
-            q_motor[19] = int(qref_l(3, id) * encoderResolution[1] * harmonicRatio[3] / M_PI / 2);
+            motorCommandArray_[12] = int(qref_r(0, id) * encoderResolution[0] * harmonicRatio[0] / M_PI / 2);  // be samte jelo
+            motorCommandArray_[13] = -int(qref_r(1, id) * encoderResolution[0] * harmonicRatio[1] / M_PI / 2); // be samte birun
+            motorCommandArray_[14] = int(qref_r(2, id) * encoderResolution[1] * harmonicRatio[2] / M_PI / 2);  // be samte birun
+            motorCommandArray_[15] = -int(qref_r(3, id) * encoderResolution[1] * harmonicRatio[3] / M_PI / 2); // be samte bala
+            motorCommandArray_[16] = -int(qref_l(0, id) * encoderResolution[0] * harmonicRatio[0] / M_PI / 2);
+            motorCommandArray_[17] = -int(qref_l(1, id) * encoderResolution[0] * harmonicRatio[1] / M_PI / 2);
+            motorCommandArray_[18] = int(qref_l(2, id) * encoderResolution[1] * harmonicRatio[2] / M_PI / 2);
+            motorCommandArray_[19] = int(qref_l(3, id) * encoderResolution[1] * harmonicRatio[3] / M_PI / 2);
 
             motorCommand_.data.clear();
             for (int i = 0; i < 20; i++)
             {
-                motorCommand_.data.push_back(q_motor[i]);
+                motorCommand_.data.push_back(motorCommandArray_[i]);
             }
             motorDataPub_.publish(motorCommand_);
             ros::spinOnce();

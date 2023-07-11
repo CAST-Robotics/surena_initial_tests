@@ -72,8 +72,6 @@ Vector3d *DCMPlanner::getCoM()
         COM_[i](2) = xi_[i](2);
         CoMDot_[i] = -sqrt(K_G / deltaZ_) * (COM_[i] - xi_[i]);
     }
-    MinJerk::write2File(COM_, length, "COM");
-    MinJerk::write2File(CoMDot_, length, "COMDot");
     return COM_;
 }
 
@@ -144,8 +142,6 @@ void DCMPlanner::updateXiDSPositions()
             delete[] coefs;
         }
     }
-    MinJerk::write2File(xi_, length, "xi");
-    MinJerk::write2File(xiDot_, length, "xiDot");
 }
 
 void DCMPlanner::updateDS()
@@ -207,7 +203,6 @@ Vector3d *DCMPlanner::getZMP()
     ZMP_ = new Vector3d[length];
     for (int i = 0; i < length; i++)
         ZMP_[i] = xi_[i] - xiDot_[i] * sqrt(deltaZ_ / K_G);
-    MinJerk::write2File(ZMP_, length, "ZMP");
     return ZMP_;
 }
 

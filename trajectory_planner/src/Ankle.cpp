@@ -294,8 +294,6 @@ void Ankle::updateTrajectory(bool left_first)
         index++;
     }
     // cout << index << endl;
-    MinJerk::write2File(lFoot_, length_, "lFoot");
-    MinJerk::write2File(rFoot_, length_, "rFoot");
 }
 
 Ankle::~Ankle()

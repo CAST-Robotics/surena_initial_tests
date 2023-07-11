@@ -74,6 +74,4 @@ void GeneralMotion::changeInPlace(Vector3d init_com_pos, Vector3d final_com_pos,
         else
             robotState_[index] = 4;
     }
-    MinJerk::write2File(LAnklePos_, length_, "lFoot");
-    MinJerk::write2File(RAnklePos_, length_, "rFoot");
 }

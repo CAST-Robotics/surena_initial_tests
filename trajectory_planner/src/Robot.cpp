@@ -2,19 +2,6 @@
 
 using json = nlohmann::json;
 
-void write2File(Vector3d *input, int size, string file_name = "data")
-{
-    ofstream output_file(file_name + ".csv");
-    for (int i = 0; i < size; i++)
-    {
-        output_file << input[i](0) << " ,";
-        output_file << input[i](1) << " ,";
-        output_file << input[i](2) << " ,";
-        output_file << "\n";
-    }
-    output_file.close();
-}
-
 Robot::Robot(ros::NodeHandle *nh, std::string config_path) : nh_(nh), robotConfigPath_(config_path)
 {
     initROSCommunication();

@@ -21,8 +21,6 @@ Robot::Robot(ros::NodeHandle *nh, std::string config_path) : nh_(nh), robotConfi
     onlineWalk_ = new Controller(kp, ki, kzmp, kcom);
 
     ankleColide_ = new Collision(soleXFront_, soleY_, soleXBack_, soleMinDist_);
-
-    estimator_ = new Estimator();
 }
 
 void Robot::initROSCommunication()
@@ -292,7 +290,6 @@ void Robot::updateRobotState(double config[], double jnt_vel[], Vector3d torque_
     Vector3d base_attitude = links_[0]->getEuler();
     Vector3d base_vel = links_[0]->getLinkVel();
     Vector3d base_pos = links_[0]->getPose();
-    estimator_->atitudeEulerEstimator(base_attitude, gyro);
     Matrix3d rot = (AngleAxisd(base_attitude[2], Vector3d::UnitZ()) // roll, pitch, yaw
                     * AngleAxisd(base_attitude[1], Vector3d::UnitY()) * AngleAxisd(base_attitude[0], Vector3d::UnitX()))
                        .matrix();
@@ -398,14 +395,6 @@ void Robot::updateSolePosition()
     }
     FKBaseDot_[index_] = (f2 - 4 * f3 + 3 * FKBase_[index_]) / (2 * this->dt_);
     FKCoMDot_[index_] = (f0 - 4 * f1 + 3 * FKCoM_[index_]) / (2 * this->dt_);
-    // if(index_ > 200){
-    //     Vector3d posterior = CoMDot_[index_ - 201];
-    //     double p = FKCoMDotP_[index_ - 201];
-    //     estimator_->gaussianPredict(posterior, p, 0.2, CoMDot_[index_ - 200] - CoMDot_[index_ - 201]);
-    //     estimator_->gaussianUpdate(posterior, p, FKCoMDot_[index_], 0.03);
-    //     FKCoMDot_[index_] = posterior;
-    //     FKCoMDotP_[index_ - 1] = p;
-    // }
     // realXi_[index_] = FKBase_[index_] + FKBaseDot_[index_] / sqrt(K_G/COM_height_);
     realXi_[index_] = FKCoM_[index_] + FKCoMDot_[index_] / sqrt(K_G / COM_height_);
 }
@@ -654,7 +643,6 @@ bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double
     anklePlanner->generateTrajectory();
     delete[] ankle_rf;
     onlineWalk_->setDt(dt);
-    estimator_->setDt(dt);
     onlineWalk_->setBaseHeight(COM_height);
     onlineWalk_->setBaseIdle(shank_ + thigh_);
     onlineWalk_->setBaseLowHeight(0.65);
@@ -676,7 +664,6 @@ bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double
         delete[] FKBase_;
         delete[] FKCoM_;
         delete[] FKCoMDot_;
-        delete[] FKCoMDotP_;
         delete[] FKBaseDot_;
         delete[] realXi_;
         delete[] realZMP_;
@@ -704,8 +691,6 @@ bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double
     FKBase_ = new Vector3d[dataSize_];
     FKCoM_ = new Vector3d[dataSize_];
     FKCoMDot_ = new Vector3d[dataSize_];
-    FKCoMDotP_ = new double[dataSize_];
-    FKCoMDotP_[0] = 2.0;
     FKBaseDot_ = new Vector3d[dataSize_];
     realXi_ = new Vector3d[dataSize_];
     realZMP_ = new Vector3d[dataSize_];
@@ -798,7 +783,6 @@ bool Robot::generalTrajGen(double dt, double time, double init_com_pos[3], doubl
     int trajectory_size = motion_planner->getLength();
 
     onlineWalk_->setDt(dt);
-    estimator_->setDt(dt);
     onlineWalk_->setBaseIdle(shank_ + thigh_);
     onlineWalk_->setBaseLowHeight(0.65);
     onlineWalk_->setInitCoM(Vector3d(0.0, 0.0, COM_height_));
@@ -819,7 +803,6 @@ bool Robot::generalTrajGen(double dt, double time, double init_com_pos[3], doubl
         delete[] FKBase_;
         delete[] FKCoM_;
         delete[] FKCoMDot_;
-        delete[] FKCoMDotP_;
         delete[] FKBaseDot_;
         delete[] realXi_;
         delete[] realZMP_;
@@ -846,8 +829,6 @@ bool Robot::generalTrajGen(double dt, double time, double init_com_pos[3], doubl
     FKBase_ = new Vector3d[dataSize_];
     FKCoM_ = new Vector3d[dataSize_];
     FKCoMDot_ = new Vector3d[dataSize_];
-    FKCoMDotP_ = new double[dataSize_];
-    FKCoMDotP_[0] = 2.0;
     FKBaseDot_ = new Vector3d[dataSize_];
     realXi_ = new Vector3d[dataSize_];
     realZMP_ = new Vector3d[dataSize_];
@@ -905,7 +886,6 @@ bool Robot::resetTraj()
     delete[] FKBase_;
     delete[] FKCoM_;
     delete[] FKCoMDot_;
-    delete[] FKCoMDotP_;
     delete[] FKBaseDot_;
     delete[] realXi_;
     delete[] realZMP_;
@@ -926,6 +906,4 @@ bool Robot::resetTraj()
 Robot::~Robot()
 {
     delete ankleColide_;
-    // delete[] links_;
-    // delete[] FKBase_;
 }

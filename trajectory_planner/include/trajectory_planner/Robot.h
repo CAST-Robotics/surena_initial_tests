@@ -21,6 +21,7 @@
 #include "Collision.h"
 #include "Estimator.h"
 
+#include <deque>
 #include "fstream"
 
 using namespace std;
@@ -141,16 +142,12 @@ private:
 
     Vector3d rSole_;   // current position of right sole
     Vector3d lSole_;   // current position of left sole
-    Vector3d *FKBase_; // current CoM of robot
-    Vector3d *FKBaseDot_;
-    Vector3d *FKCoM_;
-    Vector3d *FKCoMDot_;
-    double *FKCoMDotP_;
-    Vector3d *realXi_;
-    Vector3d *realZMP_; // current ZMP of robot
-    Vector3d *rSoles_;
-    Vector3d *lSoles_;
-    Vector3d *cntOut_;
+    deque<Vector3d> FKBase_{3, Vector3d(0, 0, 0)};
+    Vector3d FKBaseDot_;
+    deque<Vector3d> FKCoM_{3, Vector3d(0, 0, 0)};
+    Vector3d FKCoMDot_;
+    Vector3d realXi_;
+    Vector3d realZMP_; // current ZMP of robot
     bool leftSwings_;
     bool rightSwings_;
 

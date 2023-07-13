@@ -126,7 +126,7 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
     doIK(CoMPos_[iter], CoMRot_[iter], lAnklePos_[iter], lAnkleRot_[iter], rAnklePos_[iter], rAnkleRot_[iter]);
     Vector3d Rrpy = rAnkleRot_[iter].eulerAngles(2, 1, 0);
     Vector3d Lrpy = lAnkleRot_[iter].eulerAngles(2, 1, 0);
-    cout << CoMPos_[iter](0) << ", " << CoMPos_[iter](1) << ", " << CoMPos_[iter](2) << endl;
+    cout << FKBase_.size() << endl;
     for (int i = 0; i < 12; i++)
         joint_angles[i] = joints_[i]; // right leg(0-5) & left leg(6-11)
 }
@@ -246,27 +246,27 @@ void Robot::runZMPAdmitanceController()
     Matrix3d kc = Vector3d(4.5, 4, 0).asDiagonal();
     if (robotPhase_[index_] == 2)
     {
-        Vector3d temp = onlineWalk_->ZMPAdmitanceComtroller_(CoMPos_[index_], FKBase_[index_], rZMP_, Vector3d(0.02, 0, 0), kp, kc);
+        Vector3d temp = onlineWalk_->ZMPAdmitanceComtroller_(CoMPos_[index_], FKBase_.back(), rZMP_, Vector3d(0.02, 0, 0), kp, kc);
         CoMPos_[index_] += temp;
-        // cout << temp(0) << "," << temp(1)  << "," << temp(2)  << "," << rZMP_(0) << "," << rZMP_(1)  << "," << rZMP_(2)  << "," << CoMPos_[index_](0) << "," << CoMPos_[index_](1)  << "," << FKBase_[index_](0) << "," << FKBase_[index_](1)  << ",";
+        // cout << temp(0) << "," << temp(1)  << "," << temp(2)  << "," << rZMP_(0) << "," << rZMP_(1)  << "," << rZMP_(2)  << "," << CoMPos_[index_](0) << "," << CoMPos_[index_](1)  << "," << FKBase_.back()(0) << "," << FKBase_.back()(1)  << ",";
     }
     else if (robotPhase_[index_] == 3)
     {
-        Vector3d temp = onlineWalk_->ZMPAdmitanceComtroller_(CoMPos_[index_], FKBase_[index_], lZMP_, Vector3d(0.02, 0, 0), kp, kc);
+        Vector3d temp = onlineWalk_->ZMPAdmitanceComtroller_(CoMPos_[index_], FKBase_.back(), lZMP_, Vector3d(0.02, 0, 0), kp, kc);
         CoMPos_[index_] += temp;
-        // cout << temp(0) << "," << temp(1)  << "," << temp(2)  << "," << lZMP_(0) << "," << lZMP_(1)  << "," << lZMP_(2)  << "," << CoMPos_[index_](0) << "," << CoMPos_[index_](1)  << "," << FKBase_[index_](0) << "," << FKBase_[index_](1)  << ",";
+        // cout << temp(0) << "," << temp(1)  << "," << temp(2)  << "," << lZMP_(0) << "," << lZMP_(1)  << "," << lZMP_(2)  << "," << CoMPos_[index_](0) << "," << CoMPos_[index_](1)  << "," << FKBase_.back()(0) << "," << FKBase_.back()(1)  << ",";
     }
     else if (robotPhase_[index_] == 1)
     {
         Vector3d temp = onlineWalk_->ZMPAdmitanceComtroller_(CoMPos_[index_], CoMPos_[index_], Vector3d(0, 0, 0), Vector3d(0, 0, 0), kp, kc);
         CoMPos_[index_] += temp;
-        // cout << temp(0) << "," << temp(1)  << "," << temp(2)  << "," << 0 << "," << 0  << "," << 0  << "," << CoMPos_[index_](0) << "," << CoMPos_[index_](1)  << "," << FKBase_[index_](0) << "," << FKBase_[index_](1)  << ",";
+        // cout << temp(0) << "," << temp(1)  << "," << temp(2)  << "," << 0 << "," << 0  << "," << 0  << "," << CoMPos_[index_](0) << "," << CoMPos_[index_](1)  << "," << FKBase_.back()(0) << "," << FKBase_.back()(1)  << ",";
     }
     else
     {
-        Vector3d temp = onlineWalk_->ZMPAdmitanceComtroller_(CoMPos_[index_], FKBase_[index_], realZMP_[index_], Vector3d(0, 0, 0), kp, kc);
+        Vector3d temp = onlineWalk_->ZMPAdmitanceComtroller_(CoMPos_[index_], FKBase_.back(), realZMP_, Vector3d(0, 0, 0), kp, kc);
         CoMPos_[index_] += temp;
-        // cout << temp(0) << "," << temp(1)  << "," << temp(2)  << "," << realZMP_[index_](0) << "," << realZMP_[index_](1) << "," << 0 << "," << CoMPos_[index_](0) << "," << CoMPos_[index_](1)  << "," << FKBase_[index_](0) << "," << FKBase_[index_](1)  << ",";
+        // cout << temp(0) << "," << temp(1)  << "," << temp(2)  << "," << realZMP_(0) << "," << realZMP_(1) << "," << 0 << "," << CoMPos_[index_](0) << "," << CoMPos_[index_](1)  << "," << FKBase_.back()(0) << "," << FKBase_.back()(1)  << ",";
     }
 }
 
@@ -324,10 +324,10 @@ void Robot::updateRobotState(double config[], double jnt_vel[], Vector3d torque_
     if (abs(f_r) < 20)
         f_r = 0;
 
-    realZMP_[index_] = ZMPGlobal(rSole_ + lZMP_, lSole_ + rZMP_, f_r, f_l);
-    zmpPosition_.x = realZMP_[index_](0);
-    zmpPosition_.y = realZMP_[index_](1);
-    zmpPosition_.z = realZMP_[index_](2);
+    realZMP_ = ZMPGlobal(rSole_ + lZMP_, lSole_ + rZMP_, f_r, f_l);
+    zmpPosition_.x = realZMP_(0);
+    zmpPosition_.y = realZMP_(1);
+    zmpPosition_.z = realZMP_(2);
     // zmpDataPub_.publish(zmpPosition_);
 }
 
@@ -339,63 +339,67 @@ void Robot::updateSolePosition()
     if (leftSwings_ && (!rightSwings_))
     {
         lSole_ = rSole_ - links_[6]->getPose() + links_[12]->getPose();
-        // FKBase_[index_] = lSole_ - links_[0]->getRot() * links_[12]->getPose();
-        FKBase_[index_] = lSole_ - links_[12]->getPose();
-        FKBaseDot_[index_] = links_[6]->getVel().block(0, 0, 3, 1);
-        // FKCoMDot_[index_] = -links_[0]->getRot() * links_[6]->getVel().block<3,1>(0, 0) - r_dot * links_[6]->getPose();
-        rSoles_[index_] = rSole_;
-        lSoles_[index_] = lSole_;
+        // FKBase_.push_back(lSole_ - links_[0]->getRot() * links_[12]->getPose());
+        FKBase_.push_back(lSole_ - links_[12]->getPose());
+        FKBaseDot_ = links_[6]->getVel().block(0, 0, 3, 1);
+        // FKCoMDot_ = -links_[0]->getRot() * links_[6]->getVel().block<3,1>(0, 0) - r_dot * links_[6]->getPose();
     }
     else if ((!leftSwings_) && rightSwings_)
     {
         Matrix<double, 6, 1> q_dot;
         rSole_ = lSole_ - links_[12]->getPose() + links_[6]->getPose();
-        // FKBase_[index_] = rSole_ - links_[0]->getRot() * links_[6]->getPose();
-        FKBase_[index_] = rSole_ - links_[6]->getPose();
-        FKBaseDot_[index_] = links_[12]->getVel().block(0, 0, 3, 1);
-        // FKCoMDot_[index_] = -links_[0]->getRot() * links_[12]->getVel().block<3,1>(0, 0) - r_dot * links_[12]->getPose();
-        rSoles_[index_] = rSole_;
-        lSoles_[index_] = lSole_;
+        // FKBase_.push_back(rSole_ - links_[0]->getRot() * links_[6]->getPose());
+        FKBase_.push_back(rSole_ - links_[6]->getPose());
+        FKBaseDot_ = links_[12]->getVel().block(0, 0, 3, 1);
+        // FKCoMDot_ = -links_[0]->getRot() * links_[12]->getVel().block<3,1>(0, 0) - r_dot * links_[12]->getPose();
     }
     else
     { // double support
-        // FKBase_[index_] = rSole_ - links_[0]->getRot() * links_[6]->getPose();
-        FKBase_[index_] = rSole_ - links_[6]->getPose();
-        FKBaseDot_[index_] = links_[6]->getVel().block(0, 0, 3, 1);
-        // FKCoMDot_[index_] = -links_[0]->getRot() * links_[6]->getVel().block<3,1>(0, 0) - r_dot * links_[6]->getPose();
-        rSoles_[index_] = rSole_;
-        lSoles_[index_] = lSole_;
+        // FKBase_.push_back(rSole_ - links_[0]->getRot() * links_[6]->getPose());
+        FKBase_.push_back(rSole_ - links_[6]->getPose());
+        FKBaseDot_ = links_[6]->getVel().block(0, 0, 3, 1);
+        // FKCoMDot_ = -links_[0]->getRot() * links_[6]->getVel().block<3,1>(0, 0) - r_dot * links_[6]->getPose();
     }
-    FKCoM_[index_] = FKBase_[index_] + CoM2Base();
-    FKCoMDot_[index_] = FKBaseDot_[index_] + CoM2BaseVel();
+
+    FKCoM_.push_back(FKBase_.back() + CoM2Base());
+    FKCoMDot_ = FKBaseDot_ + CoM2BaseVel();
+    if (FKBase_.size() > 3) 
+    {
+        FKBase_.pop_front();
+    }
+    if (FKCoM_.size() > 3) 
+    {
+        FKCoM_.pop_front();
+    }
+
     // 3-point backward formula for numeraical differentiation:
     // https://www3.nd.edu/~zxu2/acms40390F15/Lec-4.1.pdf
     Vector3d f1, f0, f3, f2;
     if (index_ == 0)
     {
-        f1 = FKCoM_[index_];    // com vel
-        f0 = FKCoM_[index_];    // com vel
+        f1 = FKCoM_.back();    // com vel
+        f0 = FKCoM_.back();    // com vel
         f2 = Vector3d::Zero(3); // base vel
         f3 = Vector3d::Zero(3); // base vel
     }
     else if (index_ == 1)
     {
-        f1 = FKCoM_[index_ - 1];
+        f1 = FKCoM_.at(FKCoM_.size() - 2);
         f0 = Vector3d::Zero(3);
-        f3 = FKBase_[index_ - 1];
+        f3 = FKBase_.at(FKBase_.size() - 2);
         f2 = Vector3d::Zero(3);
     }
     else
     {
-        f1 = FKCoM_[index_ - 1];
-        f0 = FKCoM_[index_ - 2];
-        f3 = FKBase_[index_ - 1];
-        f2 = FKBase_[index_ - 2];
+        f1 = FKCoM_.at(FKCoM_.size() - 2);
+        f0 = FKCoM_.at(FKCoM_.size() - 3);
+        f3 = FKBase_.at(FKBase_.size() - 2);
+        f2 = FKBase_.at(FKBase_.size() - 3);
     }
-    FKBaseDot_[index_] = (f2 - 4 * f3 + 3 * FKBase_[index_]) / (2 * this->dt_);
-    FKCoMDot_[index_] = (f0 - 4 * f1 + 3 * FKCoM_[index_]) / (2 * this->dt_);
-    // realXi_[index_] = FKBase_[index_] + FKBaseDot_[index_] / sqrt(K_G/COM_height_);
-    realXi_[index_] = FKCoM_[index_] + FKCoMDot_[index_] / sqrt(K_G / COM_height_);
+    FKBaseDot_ = (f2 - 4 * f3 + 3 * FKBase_.back()) / (2 * this->dt_);
+    FKCoMDot_ = (f0 - 4 * f1 + 3 * FKCoM_.back()) / (2 * this->dt_);
+    // realXi_ = FKBase_.back() + FKBaseDot_ / sqrt(K_G/COM_height_);
+    realXi_ = FKCoM_.back() + FKCoMDot_ / sqrt(K_G / COM_height_);
 }
 
 Vector3d Robot::getZMPLocal(Vector3d torque, double fz)
@@ -651,9 +655,6 @@ bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double
     vector<Vector3d> rank = anklePlanner->getTrajectoryR();
     rAnklePos_.insert(rAnklePos_.end(), rank.begin(), rank.end());
 
-    vector<int> robot_state = anklePlanner->getRobotState();
-    robotPhase_.insert(robotPhase_.end(), robot_state.begin(), robot_state.end()); 
-
     vector<Matrix3d> com_rot = trajectoryPlanner->yawRotGen();
     CoMRot_.insert(CoMRot_.end(), com_rot.begin(), com_rot.end());
     vector<Matrix3d> lank_rot = anklePlanner->getRotTrajectoryL();
@@ -661,31 +662,15 @@ bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double
     vector<Matrix3d> rank_rot = anklePlanner->getRotTrajectoryR();
     rAnkleRot_.insert(rAnkleRot_.end(), rank_rot.begin(), rank_rot.end());
 
-    if (dataSize_ != 0)
-    {
-        delete[] FKBase_;
-        delete[] FKCoM_;
-        delete[] FKCoMDot_;
-        delete[] FKBaseDot_;
-        delete[] realXi_;
-        delete[] realZMP_;
-        delete[] rSoles_;
-        delete[] lSoles_;
-    }
+    vector<int> robot_state = anklePlanner->getRobotState();
+    robotPhase_.insert(robotPhase_.end(), robot_state.begin(), robot_state.end()); 
+
     dataSize_ += trajectory_size;
     CoMDot_ = trajectoryPlanner->get_CoMDot();
     trajSizes_.push_back(dataSize_);
     robotControlState_.push_back(Robot::WALK);
     isTrajAvailable_ = true;
 
-    FKBase_ = new Vector3d[dataSize_];
-    FKCoM_ = new Vector3d[dataSize_];
-    FKCoMDot_ = new Vector3d[dataSize_];
-    FKBaseDot_ = new Vector3d[dataSize_];
-    realXi_ = new Vector3d[dataSize_];
-    realZMP_ = new Vector3d[dataSize_];
-    rSoles_ = new Vector3d[dataSize_];
-    lSoles_ = new Vector3d[dataSize_];
     return true;
 }
 
@@ -793,31 +778,13 @@ bool Robot::generalTrajGen(double dt, double time, double init_com_pos[3], doubl
 
     vector<int> robot_state = motion_planner->getRobotState();
     robotPhase_.insert(robotPhase_.end(), robot_state.begin(), robot_state.end()); 
-    
-    if (dataSize_ != 0)
-    {
-        delete[] FKBase_;
-        delete[] FKCoM_;
-        delete[] FKCoMDot_;
-        delete[] FKBaseDot_;
-        delete[] realXi_;
-        delete[] realZMP_;
-        delete[] rSoles_;
-        delete[] lSoles_;
-    }
+
     dataSize_ += trajectory_size;
 
     trajSizes_.push_back(dataSize_);
     robotControlState_.push_back(Robot::IDLE);
     isTrajAvailable_ = true;
-    FKBase_ = new Vector3d[dataSize_];
-    FKCoM_ = new Vector3d[dataSize_];
-    FKCoMDot_ = new Vector3d[dataSize_];
-    FKBaseDot_ = new Vector3d[dataSize_];
-    realXi_ = new Vector3d[dataSize_];
-    realZMP_ = new Vector3d[dataSize_];
-    rSoles_ = new Vector3d[dataSize_];
-    lSoles_ = new Vector3d[dataSize_];
+
     return true;
 }
 
@@ -866,15 +833,6 @@ bool Robot::resetTraj()
     rAnklePos_.clear();
     lAnkleRot_.clear();
     rAnkleRot_.clear();
-
-    delete[] FKBase_;
-    delete[] FKCoM_;
-    delete[] FKCoMDot_;
-    delete[] FKBaseDot_;
-    delete[] realXi_;
-    delete[] realZMP_;
-    delete[] rSoles_;
-    delete[] lSoles_;
 
     trajSizes_.clear();
     robotControlState_.clear();

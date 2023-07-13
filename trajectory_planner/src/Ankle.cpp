@@ -12,17 +12,14 @@ Ankle::Ankle(double step_time, double ds_time, double height, double alpha,
     this->theta_ = theta;
     this->yawSign_ = 1;
     this->slope_ = slope;
-
-    // cout << "ankle Trajectory Planner initialized\n";
 }
 
-void Ankle::updateFoot(Vector3d foot_pose[], int sign)
+void Ankle::updateFoot(const vector<Vector3d>& foot_pose, int sign)
 {
     /*
         begining and end steps (Not included in DCM foot planner)
         should be given too.
     */
-    this->footPose_ = new Vector3d[stepCount_ + 2];
     footPose_ = foot_pose;
     if (foot_pose[0](1) > 0)
         leftFirst_ = true; // First Swing foot is left foot
@@ -31,27 +28,27 @@ void Ankle::updateFoot(Vector3d foot_pose[], int sign)
     this->yawSign_ = sign;
 }
 
-Vector3d *Ankle::getTrajectoryL()
+const vector<Vector3d>& Ankle::getTrajectoryL()
 {
     return lFoot_;
 }
 
-Vector3d *Ankle::getTrajectoryR()
+const vector<Vector3d>& Ankle::getTrajectoryR()
 {
     return rFoot_;
 }
 
-Matrix3d *Ankle::getRotTrajectoryR()
+const vector<Matrix3d>& Ankle::getRotTrajectoryR()
 {
     return rFootRot_;
 }
 
-Matrix3d *Ankle::getRotTrajectoryL()
+const vector<Matrix3d>& Ankle::getRotTrajectoryL()
 {
     return lFootRot_;
 }
 
-int *Ankle::getRobotState()
+const vector<int>& Ankle::getRobotState()
 {
     return stateIndicator_;
 }
@@ -59,12 +56,12 @@ int *Ankle::getRobotState()
 void Ankle::generateTrajectory()
 {
 
-    length_ = int(((stepCount_ + 2) * tStep_) / dt_ + 100);
-    lFoot_ = new Vector3d[length_];
-    rFoot_ = new Vector3d[length_];
-    rFootRot_ = new Matrix3d[length_];
-    lFootRot_ = new Matrix3d[length_];
-    stateIndicator_ = new int[length_];
+    length_ = int(((stepCount_ + 2) * tStep_) / dt_);
+    lFoot_.resize(length_);
+    rFoot_.resize(length_);
+    rFootRot_.resize(length_);
+    lFootRot_.resize(length_);
+    stateIndicator_.resize(length_);
 
     if (leftFirst_)
         updateTrajectory(true);
@@ -96,7 +93,11 @@ void Ankle::updateTrajectory(bool left_first)
         stateIndicator_[index] = 1;
         index++;
     }
-
+    int step_size = int(tStep_ / dt_);
+    int ds_size = int(tDS_ / dt_);
+    int init_ds_size = int((1 - alpha_) * ds_size);
+    int final_ds_size = ds_size - init_ds_size;
+    int ss_size = step_size - ds_size;
     if (left_first)
     {
         for (int step = 1; step < stepCount_ + 1; step++)
@@ -113,7 +114,7 @@ void Ankle::updateTrajectory(bool left_first)
                 theta_end = (step - 1) * theta_ * yawSign_;
             if (step % 2 == 0)
             { // Left is support, Right swings
-                for (double time = 0; time < (1 - alpha_) * tDS_; time += dt_)
+                for (int i = 0; i < init_ds_size; i++)
                 {
                     lFoot_[index] = footPose_[step];
                     lFootRot_[index] = lFootRot_[index - 1];
@@ -125,8 +126,9 @@ void Ankle::updateTrajectory(bool left_first)
                 Vector3d *coefs = ankle5Poly(footPose_[step - 1], footPose_[step + 1], height_, tStep_ - tDS_, footPose_[step + 1](2));
                 double *theta_coefs = cubicInterpolate<double>(theta_ini, theta_end, 0, 0, tStep_ - tDS_);
                 double *slope_coefs = cubicInterpolate<double>(slope_ini, slope_end, 0, 0, tStep_ - tDS_);
-                for (double time = 0.0; time < tStep_ - tDS_; time += dt_)
+                for (int i = 0; i < ss_size; i++)
                 {
+                    double time = dt_ * i;
                     lFoot_[index] = footPose_[step];
                     lFootRot_[index] = lFootRot_[index - 1];
                     rFoot_[index] = coefs[0] + coefs[1] * time + coefs[2] * pow(time, 2) + coefs[3] * pow(time, 3) + coefs[4] * pow(time, 4) + coefs[5] * pow(time, 5);
@@ -138,7 +140,7 @@ void Ankle::updateTrajectory(bool left_first)
                     stateIndicator_[index] = 3;
                     index++;
                 }
-                for (double time = 0; time < (alpha_)*tDS_; time += dt_)
+                for (int i = 0; i < final_ds_size; i++)
                 {
                     lFoot_[index] = footPose_[step];
                     lFootRot_[index] = lFootRot_[index - 1];
@@ -150,7 +152,7 @@ void Ankle::updateTrajectory(bool left_first)
             }
             else
             { // Right is support, Left swings
-                for (double time = 0; time < (1 - alpha_) * tDS_; time += dt_)
+                for (int i = 0; i < init_ds_size; i++)
                 {
                     lFoot_[index] = footPose_[step - 1];
                     lFootRot_[index] = lFootRot_[index - 1];
@@ -162,8 +164,9 @@ void Ankle::updateTrajectory(bool left_first)
                 Vector3d *coefs = ankle5Poly(footPose_[step - 1], footPose_[step + 1], height_, tStep_ - tDS_, footPose_[step + 1](2));
                 double *theta_coefs = cubicInterpolate<double>(theta_ini, theta_end, 0, 0, tStep_ - tDS_);
                 double *slope_coefs = cubicInterpolate<double>(slope_ini, slope_end, 0, 0, tStep_ - tDS_);
-                for (double time = 0.0; time < tStep_ - tDS_; time += dt_)
+                for (int i = 0; i < ss_size; i++)
                 {
+                    double time = dt_ * i;
                     rFoot_[index] = footPose_[step];
                     rFootRot_[index] = rFootRot_[index - 1];
                     lFoot_[index] = coefs[0] + coefs[1] * time + coefs[2] * pow(time, 2) + coefs[3] * pow(time, 3) + coefs[4] * pow(time, 4) + coefs[5] * pow(time, 5);
@@ -175,7 +178,7 @@ void Ankle::updateTrajectory(bool left_first)
                     stateIndicator_[index] = 2;
                     index++;
                 }
-                for (double time = 0; time < (alpha_)*tDS_; time += dt_)
+                for (int i = 0; i < final_ds_size; i++)
                 {
                     lFoot_[index] = footPose_[step + 1];
                     lFootRot_[index] = lFootRot_[index - 1];
@@ -206,7 +209,7 @@ void Ankle::updateTrajectory(bool left_first)
 
             if (step % 2 != 0)
             { // Left is support, Right swings
-                for (double time = 0; time < (1 - alpha_) * tDS_; time += dt_)
+                for (int i = 0; i < init_ds_size; i++)
                 {
                     lFoot_[index] = footPose_[step];
                     lFootRot_[index] = lFootRot_[index - 1];
@@ -218,8 +221,9 @@ void Ankle::updateTrajectory(bool left_first)
                 Vector3d *coefs = ankle5Poly(footPose_[step - 1], footPose_[step + 1], height_, tStep_ - tDS_, footPose_[step + 1](2));
                 double *theta_coefs = cubicInterpolate<double>(theta_ini, theta_end, 0, 0, tStep_ - tDS_);
                 double *slope_coefs = cubicInterpolate<double>(slope_ini, slope_end, 0, 0, tStep_ - tDS_);
-                for (double time = 0.0; time < tStep_ - tDS_; time += dt_)
+                for (int i = 0; i < ss_size; i++)
                 {
+                    double time = dt_ * i;
                     lFoot_[index] = footPose_[step];
                     lFootRot_[index] = lFootRot_[index - 1];
                     rFoot_[index] = coefs[0] + coefs[1] * time + coefs[2] * pow(time, 2) + coefs[3] * pow(time, 3) + coefs[4] * pow(time, 4) + coefs[5] * pow(time, 5);
@@ -231,7 +235,7 @@ void Ankle::updateTrajectory(bool left_first)
                     stateIndicator_[index] = 3;
                     index++;
                 }
-                for (double time = 0; time < (alpha_)*tDS_; time += dt_)
+                for (int i = 0; i < final_ds_size; i++)
                 {
                     lFoot_[index] = footPose_[step];
                     lFootRot_[index] = lFootRot_[index - 1];
@@ -243,7 +247,7 @@ void Ankle::updateTrajectory(bool left_first)
             }
             else
             { // Right is support, Left swings
-                for (double time = 0; time < (1 - alpha_) * tDS_; time += dt_)
+                for (int i = 0; i < init_ds_size; i++)
                 {
                     lFoot_[index] = footPose_[step - 1];
                     lFootRot_[index] = lFootRot_[index - 1];
@@ -255,8 +259,9 @@ void Ankle::updateTrajectory(bool left_first)
                 Vector3d *coefs = ankle5Poly(footPose_[step - 1], footPose_[step + 1], height_, tStep_ - tDS_, footPose_[step + 1](2));
                 double *theta_coefs = cubicInterpolate<double>(theta_ini, theta_end, 0, 0, tStep_ - tDS_);
                 double *slope_coefs = cubicInterpolate<double>(slope_ini, slope_end, 0, 0, tStep_ - tDS_);
-                for (double time = 0.0; time < tStep_ - tDS_; time += dt_)
+                for (int i = 0; i < ss_size; i++)
                 {
+                    double time = dt_ * i;
                     rFoot_[index] = footPose_[step];
                     rFootRot_[index] = rFootRot_[index - 1];
                     lFoot_[index] = coefs[0] + coefs[1] * time + coefs[2] * pow(time, 2) + coefs[3] * pow(time, 3) + coefs[4] * pow(time, 4) + coefs[5] * pow(time, 5);
@@ -268,7 +273,7 @@ void Ankle::updateTrajectory(bool left_first)
                     stateIndicator_[index] = 2;
                     index++;
                 }
-                for (double time = 0; time < (alpha_)*tDS_; time += dt_)
+                for (int i = 0; i < final_ds_size; i++)
                 {
                     lFoot_[index] = footPose_[step + 1];
                     lFootRot_[index] = lFootRot_[index - 1];
@@ -293,15 +298,9 @@ void Ankle::updateTrajectory(bool left_first)
         stateIndicator_[index] = 1;
         index++;
     }
-    // cout << index << endl;
 }
 
 Ankle::~Ankle()
 {
-    delete[] footPose_;
-    delete[] lFoot_;
-    delete[] rFoot_;
-    delete[] rFootRot_;
-    delete[] lFootRot_;
-    delete[] stateIndicator_;
+    
 }

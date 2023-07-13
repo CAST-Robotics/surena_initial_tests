@@ -60,10 +60,10 @@ public:
                         double init_rankle_pos[3], double final_rankle_pos[3], double init_rankle_orient[3], double final_rankle_orient[3]);
     bool resetTraj();
 
-    void generateStraightFootStep(Vector3d *ankle_rf, Vector3d *dcm_rf, const double &step_width,
+    void generateStraightFootStep(vector<Vector3d>& ankle_rf, vector<Vector3d>& dcm_rf, const double &step_width,
                                   const double &step_length, const double &step_height, const int &step_count);
 
-    void generateTurnFootStep(Vector3d *ankle_rf, Vector3d *dcm_rf, const double &step_length,
+    void generateTurnFootStep(vector<Vector3d>& ankle_rf, vector<Vector3d>& dcm_rf, const double &step_length,
                               const double &step_height, const int &step_count, const double &theta);
 
     int findTrajIndex(vector<int> arr, int n, int K);
@@ -72,7 +72,7 @@ public:
     void distributeBump(double r_foot_z, double l_foot_z, double &r_bump, double &l_bump);
 
     void publishCoMPose(int iter);
-    void publishFootStep(Vector3d *ankle_rf, const int &step_count);
+    void publishFootStep(const vector<Vector3d>& ankle_rf, const int &step_count);
 
 private:
     enum ControlState
@@ -125,17 +125,16 @@ private:
     Matrix3d Rroll(double phi);
     Matrix3d RPitch(double theta);
 
-    Vector3d *CoMPos_;
-    Matrix3d *CoMRot_;
-    Vector3d *zmpd_;
-    Vector3d *CoMDot_;
-    Vector3d *xiDesired_;
-    Vector3d *xiDot_;
-    Vector3d *rAnklePos_;
-    Vector3d *lAnklePos_;
-    Matrix3d *rAnkleRot_;
-    Matrix3d *lAnkleRot_;
-    int *robotPhase_;
+    vector<Vector3d> CoMPos_;
+    vector<Matrix3d> CoMRot_;
+    vector<Vector3d> zmpd_;
+    vector<Vector3d> CoMDot_;
+    vector<Vector3d> xiDesired_;
+    vector<Vector3d> rAnklePos_;
+    vector<Vector3d> lAnklePos_;
+    vector<Matrix3d> rAnkleRot_;
+    vector<Matrix3d> lAnkleRot_;
+    vector<int> robotPhase_;
     double bumpBiasR_;
     double bumpBiasL_;
     bool bumpSensorCalibrated_;

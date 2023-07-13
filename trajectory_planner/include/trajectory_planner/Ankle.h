@@ -7,13 +7,13 @@ class Ankle : private MinJerk
 public:
     Ankle(double step_time, double ds_time, double height, double alpha, short int num_step, double dt, double theta, double slope);
     ~Ankle();
-    void updateFoot(Vector3d foot_pose[], int sign);
+    void updateFoot(const vector<Vector3d>& ankle_rf, int sign);
     void generateTrajectory();
-    Vector3d *getTrajectoryL();
-    Vector3d *getTrajectoryR();
-    Matrix3d *getRotTrajectoryR();
-    Matrix3d *getRotTrajectoryL();
-    int *getRobotState();
+    const vector<Vector3d>& getTrajectoryL();
+    const vector<Vector3d>& getTrajectoryR();
+    const vector<Matrix3d>& getRotTrajectoryR();
+    const vector<Matrix3d>& getRotTrajectoryL();
+    const vector<int>& getRobotState();
 
 private:
     double tStep_;
@@ -29,14 +29,14 @@ private:
     int yawSign_;
     int length_;
 
-    Vector3d *footPose_;
-    Vector3d *lFoot_;
-    Vector3d *rFoot_;
-    Matrix3d *lFootRot_;
-    Matrix3d *rFootRot_;
+    vector<Vector3d> footPose_;
+    vector<Vector3d> lFoot_;
+    vector<Vector3d> rFoot_;
+    vector<Matrix3d> lFootRot_;
+    vector<Matrix3d> rFootRot_;
 
     // Robot Movment State Indicator (0:Stance, 1:Double Support, 2:Right Single Support, 3: Left Single Support, 4:None)
-    int *stateIndicator_;
+    vector<int> stateIndicator_;
 
     void updateTrajectory(bool left_first);
 };

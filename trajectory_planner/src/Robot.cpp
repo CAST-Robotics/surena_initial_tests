@@ -126,7 +126,7 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
     doIK(CoMPos_[iter], CoMRot_[iter], lAnklePos_[iter], lAnkleRot_[iter], rAnklePos_[iter], rAnkleRot_[iter]);
     Vector3d Rrpy = rAnkleRot_[iter].eulerAngles(2, 1, 0);
     Vector3d Lrpy = lAnkleRot_[iter].eulerAngles(2, 1, 0);
-    cout << FKBase_.size() << endl;
+    
     for (int i = 0; i < 12; i++)
         joint_angles[i] = joints_[i]; // right leg(0-5) & left leg(6-11)
 }
@@ -458,15 +458,13 @@ Vector3d Robot::CoM2BaseVel()
 void Robot::doIK(MatrixXd pelvisP, Matrix3d pelvisR, MatrixXd leftAnkleP, Matrix3d leftAnkleR, MatrixXd rightAnkleP, Matrix3d rightAnkleR)
 {
     // Calculates and sets Robot Leg Configuration at each time step
-    double *q_left = this->geometricIK(pelvisP, pelvisR, leftAnkleP, leftAnkleR, true);
-    double *q_right = this->geometricIK(pelvisP, pelvisR, rightAnkleP, rightAnkleR, false);
+    vector<double> q_left = this->geometricIK(pelvisP, pelvisR, leftAnkleP, leftAnkleR, true);
+    vector<double> q_right = this->geometricIK(pelvisP, pelvisR, rightAnkleP, rightAnkleR, false);
     for (int i = 0; i < 6; i++)
     {
         joints_[i] = q_right[i];
         joints_[i + 6] = q_left[i];
     }
-    delete[] q_left;
-    delete[] q_right;
 }
 
 Matrix3d Robot::Rroll(double phi)
@@ -500,7 +498,7 @@ Matrix3d Robot::rDot_(Matrix3d R)
     return r_dot;
 }
 
-double *Robot::geometricIK(MatrixXd p1, MatrixXd r1, MatrixXd p7, MatrixXd r7, bool isLeft)
+vector<double> Robot::geometricIK(MatrixXd p1, MatrixXd r1, MatrixXd p7, MatrixXd r7, bool isLeft)
 {
     /*
         Geometric Inverse Kinematic for Robot Leg (Section 2.5  Page 53)
@@ -508,7 +506,7 @@ double *Robot::geometricIK(MatrixXd p1, MatrixXd r1, MatrixXd p7, MatrixXd r7, b
         1 ----> Body        7-----> Foot
     */
 
-    double *q = new double[6];
+    vector<double> q(6);
     MatrixXd D(3, 1);
 
     if (isLeft)

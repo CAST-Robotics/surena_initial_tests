@@ -1,5 +1,5 @@
 /**
- * @file DCMPlanner.h
+ * @file DCM.h
  * @brief Three-dimensional trajectory generation based on Divergent Component of Motion (DCM).
  * @details This file defines the DCMPlanner class, which generates trajectories for a humanoid 
  * robot's center of mass (CoM) and zero moment point (ZMP) based on DCM.
@@ -162,6 +162,6 @@ private:
      * @param tf The time duration of the trajectory.
      * @return A pointer to an array of Vector3d representing the minimum jerk trajectory.
      */
-    Vector3d *minJerkInterpolate(Vector3d theta_ini, Vector3d theta_f, Vector3d theta_dot_ini, 
-                                 Vector3d theta_dot_f, double tf);
+    vector<Vector3d> minJerkInterpolate(Vector3d theta_ini, Vector3d theta_f, 
+                                        Vector3d theta_dot_ini, Vector3d theta_dot_f, double tf);
 };

@@ -101,27 +101,25 @@ void DCMPlanner::updateXiDSPositions()
         {
             xi_dot_i = sqrt(K_G / deltaZ_) * (xiDSI_[step] - xi_[0]);
             xi_dot_e = sqrt(K_G / deltaZ_) * (xiDSE_[step] - rVRP_[0]);
-            Vector3d *coefs = this->minJerkInterpolate(xiDSI_[step], xiDSE_[step], xi_dot_i, xi_dot_e, tDS_);
+            vector<Vector3d> coefs = this->minJerkInterpolate(xiDSI_[step], xiDSE_[step], xi_dot_i, xi_dot_e, tDS_);
             for (int i = 0; i < (1 / dt_) * tDS_ * (1 - alpha_); ++i)
             {
                 double time = dt_ * i;
                 xi_[i] = coefs[0] + coefs[1] * time + coefs[2] * pow(time, 2) + coefs[3] * pow(time, 3);
                 xiDot_[i] = coefs[1] + 2 * coefs[2] * time + 3 * coefs[3] * pow(time, 2);
             }
-            delete[] coefs;
         }
         else
         {
             xi_dot_i = sqrt(K_G / deltaZ_) * (xiDSI_[step] - rVRP_[step - 1]);
             xi_dot_e = sqrt(K_G / deltaZ_) * (xiDSE_[step] - rVRP_[step]);
-            Vector3d *coefs = this->minJerkInterpolate(xiDSI_[step], xiDSE_[step], xi_dot_i, xi_dot_e, tDS_);
+            vector<Vector3d> coefs = this->minJerkInterpolate(xiDSI_[step], xiDSE_[step], xi_dot_i, xi_dot_e, tDS_);
             for (int i = (tStep_ * step) / dt_ - (tDS_ * alpha_ / dt_) + 1; i < ((tStep_ * step) / dt_) + (tDS_ / dt_) * (1 - alpha_); ++i)
             {
                 double time = fmod(i * dt_, tStep_ * step - tDS_ * alpha_);
                 xi_[i] = coefs[0] + coefs[1] * time + coefs[2] * pow(time, 2) + coefs[3] * pow(time, 3);
                 xiDot_[i] = coefs[1] + 2 * coefs[2] * time + 3 * coefs[3] * pow(time, 2);
             }
-            delete[] coefs;
         }
     }
 }
@@ -168,13 +166,14 @@ const vector<Vector3d>& DCMPlanner::getCoM()
     return COM_;
 }
 
-Vector3d* DCMPlanner::minJerkInterpolate(Vector3d theta_ini, Vector3d theta_f, Vector3d theta_dot_ini, Vector3d theta_dot_f, double tf)
+vector<Vector3d> DCMPlanner::minJerkInterpolate(Vector3d theta_ini, Vector3d theta_f,
+                                                Vector3d theta_dot_ini, Vector3d theta_dot_f, double tf)
 {
     /*
         Returns Cubic Polynomial with the Given Boundary Conditions
         https://www.tu-chemnitz.de/informatik//KI/edu/robotik/ws2016/lecture-tg%201.pdf
     */
-    Vector3d *coefs = new Vector3d[4]; // a0, a1, a2, a3
+    vector<Vector3d> coefs(4); // a0, a1, a2, a3
     coefs[0] = theta_ini;
     coefs[1] = theta_dot_ini;
     coefs[2] = 3 / pow(tf, 2) * (theta_f - theta_ini) - 1 / tf * (2 * theta_dot_ini + theta_dot_f);
@@ -211,7 +210,7 @@ const vector<Matrix3d>& DCMPlanner::yawRotGen()
             ini_theta = 0;
         if (i == stepCount_ - 2)
             end_theta = this->yawSign_ * (stepCount_ - 3) * theta_; //
-        double *coef = MinJerk::cubicInterpolate<double>(ini_theta, end_theta, 0, 0, tStep_);
+        vector<double> coef = MinJerk::cubicInterpolate<double>(ini_theta, end_theta, 0, 0, tStep_);
         for (int j = 0; j < tStep_ / dt_; j++)
         {
             double theta_traj = coef[0] + coef[1] * j * dt_ + coef[2] * pow(j * dt_, 2) + coef[3] * pow(j * dt_, 3);

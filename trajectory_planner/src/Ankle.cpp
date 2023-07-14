@@ -123,9 +123,9 @@ void Ankle::updateTrajectory(bool left_first)
                     stateIndicator_[index] = 1;
                     index++;
                 }
-                Vector3d *coefs = ankle5Poly(footPose_[step - 1], footPose_[step + 1], height_, tStep_ - tDS_, footPose_[step + 1](2));
-                double *theta_coefs = cubicInterpolate<double>(theta_ini, theta_end, 0, 0, tStep_ - tDS_);
-                double *slope_coefs = cubicInterpolate<double>(slope_ini, slope_end, 0, 0, tStep_ - tDS_);
+                vector<Vector3d> coefs = ankle5Poly(footPose_[step - 1], footPose_[step + 1], height_, tStep_ - tDS_, footPose_[step + 1](2));
+                vector<double> theta_coefs = cubicInterpolate<double>(theta_ini, theta_end, 0, 0, tStep_ - tDS_);
+                vector<double> slope_coefs = cubicInterpolate<double>(slope_ini, slope_end, 0, 0, tStep_ - tDS_);
                 for (int i = 0; i < ss_size; i++)
                 {
                     double time = dt_ * i;
@@ -161,9 +161,9 @@ void Ankle::updateTrajectory(bool left_first)
                     stateIndicator_[index] = 1;
                     index++;
                 }
-                Vector3d *coefs = ankle5Poly(footPose_[step - 1], footPose_[step + 1], height_, tStep_ - tDS_, footPose_[step + 1](2));
-                double *theta_coefs = cubicInterpolate<double>(theta_ini, theta_end, 0, 0, tStep_ - tDS_);
-                double *slope_coefs = cubicInterpolate<double>(slope_ini, slope_end, 0, 0, tStep_ - tDS_);
+                vector<Vector3d> coefs = ankle5Poly(footPose_[step - 1], footPose_[step + 1], height_, tStep_ - tDS_, footPose_[step + 1](2));
+                vector<double> theta_coefs = cubicInterpolate<double>(theta_ini, theta_end, 0, 0, tStep_ - tDS_);
+                vector<double> slope_coefs = cubicInterpolate<double>(slope_ini, slope_end, 0, 0, tStep_ - tDS_);
                 for (int i = 0; i < ss_size; i++)
                 {
                     double time = dt_ * i;
@@ -218,9 +218,9 @@ void Ankle::updateTrajectory(bool left_first)
                     stateIndicator_[index] = 1;
                     index++;
                 }
-                Vector3d *coefs = ankle5Poly(footPose_[step - 1], footPose_[step + 1], height_, tStep_ - tDS_, footPose_[step + 1](2));
-                double *theta_coefs = cubicInterpolate<double>(theta_ini, theta_end, 0, 0, tStep_ - tDS_);
-                double *slope_coefs = cubicInterpolate<double>(slope_ini, slope_end, 0, 0, tStep_ - tDS_);
+                vector<Vector3d> coefs = ankle5Poly(footPose_[step - 1], footPose_[step + 1], height_, tStep_ - tDS_, footPose_[step + 1](2));
+                vector<double> theta_coefs = cubicInterpolate<double>(theta_ini, theta_end, 0, 0, tStep_ - tDS_);
+                vector<double> slope_coefs = cubicInterpolate<double>(slope_ini, slope_end, 0, 0, tStep_ - tDS_);
                 for (int i = 0; i < ss_size; i++)
                 {
                     double time = dt_ * i;
@@ -256,9 +256,9 @@ void Ankle::updateTrajectory(bool left_first)
                     stateIndicator_[index] = 1;
                     index++;
                 }
-                Vector3d *coefs = ankle5Poly(footPose_[step - 1], footPose_[step + 1], height_, tStep_ - tDS_, footPose_[step + 1](2));
-                double *theta_coefs = cubicInterpolate<double>(theta_ini, theta_end, 0, 0, tStep_ - tDS_);
-                double *slope_coefs = cubicInterpolate<double>(slope_ini, slope_end, 0, 0, tStep_ - tDS_);
+                vector<Vector3d> coefs = ankle5Poly(footPose_[step - 1], footPose_[step + 1], height_, tStep_ - tDS_, footPose_[step + 1](2));
+                vector<double> theta_coefs = cubicInterpolate<double>(theta_ini, theta_end, 0, 0, tStep_ - tDS_);
+                vector<double> slope_coefs = cubicInterpolate<double>(slope_ini, slope_end, 0, 0, tStep_ - tDS_);
                 for (int i = 0; i < ss_size; i++)
                 {
                     double time = dt_ * i;

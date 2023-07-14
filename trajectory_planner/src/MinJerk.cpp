@@ -1,13 +1,13 @@
 #include "MinJerk.h"
 
-Vector3d *MinJerk::poly6Interpolate(Vector3d x_ini, Vector3d x_mid, Vector3d x_f, double tf)
+vector<Vector3d> MinJerk::poly6Interpolate(Vector3d x_ini, Vector3d x_mid, Vector3d x_f, double tf)
 {
     /*
         This function fits a 5th order (C2) Polynomial to given given inputs
         Inputs : X0, Xmid, Xf   !Xd, Xdd at begining and end are assumed to be zero!
     */
 
-    Vector3d *a = new Vector3d[7];
+    vector<Vector3d> a(7);
     a[0] = x_ini;
     a[1] = Vector3d::Zero(3);
     a[2] = Vector3d::Zero(3);
@@ -18,9 +18,9 @@ Vector3d *MinJerk::poly6Interpolate(Vector3d x_ini, Vector3d x_mid, Vector3d x_f
     return a;
 }
 
-Vector3d *MinJerk::ankle5Poly(Vector3d x0, Vector3d xf, double z_max, double tf, double final_height)
+vector<Vector3d> MinJerk::ankle5Poly(Vector3d x0, Vector3d xf, double z_max, double tf, double final_height)
 {
-    Vector3d *ans = new Vector3d[6];
+    vector<Vector3d> ans(6);
     // XY trajectory 5th order with Vel. and accl. B.C.
     ans[0] = x0;
     ans[1] = Vector3d::Zero(3);

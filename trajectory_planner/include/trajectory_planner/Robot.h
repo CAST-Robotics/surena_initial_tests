@@ -75,6 +75,10 @@ public:
     void publishCoMPose(int iter);
     void publishFootStep(const vector<Vector3d>& ankle_rf, const int &step_count);
 
+    inline int getTrajSize(){
+        return dataSize_;
+    }
+
 private:
     enum ControlState
     {
@@ -175,7 +179,6 @@ private:
     bool useController_;
 
     int index_;
-    int size_;
     int dataSize_;
     vector<int> trajSizes_;
     double COM_height_;

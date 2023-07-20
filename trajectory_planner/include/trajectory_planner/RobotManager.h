@@ -62,6 +62,8 @@ public:
     bool ankleHome(bool is_left, int roll_dest, int pitch_dest);
     bool walk(trajectory_planner::Trajectory::Request &req,
               trajectory_planner::Trajectory::Response &res);
+    // void keyboardHandler(const std_msgs::Int32 &msg);
+    bool computeLowerLimbJointMotion(double jnt_command[], int iter);
     int sgn(double v);
     double abs2rad(int abs);
     double inc2rad(int inc);
@@ -94,6 +96,7 @@ private:
     ros::Subscriber AccSub_;
     ros::Subscriber GyroSub_;
     ros::Subscriber bumpSub_;
+    // ros::Subscriber keyboardCommandSub_;
     ros::ServiceServer jointCommand_;
     ros::ServiceServer absPrinter_;
     // ros::ServiceClient trajectoryGenerator_;

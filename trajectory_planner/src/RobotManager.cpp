@@ -45,8 +45,18 @@ RobotManager::RobotManager(ros::NodeHandle *n)
 
     collision_ = false;
 
-    for (int i = 0; i < 20; i++)
-        motorCommandArray_[i] = 0;
+    for (int i = 0; i < 23; i++)
+    {
+        if (i < 20)
+            motorCommandArray_[i] = 0;
+        else if (i == 20)
+            motorCommandArray_[i] = 145;
+        else if (i == 21)
+            motorCommandArray_[i] = 145;
+        else if (i == 22)
+            motorCommandArray_[i] = 145;
+        
+    }
 
     for (int i = 0; i < 12; i++)
     {
@@ -93,7 +103,7 @@ RobotManager::RobotManager(ros::NodeHandle *n)
 bool RobotManager::sendCommand()
 {
     motorCommand_.data.clear();
-    for (int i = 0; i < 20; i++)
+    for (int i = 0; i < 23; i++)
         motorCommand_.data.push_back(motorCommandArray_[i]);
 
     motorDataPub_.publish(motorCommand_);
@@ -442,6 +452,13 @@ bool RobotManager::sendCommand(trajectory_planner::command::Request &req,
             rate_.sleep();
         }
     }
+    else if (req.motor_id == 20 || req.motor_id == 21 || req.motor_id == 22)
+    {
+        motorCommandArray_[req.motor_id] += req.angle;
+        sendCommand();
+        ros::spinOnce();
+        rate_.sleep();
+    }
     else
     {
         double inc = motorDir_[req.motor_id] * req.angle * 4096 * 4 * 160 / 2 / M_PI;
@@ -753,6 +770,66 @@ bool RobotManager::computeLowerLimbJointMotion(double jnt_command[], int iter)
         }
     }
 }
+
+// void RobotManager::keyboardHandler(const std_msgs::Int32 &msg)
+// {
+//     double dt = 0.005;
+//     double step_width = 0.0;
+//     double alpha = 0.44;
+//     double t_double_support = 0.1;
+//     double t_step = 1.0;
+//     double step_length = 0.15;
+//     double COM_height = 0.68;
+//     double step_count = 2;
+//     double ankle_height = 0.025;
+//     double step_height = 0;
+//     double theta = 0.0;
+//     double slope = 0.0;
+
+//     int command = msg.data;
+
+//     if (!this->isRunningTrajectory)
+//     {
+//         switch (command)
+//         {
+//         case 119: // w:move forward
+//             step_count = 2;
+//             step_length = 0.15;
+//             theta = 0.0;
+//             robot->trajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 
+//                            step_width, dt, theta, ankle_height, step_height, slope);
+//             break;
+
+//         case 115: // s:move backward
+//             step_count = 2;
+//             step_length = -0.15;
+//             theta = 0.0;
+//             robot->trajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 
+//                            step_width, dt, theta, ankle_height, step_height, slope);
+//             break;
+
+//         case 97: // a:turn left
+//             step_count = 2;
+//             step_length = -0.15;
+//             theta = 0.08;
+//             robot->trajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 
+//                            step_width, dt, theta, ankle_height, step_height, slope);
+//             break;
+
+//         case 100: // d:turn right
+//             step_count = 2;
+//             step_length = 0.15;
+//             theta = 0.08;
+//             robot->trajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 
+//                            step_width, dt, theta, ankle_height, step_height, slope);
+//             break;
+
+//         default:
+//             break;
+//         }
+//         isRunningTrajectory = true;
+//     }
+// }
 
 int RobotManager::sgn(double v)
 {

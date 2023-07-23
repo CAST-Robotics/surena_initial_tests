@@ -109,7 +109,7 @@ private:
     bool qcInitialBool_;
     int homeOffset_[32];
     std_msgs::Int32MultiArray motorCommand_;
-    double motorCommandArray_[20];
+    double motorCommandArray_[23];
     int harmonicRatio_[12];
     float absData_[32];
     int incData_[32];

@@ -12,6 +12,7 @@ RobotManager::RobotManager(ros::NodeHandle *n)
     jointCommand_ = n->advertiseService("joint_command", &RobotManager::sendCommand, this);
     absPrinter_ = n->advertiseService("print_absolute", &RobotManager::absPrinter, this);
     walkService_ = n->advertiseService("walk_service", &RobotManager::walk, this);
+    keyboardWalkService_ = n->advertiseService("keyboard_walk", &RobotManager::keyboardWalk, this);
     homeService_ = n->advertiseService("home_service", &RobotManager::home, this);
     dummyCommand_ = n->advertiseService("get_data", &RobotManager::dummyCallback, this);
     lFT_ = n->subscribe("/surena/ft_l_state", 100, &RobotManager::ftCallbackLeft, this);
@@ -20,7 +21,7 @@ RobotManager::RobotManager(ros::NodeHandle *n)
     AccSub_ = n->subscribe("/imu/acceleration", 100, &RobotManager::AccCallback, this);
     GyroSub_ = n->subscribe("/imu/angular_velocity", 100, &RobotManager::GyroCallback, this);
     bumpSub_ = n->subscribe("/surena/bump_sensor_state", 100, &RobotManager::bumpCallback, this);
-    // keyboardCommandSub_ = n.subscribe("/keyboard_command", 1, &RobotManager::keyboardHandler, this);
+    keyboardCommandSub_ = n->subscribe("/keyboard_command", 1, &RobotManager::keyboardHandler, this);
 
     move_hand_single_service = n->advertiseService("move_hand_single_srv", &RobotManager::single, this);
     move_hand_both_service = n->advertiseService("move_hand_both_srv", &RobotManager::both, this);
@@ -32,7 +33,10 @@ RobotManager::RobotManager(ros::NodeHandle *n)
     r30_inner << 0.035, 0.034, -0.002;
     r30_outer << 0.035, -0.034, -0.002;
 
-    qcInitialBool_ = true;
+    qcInitialBool_ = false;
+    isKeyboardTrajectoryEnabled = false;
+    isWalkingWithKeyboard = false;
+
     int temp_ratio[12] = {100, 100, 50, 80, 100, 100, 50, 80, 120, 120, 120, 120};
     int temp_home_abs[12] = {122570, 139874, 137321, 8735, 131448, 129963, 145545, 145183, 122054, 18816, 131690, 140432};
     int temp_abs_high[12] = {108426, 119010, 89733, 136440, 71608, 102443, 119697, 82527, 168562, 131334, 191978, 111376};
@@ -137,7 +141,6 @@ bool RobotManager::setPos(int jointID, int dest)
 
 bool RobotManager::home(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
 {
-
     // ankleHome(false);
     //  setPos(6, homeAbs_[6]);
     //  setPos(0, homeAbs_[0]);
@@ -169,7 +172,7 @@ void RobotManager::qcInitial(const sensor_msgs::JointState &msg)
 
     if (qcInitialBool_)
     {
-
+        this->emptyCommand();
         for (int i = 0; i < 12; ++i)
         {
             homeOffset_[i] = int(msg.position[i + 1]);
@@ -771,65 +774,152 @@ bool RobotManager::computeLowerLimbJointMotion(double jnt_command[], int iter)
     }
 }
 
-// void RobotManager::keyboardHandler(const std_msgs::Int32 &msg)
-// {
-//     double dt = 0.005;
-//     double step_width = 0.0;
-//     double alpha = 0.44;
-//     double t_double_support = 0.1;
-//     double t_step = 1.0;
-//     double step_length = 0.15;
-//     double COM_height = 0.68;
-//     double step_count = 2;
-//     double ankle_height = 0.025;
-//     double step_height = 0;
-//     double theta = 0.0;
-//     double slope = 0.0;
+void RobotManager::keyboardHandler(const std_msgs::Int32 &msg)
+{
+    double dt = 0.005;
+    double step_width = 0.0;
+    double alpha = 0.44;
+    double t_double_support = 0.1;
+    double t_step = 1.0;
+    double step_length = 0.15;
+    double COM_height = 0.68;
+    double step_count = 2;
+    double ankle_height = 0.025;
+    double step_height = 0;
+    double theta = 0.0;
+    double slope = 0.0;
 
-//     int command = msg.data;
+    int command = msg.data;
 
-//     if (!this->isRunningTrajectory)
-//     {
-//         switch (command)
-//         {
-//         case 119: // w:move forward
-//             step_count = 2;
-//             step_length = 0.15;
-//             theta = 0.0;
-//             robot->trajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 
-//                            step_width, dt, theta, ankle_height, step_height, slope);
-//             break;
+    if (this->isKeyboardTrajectoryEnabled)
+    {
+        switch (command)
+        {
+        case 119: // w: move forward
+            step_count = 2;
+            step_length = 0.15;
+            theta = 0.0;
+            robot->trajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 
+                           step_width, dt, theta, ankle_height, step_height, slope);
+            isKeyboardTrajectoryEnabled = false;
+            break;
 
-//         case 115: // s:move backward
-//             step_count = 2;
-//             step_length = -0.15;
-//             theta = 0.0;
-//             robot->trajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 
-//                            step_width, dt, theta, ankle_height, step_height, slope);
-//             break;
+        case 115: // s: move backward
+            step_count = 2;
+            step_length = -0.15;
+            theta = 0.0;
+            robot->trajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 
+                           step_width, dt, theta, ankle_height, step_height, slope);
+            isKeyboardTrajectoryEnabled = false;
+            break;
 
-//         case 97: // a:turn left
-//             step_count = 2;
-//             step_length = -0.15;
-//             theta = 0.08;
-//             robot->trajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 
-//                            step_width, dt, theta, ankle_height, step_height, slope);
-//             break;
+        case 97: // a: turn left
+            step_count = 2;
+            step_length = -0.15;
+            theta = 0.08;
+            robot->trajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 
+                           step_width, dt, theta, ankle_height, step_height, slope);
+            isKeyboardTrajectoryEnabled = false;
+            break;
 
-//         case 100: // d:turn right
-//             step_count = 2;
-//             step_length = 0.15;
-//             theta = 0.08;
-//             robot->trajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 
-//                            step_width, dt, theta, ankle_height, step_height, slope);
-//             break;
+        case 100: // d: turn right
+            step_count = 2;
+            step_length = 0.15;
+            theta = 0.08;
+            robot->trajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 
+                           step_width, dt, theta, ankle_height, step_height, slope);
+            isKeyboardTrajectoryEnabled = false;
+            break;
 
-//         default:
-//             break;
-//         }
-//         isRunningTrajectory = true;
-//     }
-// }
+        case 27: // esc: exit
+            isKeyboardTrajectoryEnabled = false;
+            isWalkingWithKeyboard = false;
+            break;
+
+        default:
+            break;
+        }
+    }
+}
+
+bool RobotManager::keyboardWalk(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
+{
+    this->emptyCommand();
+    int rate = 200;
+    ros::Rate rate_(rate);
+
+    isWalkingWithKeyboard = true;
+
+    double dt = 0.005;
+    double init_com_pos[3] = {0, 0, 0.71};
+    double init_com_orient[3] = {0, 0, 0};
+    double final_com_pos[3] = {0, 0, 0.68};
+    double final_com_orient[3] = {0, 0, 0};
+
+    double init_lankle_pos[3] = {0, 0.0975, 0};
+    double init_lankle_orient[3] = {0, 0, 0};
+    double final_lankle_pos[3] = {0, 0.0975, 0};
+    double final_lankle_orient[3] = {0, 0, 0};
+
+    double init_rankle_pos[3] = {0, -0.0975, 0};
+    double init_rankle_orient[3] = {0, 0, 0};
+    double final_rankle_pos[3] = {0, -0.0975, 0};
+    double final_rankle_orient[3] = {0, 0, 0};
+
+    robot->generalTrajGen(dt, 2, init_com_pos, final_com_pos, init_com_orient, final_com_orient,
+                          init_lankle_pos, final_lankle_pos, init_lankle_orient, final_lankle_orient,
+                          init_rankle_pos, final_rankle_pos, init_rankle_orient, final_rankle_orient);
+
+    double jnt_command[12];
+    int status;
+
+    int iter = 0;
+    int final_iter;
+
+    while (isWalkingWithKeyboard)
+    {
+        final_iter = robot->getTrajSize();
+        
+        if(iter < final_iter)
+        {
+            double config[12];
+            double jnt_vel[12];
+            double left_ft[3] = {-currentLFT_[0], -currentLFT_[2], -currentLFT_[1]};
+            double right_ft[3] = {-currentRFT_[0], -currentRFT_[2], -currentRFT_[1]};
+            int right_bump[4] = {currentRBump_[0], currentRBump_[1], currentRBump_[2], currentRBump_[3]};
+            int left_bump[4] = {currentLBump_[0], currentLBump_[1], currentLBump_[2], currentLBump_[3]};
+            double accelerometer[3] = {baseAcc_[0], baseAcc_[1], baseAcc_[2]};
+            double gyro[3] = {baseAngVel_[0], baseAngVel_[1], baseAngVel_[2]};
+
+            for (int i = 0; i < 12; i++)
+            {
+                config[i] = commandConfig_[2][i];
+                jnt_vel[i] = (commandConfig_[0][i] - 4 * commandConfig_[1][i] + 3 * commandConfig_[2][i]) / (2 * dt);
+            }
+
+            robot->getJointAngs(iter, config, jnt_vel, right_ft, left_ft, right_bump,
+                                left_bump, gyro, accelerometer, jnt_command, status);
+            if (status != 0)
+            {
+                cout << "Node was shut down due to Ankle Collision!" << endl;
+                return false;
+            }
+            computeLowerLimbJointMotion(jnt_command, iter);
+            sendCommand();
+            iter++;
+        }
+        if (iter == final_iter - 1)
+        {
+            robot->resetTraj();
+            isKeyboardTrajectoryEnabled = true;
+            iter = 0;
+        }
+
+        ros::spinOnce();
+        rate_.sleep();
+    }
+    return true;
+}
 
 int RobotManager::sgn(double v)
 {

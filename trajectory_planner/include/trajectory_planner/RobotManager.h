@@ -10,6 +10,7 @@
 #include <ros/package.h>
 
 #include <std_srvs/Empty.h>
+#include <std_msgs/Int32.h>
 #include <sensor_msgs/JointState.h>
 #include "sensor_msgs/Imu.h"
 #include <std_msgs/Int32MultiArray.h>
@@ -62,7 +63,8 @@ public:
     bool ankleHome(bool is_left, int roll_dest, int pitch_dest);
     bool walk(trajectory_planner::Trajectory::Request &req,
               trajectory_planner::Trajectory::Response &res);
-    // void keyboardHandler(const std_msgs::Int32 &msg);
+    bool keyboardWalk(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res);
+    void keyboardHandler(const std_msgs::Int32 &msg);
     bool computeLowerLimbJointMotion(double jnt_command[], int iter);
     int sgn(double v);
     double abs2rad(int abs);
@@ -96,16 +98,15 @@ private:
     ros::Subscriber AccSub_;
     ros::Subscriber GyroSub_;
     ros::Subscriber bumpSub_;
-    // ros::Subscriber keyboardCommandSub_;
+    ros::Subscriber keyboardCommandSub_;
     ros::ServiceServer jointCommand_;
     ros::ServiceServer absPrinter_;
-    // ros::ServiceClient trajectoryGenerator_;
-    // ros::ServiceClient generalTrajectory_ ;
-    // ros::ServiceClient resetTrajectory_;
-    // ros::ServiceClient jointAngles_;
     ros::ServiceServer walkService_;
+    ros::ServiceServer keyboardWalkService_;
     ros::ServiceServer homeService_;
     ros::ServiceServer dummyCommand_;
+    bool isWalkingWithKeyboard;
+    bool isKeyboardTrajectoryEnabled;
     bool qcInitialBool_;
     int homeOffset_[32];
     std_msgs::Int32MultiArray motorCommand_;

@@ -31,7 +31,7 @@ class Robot
     friend class Surena;
 
 public:
-    Robot(ros::NodeHandle *nh, std::string config_path);
+    Robot(ros::NodeHandle *nh, std::string config_path, bool simulation=false);
     ~Robot();
 
     void initROSCommunication();
@@ -90,6 +90,7 @@ private:
 
     ros::NodeHandle *nh_;
     std::string robotConfigPath_;
+    bool simulation_;
 
     double thigh_;
     double shank_;

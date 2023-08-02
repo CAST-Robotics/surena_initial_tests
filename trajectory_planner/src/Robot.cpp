@@ -2,7 +2,8 @@
 
 using json = nlohmann::json;
 
-Robot::Robot(ros::NodeHandle *nh, std::string config_path) : nh_(nh), robotConfigPath_(config_path)
+Robot::Robot(ros::NodeHandle *nh, std::string config_path, bool simulation)
+ : nh_(nh), robotConfigPath_(config_path), simulation_(simulation)
 {
     initROSCommunication();
     initializeRobotParams();
@@ -96,23 +97,25 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
         bumpBiasR_ = 0.25 * (bump_r[0] + bump_r[1] + bump_r[2] + bump_r[3]);
         bumpBiasL_ = 0.25 * (bump_l[0] + bump_l[1] + bump_l[2] + bump_l[3]);
     }
-
-    if (robotControlState_[traj_index] == Robot::WALK)
+    if(!simulation_)
     {
-        bumpSensorCalibrated_ = true;
-        runFootLenController(iter, f_l, f_r, traj_index);
+        if (robotControlState_[traj_index] == Robot::WALK)
+        {
+            bumpSensorCalibrated_ = true;
+            // runFootLenController(iter, f_l, f_r, traj_index);
 
-        runBumpFootOrientController(iter, bump_r, bump_l);
+            runBumpFootOrientController(iter, bump_r, bump_l);
 
-        runEarlyContactController(iter, bump_r, bump_l);
+            runEarlyContactController(iter, bump_r, bump_l);
 
-        // runFootOrientController();
+            // runFootOrientController();
 
-        // runZMPAdmitanceController();
-    }
-    else if (robotControlState_[traj_index] == Robot::IDLE)
-    {
-        // runFootLenController(iter, f_l, f_r, traj_index);
+            // runZMPAdmitanceController();
+        }
+        else if (robotControlState_[traj_index] == Robot::IDLE)
+        {
+            // runFootLenController(iter, f_l, f_r, traj_index);
+        }
     }
 
     if (ankleColide_->checkColission(lAnklePos_[iter], rAnklePos_[iter], lAnkleRot_[iter], rAnkleRot_[iter]))
@@ -121,7 +124,7 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
         cout << "Collision Detected in Ankles!" << endl;
     }
 
-    // this->publishCoMPose(iter);
+    this->publishCoMPose(iter);
 
     doIK(CoMPos_[iter], CoMRot_[iter], lAnklePos_[iter], lAnkleRot_[iter], rAnklePos_[iter], rAnkleRot_[iter]);
     Vector3d Rrpy = rAnkleRot_[iter].eulerAngles(2, 1, 0);

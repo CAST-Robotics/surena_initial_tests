@@ -102,7 +102,7 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
         if (robotControlState_[traj_index] == Robot::WALK)
         {
             bumpSensorCalibrated_ = true;
-            // runFootLenController(iter, f_l, f_r, traj_index);
+            runFootLenController(iter, f_l, f_r, traj_index);
 
             runBumpFootOrientController(iter, bump_r, bump_l);
 
@@ -141,13 +141,16 @@ void Robot::runFootLenController(int iter, double f_l, double f_r, int traj_inde
     double deltaFd = 0;
     if (robotControlState_[traj_index] == Robot::WALK)
     {
-        distributeFT(zmpd_[iter - trajSizes_[0]], rAnklePos_[iter], lAnklePos_[iter], r_wrench, l_wrench);
+        int zmp_iter = iter;
+        if (traj_index != 0)
+            zmp_iter = iter - trajSizes_[traj_index - 1];
+        
+        distributeFT(zmpd_[zmp_iter], rAnklePos_[iter], lAnklePos_[iter], r_wrench, l_wrench);
         deltaFd = floor((l_wrench(0) - r_wrench(0)) * 10) / 10;
     }
     double delta_z = onlineWalk_->footLenController(deltaFd, floor((f_l - f_r) * 10) / 10, 0.00002, 0.0, 1.0);
     lAnklePos_[iter](2) -= 0.5 * delta_z;
     rAnklePos_[iter](2) += 0.5 * delta_z;
-    // cout << delta_z << ',' << f_r << ',' << f_l << ',' << floor((f_l - f_r) * 10) / 10 << endl;
 }
 
 void Robot::runBumpFootOrientController(int iter, int bump_r[], int bump_l[])

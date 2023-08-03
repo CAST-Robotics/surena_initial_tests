@@ -108,24 +108,6 @@ private:
     PID *CoMController_;
     Controller *onlineWalk_;
 
-    template <typename T>
-    T *appendTrajectory(T *old_traj, T *new_traj, int old_size, int new_size)
-    {
-        /*
-            This function appends a new trajectory to an old one.
-            for example:
-            when you want to call general_traj service twice.
-        */
-        int total_size = old_size + new_size;
-        T *temp_traj = new T[total_size];
-        copy(old_traj, old_traj + old_size, temp_traj);
-        delete[] old_traj;
-        old_traj = temp_traj;
-        temp_traj = new_traj;
-        copy(temp_traj, temp_traj + new_size, old_traj + old_size);
-        return old_traj;
-    }
-
     void doIK(MatrixXd pelvisP, Matrix3d pelvisR, MatrixXd leftAnkleP, Matrix3d leftAnkleR, MatrixXd rightAnkleP, Matrix3d rightAnkleR);
     vector<double> geometricIK(MatrixXd p1, MatrixXd r1, MatrixXd p7, MatrixXd r7, bool isLeft);
     Matrix3d Rroll(double phi);

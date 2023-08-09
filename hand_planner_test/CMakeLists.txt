@@ -142,18 +142,26 @@ include_directories(
 #add_executable(home_node_cpp src/surena5/BacktoHome.cpp)
 #target_link_libraries( home_node_cpp  ${catkin_LIBRARIES} )
 #add_executable(test_node_cpp src/test_surena4_ros/target_robot_test_RH.cpp src/test_surena4_ros/S5mod_right_hand.cpp src/test_surena4_ros/MinimumJerkInterpolation.cpp)
-add_executable(test_node_cpp src/test_surena4_ros/test_forgotten.cpp src/test_surena4_ros/S5mod_right_hand.cpp src/test_surena4_ros/S5mod_left_hand.cpp src/test_surena4_ros/MinimumJerkInterpolation.cpp)
+#add_executable(test_node_cpp src/test_surena4_ros/test_forgotten.cpp src/test_surena4_ros/S5mod_right_hand.cpp src/test_surena4_ros/S5mod_left_hand.cpp src/test_surena4_ros/MinimumJerkInterpolation.cpp)
 #add_executable(test_node_cpp src/surena5/target_robot_test_RH.cpp src/surena5/S5mod_right_hand.cpp src/surena5/MinimumJerkInterpolation.cpp)
 #add_executable(test_node_cpp src/sura5/target_robot_test_LH.cpp src/surena5/S5mod_left_hand.cpp src/surena5/MinimumJerkInterpolation.cpp)
 #add_executable(test_node_cpp src/surena5/target_robot_test.cpp src/surena5/S5mod_left_hand.cpp src/surena5/S5mod_right_hand.cpp src/surena5/MinimumJerkInterpolation.cpp)
 #add_executable(test_node_cpp src/surena5/move2pose_robot_test.cpp src/surena5/S5mod_right_hand.cpp)
-target_link_libraries( test_node_cpp  ${catkin_LIBRARIES} ) 
+#target_link_libraries( test_node_cpp  ${catkin_LIBRARIES} ) 
 
 #add_executable( test_node_cpp src/surena4/s5Version2_test_r.cpp src/surena4/S5mod_right_hand.cpp src/surena4/MinimumJerkInterpolation.cpp)
 
-add_executable(hand_trajectory src/test_surena4_ros/test_forgotten_srv.cpp src/test_surena4_ros/S5mod_right_hand.cpp src/test_surena4_ros/S5mod_left_hand.cpp src/test_surena4_ros/MinimumJerkInterpolation.cpp)
-target_link_libraries(hand_trajectory ${catkin_LIBRARIES})
-add_dependencies(hand_trajectory hand_planner_test_gencpp)
+#add_executable(hand_trajectory src/test_surena4_ros/test_forgotten_srv.cpp src/test_surena4_ros/S5mod_right_hand.cpp src/test_surena4_ros/S5mod_left_hand.cpp src/test_surena4_ros/MinimumJerkInterpolation.cpp)
+#target_link_libraries(hand_trajectory ${catkin_LIBRARIES})
+#add_dependencies(hand_trajectory hand_planner_test_gencpp)
+
+add_executable(hand_gripOnline src/test_surena4_ros/gripOnline.cpp src/test_surena4_ros/S5mod_right_hand.cpp src/test_surena4_ros/S5mod_left_hand.cpp src/test_surena4_ros/MinimumJerkInterpolation.cpp)
+target_link_libraries(hand_gripOnline ${catkin_LIBRARIES})
+add_dependencies(hand_gripOnline hand_planner_test_gencpp)
+
+add_executable(CAMERA_AI src/test_surena4_ros/camera_ai_node.cpp)
+target_link_libraries(CAMERA_AI ${catkin_LIBRARIES})
+add_dependencies(CAMERA_AI hand_planner_test_gencpp)
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the

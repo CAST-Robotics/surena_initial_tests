@@ -15,27 +15,27 @@ public:
                        Vector3d init_rankle_orient, Vector3d final_rankle_orient,
                        double time);
 
-    Vector3d *getCOMPos()
+    const vector<Vector3d>& getCOMPos()
     {
         return COMPos_;
     }
-    Vector3d *getLAnklePos()
+    const vector<Vector3d>& getLAnklePos()
     {
         return LAnklePos_;
     }
-    Vector3d *getRAnklePos()
+    const vector<Vector3d>& getRAnklePos()
     {
         return RAnklePos_;
     }
-    Matrix3d *getLAnkleOrient()
+    const vector<Matrix3d>& getLAnkleOrient()
     {
         return LAnkleOrient_;
     }
-    Matrix3d *getRAnkleOrient()
+    const vector<Matrix3d>& getRAnkleOrient()
     {
         return RAnkleOrient_;
     }
-    Matrix3d *getCOMOrient()
+    const vector<Matrix3d>& getCOMOrient()
     {
         return COMOrient_;
     }
@@ -44,7 +44,7 @@ public:
         return length_;
     }
 
-    int *getRobotState()
+    const vector<int>& getRobotState()
     {
         return robotState_;
     }
@@ -52,13 +52,13 @@ public:
 private:
     int length_;
     double dt_;
-    Vector3d *COMPos_;
-    Vector3d *LAnklePos_;
-    Vector3d *RAnklePos_;
-    Matrix3d *COMOrient_;
-    Matrix3d *LAnkleOrient_;
-    Matrix3d *RAnkleOrient_;
+    vector<Vector3d> COMPos_;
+    vector<Vector3d> LAnklePos_;
+    vector<Vector3d> RAnklePos_;
+    vector<Matrix3d> COMOrient_;
+    vector<Matrix3d> LAnkleOrient_;
+    vector<Matrix3d> RAnkleOrient_;
 
     // Robot Movment State Indicator (0:Stance, 1:Double Support, 2:Right Single Support, 3: Left Single Support, 4:None)
-    int *robotState_;
+    vector<int> robotState_;
 };

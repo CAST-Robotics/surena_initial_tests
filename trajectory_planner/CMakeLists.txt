@@ -112,9 +112,9 @@ generate_messages(
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-#  INCLUDE_DIRS include
-#  LIBRARIES trajectory_planner
-#  CATKIN_DEPENDS roscpp rospy std_msgs
+ INCLUDE_DIRS include
+ LIBRARIES trajectory_planner
+ CATKIN_DEPENDS roscpp rospy std_msgs
 #  DEPENDS system_lib
 )
 
@@ -214,8 +214,10 @@ include_directories(
 ## Add folders to be run by python nosetests
 # catkin_add_nosetests(test)
 file(GLOB SOURCES "src/*.cpp")
-add_executable(trajectory_planner ${SOURCES})
-target_link_libraries(trajectory_planner ${catkin_LIBRARIES})
+add_library(${PROJECT_NAME} ${SOURCES})
+add_executable(trajectory_planner_node ${SOURCES})
+target_link_libraries(${PROJECT_NAME} ${catkin_LIBRARIES})
+target_link_libraries(trajectory_planner_node ${catkin_LIBRARIES})
 add_dependencies(trajectory_planner trajectory_planner_generate_messages_cpp
 ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS}
 )

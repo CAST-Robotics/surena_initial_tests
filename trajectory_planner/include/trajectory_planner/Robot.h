@@ -21,6 +21,7 @@
 #include "Collision.h"
 #include "Estimator.h"
 
+#include <deque>
 #include "fstream"
 
 using namespace std;
@@ -30,7 +31,7 @@ class Robot
     friend class Surena;
 
 public:
-    Robot(ros::NodeHandle *nh, std::string config_path);
+    Robot(ros::NodeHandle *nh, std::string config_path, bool simulation=false);
     ~Robot();
 
     void initROSCommunication();
@@ -60,10 +61,10 @@ public:
                         double init_rankle_pos[3], double final_rankle_pos[3], double init_rankle_orient[3], double final_rankle_orient[3]);
     bool resetTraj();
 
-    void generateStraightFootStep(Vector3d *ankle_rf, Vector3d *dcm_rf, const double &step_width,
+    void generateStraightFootStep(vector<Vector3d>& ankle_rf, vector<Vector3d>& dcm_rf, const double &step_width,
                                   const double &step_length, const double &step_height, const int &step_count);
 
-    void generateTurnFootStep(Vector3d *ankle_rf, Vector3d *dcm_rf, const double &step_length,
+    void generateTurnFootStep(vector<Vector3d>& ankle_rf, vector<Vector3d>& dcm_rf, const double &step_length,
                               const double &step_height, const int &step_count, const double &theta);
 
     int findTrajIndex(vector<int> arr, int n, int K);
@@ -72,7 +73,11 @@ public:
     void distributeBump(double r_foot_z, double l_foot_z, double &r_bump, double &l_bump);
 
     void publishCoMPose(int iter);
-    void publishFootStep(Vector3d *ankle_rf, const int &step_count);
+    void publishFootStep(const vector<Vector3d>& ankle_rf, const int &step_count);
+
+    inline int getTrajSize(){
+        return dataSize_;
+    }
 
 private:
     enum ControlState
@@ -85,6 +90,7 @@ private:
 
     ros::NodeHandle *nh_;
     std::string robotConfigPath_;
+    bool simulation_;
 
     double thigh_;
     double shank_;
@@ -102,56 +108,33 @@ private:
     PID *CoMController_;
     Controller *onlineWalk_;
 
-    template <typename T>
-    T *appendTrajectory(T *old_traj, T *new_traj, int old_size, int new_size)
-    {
-        /*
-            This function appends a new trajectory to an old one.
-            for example:
-            when you want to call general_traj service twice.
-        */
-        int total_size = old_size + new_size;
-        T *temp_traj = new T[total_size];
-        copy(old_traj, old_traj + old_size, temp_traj);
-        delete[] old_traj;
-        old_traj = temp_traj;
-        temp_traj = new_traj;
-        copy(temp_traj, temp_traj + new_size, old_traj + old_size);
-        return old_traj;
-    }
-
     void doIK(MatrixXd pelvisP, Matrix3d pelvisR, MatrixXd leftAnkleP, Matrix3d leftAnkleR, MatrixXd rightAnkleP, Matrix3d rightAnkleR);
-    double *geometricIK(MatrixXd p1, MatrixXd r1, MatrixXd p7, MatrixXd r7, bool isLeft);
+    vector<double> geometricIK(MatrixXd p1, MatrixXd r1, MatrixXd p7, MatrixXd r7, bool isLeft);
     Matrix3d Rroll(double phi);
     Matrix3d RPitch(double theta);
 
-    Vector3d *CoMPos_;
-    Matrix3d *CoMRot_;
-    Vector3d *zmpd_;
-    Vector3d *CoMDot_;
-    Vector3d *xiDesired_;
-    Vector3d *xiDot_;
-    Vector3d *rAnklePos_;
-    Vector3d *lAnklePos_;
-    Matrix3d *rAnkleRot_;
-    Matrix3d *lAnkleRot_;
-    int *robotPhase_;
+    vector<Vector3d> CoMPos_;
+    vector<Matrix3d> CoMRot_;
+    vector<Vector3d> zmpd_;
+    vector<Vector3d> CoMDot_;
+    vector<Vector3d> xiDesired_;
+    vector<Vector3d> rAnklePos_;
+    vector<Vector3d> lAnklePos_;
+    vector<Matrix3d> rAnkleRot_;
+    vector<Matrix3d> lAnkleRot_;
+    vector<int> robotPhase_;
     double bumpBiasR_;
     double bumpBiasL_;
     bool bumpSensorCalibrated_;
 
     Vector3d rSole_;   // current position of right sole
     Vector3d lSole_;   // current position of left sole
-    Vector3d *FKBase_; // current CoM of robot
-    Vector3d *FKBaseDot_;
-    Vector3d *FKCoM_;
-    Vector3d *FKCoMDot_;
-    double *FKCoMDotP_;
-    Vector3d *realXi_;
-    Vector3d *realZMP_; // current ZMP of robot
-    Vector3d *rSoles_;
-    Vector3d *lSoles_;
-    Vector3d *cntOut_;
+    deque<Vector3d> FKBase_{3, Vector3d(0, 0, 0)};
+    Vector3d FKBaseDot_;
+    deque<Vector3d> FKCoM_{3, Vector3d(0, 0, 0)};
+    Vector3d FKCoMDot_;
+    Vector3d realXi_;
+    Vector3d realZMP_; // current ZMP of robot
     bool leftSwings_;
     bool rightSwings_;
 
@@ -179,7 +162,6 @@ private:
     bool useController_;
 
     int index_;
-    int size_;
     int dataSize_;
     vector<int> trajSizes_;
     double COM_height_;

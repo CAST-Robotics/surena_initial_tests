@@ -7,13 +7,7 @@ GeneralMotion::GeneralMotion(double dt)
 
 GeneralMotion::~GeneralMotion()
 {
-    delete[] COMPos_;
-    delete[] COMOrient_;
-    delete[] LAnklePos_;
-    delete[] RAnklePos_;
-    delete[] LAnkleOrient_;
-    delete[] RAnkleOrient_;
-    delete[] robotState_;
+
 }
 
 void GeneralMotion::changeInPlace(Vector3d init_com_pos, Vector3d final_com_pos,
@@ -32,23 +26,23 @@ void GeneralMotion::changeInPlace(Vector3d init_com_pos, Vector3d final_com_pos,
         init_{com, lankle, rankle}_orient, final_{com, lankle, rankle}_orient are
         initial and final euler angles of COM, Left Ankle & Right Ankle (roll, pitch, yaw).
     */
-
+    // cout << init_lankle_pos << "--------" << init_rankle_pos << endl;
     length_ = time / dt_;
-    COMPos_ = new Vector3d[length_];
-    COMOrient_ = new Matrix3d[length_];
-    LAnklePos_ = new Vector3d[length_];
-    LAnkleOrient_ = new Matrix3d[length_];
-    RAnklePos_ = new Vector3d[length_];
-    RAnkleOrient_ = new Matrix3d[length_];
-    robotState_ = new int[length_];
+    COMPos_.resize(length_);
+    COMOrient_.resize(length_);
+    LAnklePos_.resize(length_);
+    LAnkleOrient_.resize(length_);
+    RAnklePos_.resize(length_);
+    RAnkleOrient_.resize(length_);
+    robotState_.resize(length_);
 
-    Vector3d *com_pos_coefs = cubicInterpolate<Vector3d>(init_com_pos, final_com_pos, Vector3d::Zero(3), Vector3d::Zero(3), time);
-    Vector3d *lankle_pos_coefs = cubicInterpolate<Vector3d>(init_lankle_pos, final_lankle_pos, Vector3d::Zero(3), Vector3d::Zero(3), time);
-    Vector3d *rankle_pos_coefs = cubicInterpolate<Vector3d>(init_rankle_pos, final_rankle_pos, Vector3d::Zero(3), Vector3d::Zero(3), time);
+    vector<Vector3d> com_pos_coefs = cubicInterpolate<Vector3d>(init_com_pos, final_com_pos, Vector3d::Zero(3), Vector3d::Zero(3), time);
+    vector<Vector3d> lankle_pos_coefs = cubicInterpolate<Vector3d>(init_lankle_pos, final_lankle_pos, Vector3d::Zero(3), Vector3d::Zero(3), time);
+    vector<Vector3d> rankle_pos_coefs = cubicInterpolate<Vector3d>(init_rankle_pos, final_rankle_pos, Vector3d::Zero(3), Vector3d::Zero(3), time);
 
-    Vector3d *com_orient_coefs = cubicInterpolate<Vector3d>(init_com_orient, final_com_orient, Vector3d::Zero(3), Vector3d::Zero(3), time);
-    Vector3d *lankle_orient_coefs = cubicInterpolate<Vector3d>(init_lankle_orient, final_lankle_orient, Vector3d::Zero(3), Vector3d::Zero(3), time);
-    Vector3d *rankle_orient_coefs = cubicInterpolate<Vector3d>(init_rankle_orient, final_rankle_orient, Vector3d::Zero(3), Vector3d::Zero(3), time);
+    vector<Vector3d> com_orient_coefs = cubicInterpolate<Vector3d>(init_com_orient, final_com_orient, Vector3d::Zero(3), Vector3d::Zero(3), time);
+    vector<Vector3d> lankle_orient_coefs = cubicInterpolate<Vector3d>(init_lankle_orient, final_lankle_orient, Vector3d::Zero(3), Vector3d::Zero(3), time);
+    vector<Vector3d> rankle_orient_coefs = cubicInterpolate<Vector3d>(init_rankle_orient, final_rankle_orient, Vector3d::Zero(3), Vector3d::Zero(3), time);
 
     Vector3d temp_com_orient;
     Vector3d temp_lankle_orient;

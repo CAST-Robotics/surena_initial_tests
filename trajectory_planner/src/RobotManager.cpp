@@ -38,9 +38,9 @@ RobotManager::RobotManager(ros::NodeHandle *n)
     isWalkingWithKeyboard = false;
 
     int temp_ratio[12] = {100, 100, 50, 80, 100, 100, 50, 80, 120, 120, 120, 120};
-    int temp_home_abs[12] = {122570, 139874, 137321, 8735, 131448, 129963, 145545, 145183, 122054, 18816, 131690, 140432};
-    int temp_abs_high[12] = {108426, 119010, 89733, 136440, 71608, 102443, 119697, 82527, 168562, 131334, 191978, 111376};
-    int temp_abs_low[12] = {145354, 183778, 194153, 7000, 203256, 160491, 150225, 180000, 61510, 16500, 61482, 172752};
+    int temp_home_abs[12] = {121354, 140898, 135849, 8159, 130104, 130283, 143633, 145631, 123654, 63488, 133626, 140880};
+    int temp_abs_high[12] = {108426, 119010, 89733, 136440, 71608, 102443, 119697, 82527, 168562, 160000, 191978, 111376};
+    int temp_abs_low[12] = {145354, 183778, 194153, 7000, 203256, 160491, 150225, 180000, 61510, 61000, 61482, 172752};
     int temp_abs2inc_dir[12] = {1, 1, -1, -1, -1, 1, 1, 1, -1, 1, 1, 1};
     int temp_abs_dir[12] = {-1, -1, -1, 1, -1, -1, -1, -1, 1, 1, 1, -1};
     int temp_motor_dir[12] = {1, 1, 1, -1, -1, 1, 1, 1, -1, 1, 1, -1};
@@ -53,11 +53,11 @@ RobotManager::RobotManager(ros::NodeHandle *n)
     {
         if (i < 20)
             motorCommandArray_[i] = 0;
-        else if (i == 20)
+        else if (i == 20) // head pitch
             motorCommandArray_[i] = 145;
-        else if (i == 21)
+        else if (i == 21) // head roll
             motorCommandArray_[i] = 145;
-        else if (i == 22)
+        else if (i == 22) // head yaw
             motorCommandArray_[i] = 145;
         
     }
@@ -481,10 +481,10 @@ void RobotManager::absReader(const sensor_msgs::JointState &msg)
     {
         absData_[i] = msg.position[i + 1];
 
-        if (i == 10)
-            absData_[10] = msg.position[12];
-        else if (i == 11)
-            absData_[11] = msg.position[11];
+        // if (i == 10)
+        //     absData_[10] = msg.position[12];
+        // else if (i == 11)
+        //     absData_[11] = msg.position[11];
 
         // Lower body collision detection
         if (i < 12 && abs(absData_[i]) > 262144)
@@ -655,7 +655,7 @@ bool RobotManager::walk(trajectory_planner::Trajectory::Request &req,
 
         robot->getJointAngs(iter, config, jnt_vel, right_ft, left_ft, right_bump,
                             left_bump, gyro, accelerometer, jnt_command, status);
-        if (status != 0)
+                if (status != 0)
         {
             cout << "Node was shut down due to Ankle Collision!" << endl;
             return false;

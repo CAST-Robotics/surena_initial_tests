@@ -131,16 +131,16 @@ int main(int argc, char *argv[])
       msg.data.clear();
       if(dir){
             //_motorPosition[i]=pos;
-            pos+=1;
+            pos+=16;
             }
           else{
             //_motorPosition[i]=pos;
-            pos-=1;
+            pos-=16;
             }
       //_dataReader.GetData(_motorPosition,_dataIndex++);
       for(size_t i = 0; i < 23; i++)
       {
-        if(i == 20 || i == 21 || i == 22)
+        if(i == 16 || i == 17 || i == 18 || i == 19)
         {
           msg.data.push_back(pos);
         }
@@ -150,9 +150,9 @@ int main(int argc, char *argv[])
       }
     // }
     pub.publish(msg);
-     if(pos>(150))
+     if(pos>(15000))
     dir=false;
-     if(pos<(90))
+     if(pos<(-15000))
     dir=true;
     
    // pub2.publish(myCustomMsg);

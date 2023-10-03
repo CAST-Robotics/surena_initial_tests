@@ -20,9 +20,13 @@
 #include "GeneralMotion.h"
 #include "Collision.h"
 #include "Estimator.h"
+#include "LieEKF.h"
+#include "QuatEKF.h"
 
 #include <deque>
 #include "fstream"
+#include <random>
+#include <chrono>
 
 using namespace std;
 
@@ -168,6 +172,8 @@ private:
 
     Collision *ankleColide_;
     Estimator *estimator_;
+    QuatEKF* quatEKF_;
+    LieEKF* lieEKF_;
 
     Vector3d lZMP_;
     Vector3d rZMP_;

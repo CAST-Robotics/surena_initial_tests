@@ -22,6 +22,8 @@ Robot::Robot(ros::NodeHandle *nh, std::string config_path, bool simulation)
     onlineWalk_ = new Controller(kp, ki, kzmp, kcom);
 
     ankleColide_ = new Collision(soleXFront_, soleY_, soleXBack_, soleMinDist_);
+    quatEKF_ = new QuatEKF();
+    lieEKF_ = new LieEKF();
 }
 
 void Robot::initROSCommunication()
@@ -88,6 +90,30 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
                        double *joint_angles, int &status)
 {
 
+    // if(simulation_)
+    // {
+    //     int contact[2];
+    //     if(robotPhase_[iter] == 2){
+    //         contact[0] = 0;
+    //         contact[1] = 1;
+    //     }else if(robotPhase_[iter] == 3){
+    //         contact[0] = 1;
+    //         contact[1] = 0;
+    //     }else{
+    //         contact[0] = 1;
+    //         contact[1] = 1;
+    //     }
+    //     // add noise to the sensor values
+    //     std::default_random_engine generator;
+    //     generator.seed(std::chrono::system_clock::now().time_since_epoch().count());
+    //     std::normal_distribution<double> dist(0.0, 0.01);
+    //     std::normal_distribution<double> dist1(0.0, 0.03te);
+
+    //     quatEKF_->setDt(dt_);
+    //     lieEKF_->setDt(dt_);
+    //     quatEKF_->runFilter(gyro + Vector3d(dist(generator), dist(generator), dist(generator)), accelerometer + Vector3d(dist(generator), dist(generator), dist(generator)), links_[12]->getPose(), links_[6]->getPose(), links_[12]->getRot(), links_[6]->getRot(), contact, true);
+    //     lieEKF_->runFilter(gyro + Vector3d(dist(generator), dist(generator), dist(generator)), accelerometer + Vector3d(dist1(generator), dist1(generator), dist1(generator)), links_[12]->getPose(), links_[6]->getPose(), links_[12]->getRot(), links_[6]->getRot(), contact, true);
+    // }
     updateRobotState(config, jnt_vel, torque_r, torque_l, f_r, f_l, gyro, accelerometer);
 
     int traj_index = findTrajIndex(trajSizes_, trajSizes_.size(), iter);

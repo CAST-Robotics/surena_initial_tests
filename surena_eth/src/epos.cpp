@@ -525,6 +525,18 @@ inline QByteArray Epos::CreateDynamixelPacket(int canID,int motorID,int motorPos
     data.append( QByteArray(4, Qt::Initialization::Uninitialized));
     return data;
 }
+inline QByteArray Epos::CreateHandBoardCommand(int id,QList<int> motorPositions)
+{
+    QByteArray data;
+    data.append((canID>>8)&0xff);
+    data.append((canID>>0)&0xff);
+    data.append(motorID&0xff);
+    data.append((motorPosition >> 8) & 0xff); //pos hi
+    data.append((motorPosition >> 0) & 0xff); //pos low
+    data.append(velocity&0xff);  //speed
+    data.append( QByteArray(4, Qt::Initialization::Uninitialized));
+    return data;
+}
 //========================================================================
 inline QByteArray Epos::CreateHandPacket(QList<int> motorPositions)
 {
@@ -539,14 +551,17 @@ inline QByteArray Epos::CreateHandPacket(QList<int> motorPositions)
     }
     else if(handDeviceID> 3 && handDeviceID<7)
     {
+     //   CreateHandBoardCommand(0x401+handDeviceID,motorPositions);
+         //  data.append(CreatePDOPacket(0x281,motorPositions[23] &0xff,0));
         // data.append(CreateDynamixelPacket(0x581,handDeviceID-3,motorPositions[12+handDeviceID],100));
         // data.append(CreateDynamixelPacket(0x581,handDeviceID-3,motorPositions[8+12+handDeviceID],100));
         handDeviceID++;
     }
     else if(handDeviceID==7)
     {
+    
         ///right palm
-        // data.append(CreatePDOPacket(palmCanID,motorPositions[19] &0xff,0));
+      //  data.append(CreatePDOPacket(0x282,motorPositions[24] &0xff,0));
         // ///left palm
         // data.append(CreatePDOPacket(palmCanID,motorPositions[27] &0xff,0));
         handDeviceID++;

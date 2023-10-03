@@ -585,7 +585,7 @@ class test_forgotten_srv{
 
             ros::Rate rate_(rate);
             ofstream fw;
-            fw.open("/home/cast/Projects/pybullet/gripOnline.txt", std::ofstream::out);
+            fw.open("/home/surenav/DynCont/Code/WalkTest/src/hand_planner_test/src/test_surena4_ros/gripOnline.txt", std::ofstream::out);
             q_motor.resize(29,0);
             q_gazebo.resize(29,0);
             q_ra.resize(7);
@@ -604,7 +604,7 @@ class test_forgotten_srv{
             x0 = x;
             y0 = y;
             z0 = z;
-            while (t_grip<=20 || (norm(r_right_palm - camera_target)>0.015)) {
+            while (t_grip<=40 || (norm(r_right_palm - camera_target)>0.015)) {
             camera_target << x, y, z;
 
             if (x!=x0 || y!=y0 || z!=z0) {
@@ -636,7 +636,7 @@ class test_forgotten_srv{
                 q_gazebo[17]=q_ra(2)-q_init_r(2);  
                 q_gazebo[18]=q_ra(3)-q_init_r(3);
                 hand_func_R.SendGazebo(q_gazebo);
-                // cout<<q_gazebo[15]<<','<<q_gazebo[16]<<','<<q_gazebo[17]<<','<<q_gazebo[18]<<endl;
+                cout<<q_gazebo[15]<<','<<q_gazebo[16]<<','<<q_gazebo[17]<<','<<q_gazebo[18]<<endl;
                 }
             else{
 
@@ -644,7 +644,7 @@ class test_forgotten_srv{
                 q_motor[13]=-int((q_ra(1)-q_init_r(1))*encoderResolution[0]*harmonicRatio[1]/M_PI/2); // be samte birun
                 q_motor[14]=int((q_ra(2)-q_init_r(2))*encoderResolution[1]*harmonicRatio[2]/M_PI/2); // be samte birun
                 q_motor[15]=-int((q_ra(3)-q_init_r(3))*encoderResolution[1]*harmonicRatio[3]/M_PI/2);// be samte bala
-                // cout<<q_motor[12]<<','<<q_motor[13]<<','<<q_motor[14]<<','<<q_motor[15]<<endl;
+                cout<<q_motor[12]<<','<<q_motor[13]<<','<<q_motor[14]<<','<<q_motor[15]<<endl;
                 
                 trajectory_data.data.clear();
                 for(int  i = 0; i < 20; i++)

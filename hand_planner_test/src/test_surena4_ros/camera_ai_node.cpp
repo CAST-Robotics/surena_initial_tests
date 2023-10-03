@@ -12,12 +12,12 @@ int main(int argc, char **argv)
     while (ros::ok){
     geometry_msgs::PoseArray  posearray;
     geometry_msgs::Pose p;
-    if (time<10){
+    if (time<5){
         p.position.x = 0.3; //shakeHands
         p.position.y = -0.05;
         p.position.z = -0.35;
     }
-    else if(time>=10 && time<20){
+    else if(time>=5 && time<10){
         p.position.x = 0.2;
         p.position.y = 0.05;
         p.position.z = -0.35;

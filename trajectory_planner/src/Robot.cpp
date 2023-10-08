@@ -150,8 +150,9 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
         cout << "Collision Detected in Ankles!" << endl;
     }
 
-    this->publishCoMPose(iter);
-
+    // this->publishCoMPose(iter);
+    cout << CoMPos_[iter](0) << ", " << CoMPos_[iter](1) << ", " << CoMPos_[iter](2) << ", ";
+    cout << CoMRot_[iter](0) << ", " << CoMRot_[iter](1) << ", " << CoMRot_[iter](2) << endl;
     doIK(CoMPos_[iter], CoMRot_[iter], lAnklePos_[iter], lAnkleRot_[iter], rAnklePos_[iter], rAnkleRot_[iter]);
     Vector3d Rrpy = rAnkleRot_[iter].eulerAngles(2, 1, 0);
     Vector3d Lrpy = lAnkleRot_[iter].eulerAngles(2, 1, 0);

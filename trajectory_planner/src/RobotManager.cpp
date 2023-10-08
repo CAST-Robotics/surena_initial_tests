@@ -53,10 +53,10 @@ RobotManager::RobotManager(ros::NodeHandle *n)
     {
         if (i < 20)
             motorCommandArray_[i] = 0;
-        else if (i == 20) // head pitch
+        else if (i == 20) // head roll
             motorCommandArray_[i] = 145;
-        else if (i == 21) // head roll
-            motorCommandArray_[i] = 145;
+        else if (i == 21) // head pitch
+            motorCommandArray_[i] = 165;
         else if (i == 22) // head yaw
             motorCommandArray_[i] = 145;
         
@@ -816,7 +816,7 @@ void RobotManager::keyboardHandler(const std_msgs::Int32 &msg)
         case 97: // a: turn left
             step_count = 2;
             step_length = -0.15;
-            theta = 0.08;
+            theta = 0.17;
             robot->trajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 
                            step_width, dt, theta, ankle_height, step_height, slope);
             isKeyboardTrajectoryEnabled = false;
@@ -825,7 +825,7 @@ void RobotManager::keyboardHandler(const std_msgs::Int32 &msg)
         case 100: // d: turn right
             step_count = 2;
             step_length = 0.15;
-            theta = 0.08;
+            theta = 0.17;
             robot->trajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 
                            step_width, dt, theta, ankle_height, step_height, slope);
             isKeyboardTrajectoryEnabled = false;

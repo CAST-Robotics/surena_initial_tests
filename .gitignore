@@ -3,3 +3,4 @@
 *.csv
 *.STL
 __pycache__
+CMakeLists.txt

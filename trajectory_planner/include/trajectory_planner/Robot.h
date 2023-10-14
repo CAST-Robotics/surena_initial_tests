@@ -78,6 +78,7 @@ public:
 
     void publishCoMPose(int iter);
     void publishFootStep(const vector<Vector3d>& ankle_rf, const int &step_count);
+    void publishZMPPose();
 
     inline int getTrajSize(){
         return dataSize_;

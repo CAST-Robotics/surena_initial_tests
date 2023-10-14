@@ -29,7 +29,7 @@ Robot::Robot(ros::NodeHandle *nh, std::string config_path, bool simulation)
 void Robot::initROSCommunication()
 {
     footStepPub_ = nh_->advertise<geometry_msgs::Point>("/surena/foot_steps", 100);
-    zmpDataPub_ = nh_->advertise<geometry_msgs::Point>("/zmp_position", 100);
+    zmpDataPub_ = nh_->advertise<geometry_msgs::PoseStamped>("/surena/zmp_position", 100);
     comDataPub_ = nh_->advertise<geometry_msgs::PoseStamped>("/surena/com_pose", 100);
     xiDataPub_ = nh_->advertise<geometry_msgs::Twist>("/xi_data", 100);
 }
@@ -151,8 +151,7 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
     }
 
     // this->publishCoMPose(iter);
-    cout << CoMPos_[iter](0) << ", " << CoMPos_[iter](1) << ", " << CoMPos_[iter](2) << ", ";
-    cout << CoMRot_[iter](0) << ", " << CoMRot_[iter](1) << ", " << CoMRot_[iter](2) << endl;
+    this->publishZMPPose();
     doIK(CoMPos_[iter], CoMRot_[iter], lAnklePos_[iter], lAnkleRot_[iter], rAnklePos_[iter], rAnkleRot_[iter]);
     Vector3d Rrpy = rAnkleRot_[iter].eulerAngles(2, 1, 0);
     Vector3d Lrpy = lAnkleRot_[iter].eulerAngles(2, 1, 0);
@@ -358,9 +357,9 @@ void Robot::updateRobotState(double config[], double jnt_vel[], Vector3d torque_
         f_r = 0;
 
     realZMP_ = ZMPGlobal(rSole_ + lZMP_, lSole_ + rZMP_, f_r, f_l);
-    zmpPosition_.x = realZMP_(0);
-    zmpPosition_.y = realZMP_(1);
-    zmpPosition_.z = realZMP_(2);
+    // zmpPosition_.x = realZMP_(0);
+    // zmpPosition_.y = realZMP_(1);
+    // zmpPosition_.z = realZMP_(2);
     // zmpDataPub_.publish(zmpPosition_);
 }
 
@@ -638,6 +637,16 @@ void Robot::publishCoMPose(int iter)
     com_pose.pose.position.y = CoMPos_[iter](1);
     com_pose.pose.position.z = CoMPos_[iter](2);
     comDataPub_.publish(com_pose);
+}
+
+void Robot::publishZMPPose()
+{
+    geometry_msgs::PoseStamped zmp_pose;
+    zmp_pose.header.stamp = ros::Time::now();
+    zmp_pose.pose.position.x = rZMP_(0);
+    zmp_pose.pose.position.y = rZMP_(1);
+    zmp_pose.pose.position.z = rZMP_(2);
+    zmpDataPub_.publish(zmp_pose);
 }
 
 bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double_support,

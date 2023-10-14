@@ -20,7 +20,7 @@ class RobotVisualizer:
         self.rate_ = rospy.Rate(int(1 / self.dt_))
         rospy.Subscriber("/surena/inc_joint_state", JointState, self.incJointCallback)
         rospy.Subscriber("/surena/foot_steps", Point, self.footStepCallback)
-        rospy.Subscriber("/surena/com_pose", PoseStamped, self.CoMCallback)
+        rospy.Subscriber("/surena/zmp_position", PoseStamped, self.CoMCallback)
 
         self.incJointData_ = []
         self.incJointDataFile_ = None

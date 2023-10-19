@@ -66,7 +66,7 @@ public:
     bool resetTraj();
 
     void generateStraightFootStep(vector<Vector3d>& ankle_rf, vector<Vector3d>& dcm_rf, const double &step_width,
-                                  const double &step_length, const double &step_height, const int &step_count);
+                                  const double &step_length, const double &step_height, const int &step_count, const double &com_offset);
 
     void generateTurnFootStep(vector<Vector3d>& ankle_rf, vector<Vector3d>& dcm_rf, const double &step_length,
                               const double &step_height, const int &step_count, const double &theta);

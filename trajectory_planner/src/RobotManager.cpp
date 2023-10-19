@@ -597,7 +597,7 @@ bool RobotManager::walk(trajectory_planner::Trajectory::Request &req,
     double final_rankle_pos[3] = {0, -0.0975, 0};
     double final_rankle_orient[3] = {0, 0, 0};
 
-    robot->generalTrajGen(req.dt, req.t_step, init_com_pos, final_com_pos, init_com_orient, final_com_orient,
+    robot->generalTrajGen(req.dt, 2, init_com_pos, final_com_pos, init_com_orient, final_com_orient,
                           init_lankle_pos, final_lankle_pos, init_lankle_orient, final_lankle_orient,
                           init_rankle_pos, final_rankle_pos, init_rankle_orient, final_rankle_orient);
     // general_traj.request.time = req.t_step;
@@ -613,8 +613,8 @@ bool RobotManager::walk(trajectory_planner::Trajectory::Request &req,
     // general_traj.request.final_rankle_pos = {0, -0.0975, 0.05};
     // generalTrajectory_.call(general_traj);
 
-    // robot->trajGen(req.step_count, req.t_step, req.alpha, req.t_double_support, req.COM_height,
-    //                req.step_length, req.step_width, req.dt, req.theta, req.ankle_height, req.step_height, 0);
+    robot->trajGen(req.step_count, req.t_step, req.alpha, req.t_double_support, req.COM_height,
+                   req.step_length, req.step_width, req.dt, req.theta, req.ankle_height, req.step_height, 0);
     // if(traj_srv.response.result){
 
     // init_com_pos[2] = req.COM_height;
@@ -624,14 +624,8 @@ bool RobotManager::walk(trajectory_planner::Trajectory::Request &req,
     //                       init_rankle_pos, final_rankle_pos, init_rankle_orient, final_rankle_orient);
 
     init_com_pos[2] = req.COM_height;
-    final_com_pos[2] = req.COM_height;
-    robot->generalTrajGen(req.dt, 15, init_com_pos, final_com_pos, init_com_orient, final_com_orient,
-                          init_lankle_pos, final_lankle_pos, init_lankle_orient, final_lankle_orient,
-                          init_rankle_pos, final_rankle_pos, init_rankle_orient, final_rankle_orient);
-
-    init_com_pos[2] = req.COM_height;
     final_com_pos[2] = 0.71;
-    robot->generalTrajGen(req.dt, 3, init_com_pos, final_com_pos, init_com_orient, final_com_orient,
+    robot->generalTrajGen(req.dt, 2, init_com_pos, final_com_pos, init_com_orient, final_com_orient,
                           init_lankle_pos, final_lankle_pos, init_lankle_orient, final_lankle_orient,
                           init_rankle_pos, final_rankle_pos, init_rankle_orient, final_rankle_orient);
 

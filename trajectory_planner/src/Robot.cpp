@@ -130,7 +130,7 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
             bumpSensorCalibrated_ = true;
             runFootLenController(iter, f_l, f_r, traj_index);
 
-            runBumpFootOrientController(iter, bump_r, bump_l);
+            // runBumpFootOrientController(iter, bump_r, bump_l);
 
             runEarlyContactController(iter, bump_r, bump_l);
 
@@ -152,6 +152,19 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
 
     // this->publishCoMPose(iter);
     this->publishZMPPose();
+    // cout << links_[6]->getPose()(0) << ", " << links_[6]->getPose()(1) << ", " << links_[6]->getPose()(2) << ", ";
+    // cout << links_[12]->getPose()(0) << ", " << links_[12]->getPose()(1) << ", " << links_[12]->getPose()(2) << ", ";
+    // cout << rZMP_(0) << ", " << rZMP_(1) << ", " << lZMP_(0) << ", " << lZMP_(1) << ", " << robotPhase_[index_] << endl;
+    
+    // if(abs(rZMP_(1)) > 0.05 && rZMP_(1) < 0.075 && robotPhase_[index_] == 2)
+    // {
+    //     double error = abs(rZMP_(1)) - 0.05;
+    //     double k_p = 0.65;
+    //     CoMPos_[iter](1) - k_p * error;
+    //     cout << "HIIII";
+
+    // }
+
     doIK(CoMPos_[iter], CoMRot_[iter], lAnklePos_[iter], lAnkleRot_[iter], rAnklePos_[iter], rAnkleRot_[iter]);
     Vector3d Rrpy = rAnkleRot_[iter].eulerAngles(2, 1, 0);
     Vector3d Lrpy = lAnkleRot_[iter].eulerAngles(2, 1, 0);
@@ -174,7 +187,7 @@ void Robot::runFootLenController(int iter, double f_l, double f_r, int traj_inde
         distributeFT(zmpd_[zmp_iter], rAnklePos_[iter], lAnklePos_[iter], r_wrench, l_wrench);
         deltaFd = floor((l_wrench(0) - r_wrench(0)) * 10) / 10;
     }
-    double delta_z = onlineWalk_->footLenController(deltaFd, floor((f_l - f_r) * 10) / 10, 0.00002, 0.0, 1.0);
+    double delta_z = onlineWalk_->footLenController(deltaFd, floor((f_l - f_r) * 10) / 10, 0.00004, 0.0, 1.0);
     lAnklePos_[iter](2) -= 0.5 * delta_z;
     rAnklePos_[iter](2) += 0.5 * delta_z;
 }
@@ -227,12 +240,12 @@ void Robot::runEarlyContactController(int iter, int bump_r[], int bump_l[])
     Vector3d delta_l_foot(0, 0, 0);
 
     if (r_mean_bump < -20 && rAnklePos_[iter](2) < rAnklePos_[iter - 1](2))
-        delta_r_foot = onlineWalk_->earlyContactController(bump_r, r_bump_d, 0.004, 3, true);
+        delta_r_foot = onlineWalk_->earlyContactController(bump_r, r_bump_d, 0.0042, 3, true);
     else
         delta_r_foot = onlineWalk_->earlyContactController(bump_r, r_bump_d, 0.0, 3, true);
 
     if (l_mean_bump < -20 && lAnklePos_[iter](2) < lAnklePos_[iter - 1](2))
-        delta_l_foot = onlineWalk_->earlyContactController(bump_l, l_bump_d, 0.004, 3, false);
+        delta_l_foot = onlineWalk_->earlyContactController(bump_l, l_bump_d, 0.0042, 3, false);
     else
         delta_l_foot = onlineWalk_->earlyContactController(bump_l, l_bump_d, 0.0, 3, false);
 
@@ -659,6 +672,7 @@ bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double
     int trajectory_size = int(((step_count + 2) * t_step) / dt);
     COM_height_ = COM_height;
     dt_ = dt;
+    double com_offset = 0.01;
 
     DCMPlanner *trajectoryPlanner = new DCMPlanner(COM_height_, t_step, t_double_support, dt_, step_count + 2, alpha, theta);
     Ankle *anklePlanner = new Ankle(t_step, t_double_support, ankle_height, alpha, step_count, dt_, theta, slope);
@@ -667,7 +681,7 @@ bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double
 
     if (theta == 0.0)
     { // Straight or Diagonal Walk
-        generateStraightFootStep(ankle_rf, dcm_rf, step_width, step_length, step_height, step_count);
+        generateStraightFootStep(ankle_rf, dcm_rf, step_width, step_length, step_height, step_count, com_offset);
     }
     else
     { // Turning Walk
@@ -711,11 +725,14 @@ bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double
     robotControlState_.push_back(Robot::WALK);
     isTrajAvailable_ = true;
 
+    for(int i=0; i<dataSize_; i++)
+        cout << CoMPos_[i](0) << ", " << CoMPos_[i](1) << endl;
+
     return true;
 }
 
 void Robot::generateStraightFootStep(vector<Vector3d>& ankle_rf, vector<Vector3d>& dcm_rf, const double &step_width,
-                                     const double &step_length, const double &step_height, const int &step_count)
+                                     const double &step_length, const double &step_height, const int &step_count, const double &com_offset)
 {
     int lateral_sign;
     if (step_width == 0)
@@ -726,7 +743,7 @@ void Robot::generateStraightFootStep(vector<Vector3d>& ankle_rf, vector<Vector3d
     ankle_rf[0] << 0.0, (torso_ + 0.0) * lateral_sign, 0.0;
     ankle_rf[1] << 0.0, (torso_ + 0.0) * -lateral_sign, 0.0;
     dcm_rf[0] << 0.0, 0.0, 0.0;
-    dcm_rf[1] << 0.0, torso_ * -lateral_sign, 0.0;
+    dcm_rf[1] << 0.0, (torso_ - com_offset) * -lateral_sign, 0.0;
 
     for (int i = 2; i <= step_count + 1; i++)
     {
@@ -740,8 +757,9 @@ void Robot::generateStraightFootStep(vector<Vector3d>& ankle_rf, vector<Vector3d
             ankle_rf[i] = ankle_rf[i - 2] + Vector3d(2 * step_length, step_width, step_height);
             dcm_rf[i] << ankle_rf[i - 2] + Vector3d(2 * step_length, step_width, step_height);
         }
+        dcm_rf[i](1) -= pow(-1, i) * com_offset;
     }
-
+    
     dcm_rf[step_count + 1] = 0.5 * (ankle_rf[step_count] + ankle_rf[step_count + 1]);
     ankle_rf[0] << 0.0, torso_ * lateral_sign, 0.0;
     ankle_rf[1] << 0.0, torso_ * -lateral_sign, 0.0;

@@ -614,7 +614,7 @@ bool RobotManager::walk(trajectory_planner::Trajectory::Request &req,
     // generalTrajectory_.call(general_traj);
 
     robot->trajGen(req.step_count, req.t_step, req.alpha, req.t_double_support, req.COM_height,
-                   req.step_length, req.step_width, req.dt, req.theta, req.ankle_height, req.step_height, 0);
+                   req.step_length, req.step_width, req.dt, req.theta, req.ankle_height, req.step_height, 0, req.com_offset);
     // if(traj_srv.response.result){
 
     // init_com_pos[2] = req.COM_height;
@@ -800,7 +800,7 @@ void RobotManager::keyboardHandler(const std_msgs::Int32 &msg)
             step_length = 0.15;
             theta = 0.0;
             robot->trajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 
-                           step_width, dt, theta, ankle_height, step_height, slope);
+                           step_width, dt, theta, ankle_height, step_height, slope, 0);
             isKeyboardTrajectoryEnabled = false;
             break;
 
@@ -809,7 +809,7 @@ void RobotManager::keyboardHandler(const std_msgs::Int32 &msg)
             step_length = -0.15;
             theta = 0.0;
             robot->trajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 
-                           step_width, dt, theta, ankle_height, step_height, slope);
+                           step_width, dt, theta, ankle_height, step_height, slope, 0);
             isKeyboardTrajectoryEnabled = false;
             break;
 
@@ -818,7 +818,7 @@ void RobotManager::keyboardHandler(const std_msgs::Int32 &msg)
             step_length = -0.15;
             theta = 0.17;
             robot->trajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 
-                           step_width, dt, theta, ankle_height, step_height, slope);
+                           step_width, dt, theta, ankle_height, step_height, slope, 0);
             isKeyboardTrajectoryEnabled = false;
             break;
 
@@ -827,7 +827,7 @@ void RobotManager::keyboardHandler(const std_msgs::Int32 &msg)
             step_length = 0.15;
             theta = 0.17;
             robot->trajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 
-                           step_width, dt, theta, ankle_height, step_height, slope);
+                           step_width, dt, theta, ankle_height, step_height, slope, 0);
             isKeyboardTrajectoryEnabled = false;
             break;
 

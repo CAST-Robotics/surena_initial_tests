@@ -59,7 +59,7 @@ public:
                       double accelerometer[3], double jnt_command[12], int &status);
     bool trajGen(int step_count, double t_step, double alpha, double t_double_support,
                  double COM_height, double step_length, double step_width, double dt,
-                 double theta, double ankle_height, double step_height, double slope);
+                 double theta, double ankle_height, double step_height, double slope, double com_offset);
     bool generalTrajGen(double dt, double time, double init_com_pos[3], double final_com_pos[3], double init_com_orient[3], double final_com_orient[3],
                         double init_lankle_pos[3], double final_lankle_pos[3], double init_lankle_orient[3], double final_lankle_orient[3],
                         double init_rankle_pos[3], double final_rankle_pos[3], double init_rankle_orient[3], double final_rankle_orient[3]);
@@ -69,7 +69,7 @@ public:
                                   const double &step_length, const double &step_height, const int &step_count, const double &com_offset);
 
     void generateTurnFootStep(vector<Vector3d>& ankle_rf, vector<Vector3d>& dcm_rf, const double &step_length,
-                              const double &step_height, const int &step_count, const double &theta);
+                              const double &step_height, const int &step_count, const double &theta, const double &com_offset);
 
     int findTrajIndex(vector<int> arr, int n, int K);
 

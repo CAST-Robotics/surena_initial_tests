@@ -664,7 +664,7 @@ void Robot::publishZMPPose()
 
 bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double_support,
                     double COM_height, double step_length, double step_width, double dt,
-                    double theta, double ankle_height, double step_height, double slope)
+                    double theta, double ankle_height, double step_height, double slope, double com_offset)
 {
     /*
         ROS service for generating robot COM & ankles trajectories
@@ -672,7 +672,6 @@ bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double
     int trajectory_size = int(((step_count + 2) * t_step) / dt);
     COM_height_ = COM_height;
     dt_ = dt;
-    double com_offset = 0.01;
 
     DCMPlanner *trajectoryPlanner = new DCMPlanner(COM_height_, t_step, t_double_support, dt_, step_count + 2, alpha, theta);
     Ankle *anklePlanner = new Ankle(t_step, t_double_support, ankle_height, alpha, step_count, dt_, theta, slope);
@@ -685,7 +684,7 @@ bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double
     }
     else
     { // Turning Walk
-        generateTurnFootStep(ankle_rf, dcm_rf, step_length, step_height, step_count, theta);
+        generateTurnFootStep(ankle_rf, dcm_rf, step_length, step_height, step_count, theta, com_offset);
     }
 
     // publishFootStep(ankle_rf, step_count);
@@ -766,7 +765,7 @@ void Robot::generateStraightFootStep(vector<Vector3d>& ankle_rf, vector<Vector3d
 }
 
 void Robot::generateTurnFootStep(vector<Vector3d>& ankle_rf, vector<Vector3d>& dcm_rf, const double &step_length,
-                                 const double &step_height, const int &step_count, const double &theta)
+                                 const double &step_height, const int &step_count, const double &theta, const double &com_offset)
 {
     double r = abs(step_length / theta);
     int turn_sign = abs(step_length) / step_length;
@@ -779,6 +778,7 @@ void Robot::generateTurnFootStep(vector<Vector3d>& ankle_rf, vector<Vector3d>& d
         ankle_rf[i] = (r + pow(-1, i - 1) * torso_) * Vector3d(sin(theta * (i - 1)), turn_sign * cos(theta * (i - 1)), 0.0) +
                       Vector3d(0.0, -turn_sign * r, 0.0);
         dcm_rf[i] = ankle_rf[i];
+        dcm_rf[i](1) += turn_sign * pow(-1, i) * com_offset;
     }
     dcm_rf[step_count + 1] = 0.5 * (ankle_rf[step_count] + ankle_rf[step_count + 1]);
 }

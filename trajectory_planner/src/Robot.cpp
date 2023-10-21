@@ -130,7 +130,7 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
             bumpSensorCalibrated_ = true;
             runFootLenController(iter, f_l, f_r, traj_index);
 
-            // runBumpFootOrientController(iter, bump_r, bump_l);
+            runBumpFootOrientController(iter, bump_r, bump_l);
 
             runEarlyContactController(iter, bump_r, bump_l);
 
@@ -187,7 +187,7 @@ void Robot::runFootLenController(int iter, double f_l, double f_r, int traj_inde
         distributeFT(zmpd_[zmp_iter], rAnklePos_[iter], lAnklePos_[iter], r_wrench, l_wrench);
         deltaFd = floor((l_wrench(0) - r_wrench(0)) * 10) / 10;
     }
-    double delta_z = onlineWalk_->footLenController(deltaFd, floor((f_l - f_r) * 10) / 10, 0.00004, 0.0, 1.0);
+    double delta_z = onlineWalk_->footLenController(deltaFd, floor((f_l - f_r) * 10) / 10, 0.00003, 0.0, 1.0);
     lAnklePos_[iter](2) -= 0.5 * delta_z;
     rAnklePos_[iter](2) += 0.5 * delta_z;
 }
@@ -724,8 +724,8 @@ bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double
     robotControlState_.push_back(Robot::WALK);
     isTrajAvailable_ = true;
 
-    for(int i=0; i<dataSize_; i++)
-        cout << CoMPos_[i](0) << ", " << CoMPos_[i](1) << endl;
+    // for(int i=0; i<dataSize_; i++)
+    //     cout << CoMPos_[i](0) << ", " << CoMPos_[i](1) << endl;
 
     return true;
 }

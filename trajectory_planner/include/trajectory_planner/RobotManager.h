@@ -85,6 +85,9 @@ public:
     bool both(trajectory_planner::move_hand_both::Request &req,
               trajectory_planner::move_hand_both::Response &res);
 
+    void handMotion(vector<double> &right_motion, vector<double> &left_motion, 
+                    double t_step, int step_count, double max_angle, double dt, bool isLeftFirst=true);
+
 private:
     Robot *robot;
     // Lower Body

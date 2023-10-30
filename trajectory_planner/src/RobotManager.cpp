@@ -597,9 +597,9 @@ bool RobotManager::walk(trajectory_planner::Trajectory::Request &req,
     double final_rankle_pos[3] = {0, -0.0975, 0};
     double final_rankle_orient[3] = {0, 0, 0};
 
-    robot->generalTrajGen(req.dt, 2, init_com_pos, final_com_pos, init_com_orient, final_com_orient,
-                          init_lankle_pos, final_lankle_pos, init_lankle_orient, final_lankle_orient,
-                          init_rankle_pos, final_rankle_pos, init_rankle_orient, final_rankle_orient);
+    // robot->generalTrajGen(req.dt, 2, init_com_pos, final_com_pos, init_com_orient, final_com_orient,
+    //                       init_lankle_pos, final_lankle_pos, init_lankle_orient, final_lankle_orient,
+    //                       init_rankle_pos, final_rankle_pos, init_rankle_orient, final_rankle_orient);
     // general_traj.request.time = req.t_step;
     // general_traj.request.init_com_pos = {0, 0, req.COM_height};
     // general_traj.request.final_com_pos = {0, 0, req.COM_height};
@@ -613,8 +613,8 @@ bool RobotManager::walk(trajectory_planner::Trajectory::Request &req,
     // general_traj.request.final_rankle_pos = {0, -0.0975, 0.05};
     // generalTrajectory_.call(general_traj);
 
-    robot->trajGen(req.step_count, req.t_step, req.alpha, req.t_double_support, req.COM_height,
-                   req.step_length, req.step_width, req.dt, req.theta, req.ankle_height, req.step_height, 0, req.com_offset);
+    // robot->trajGen(req.step_count, req.t_step, req.alpha, req.t_double_support, req.COM_height,
+    //                req.step_length, req.step_width, req.dt, req.theta, req.ankle_height, req.step_height, 0, req.com_offset);
     // if(traj_srv.response.result){
 
     // init_com_pos[2] = req.COM_height;
@@ -625,42 +625,49 @@ bool RobotManager::walk(trajectory_planner::Trajectory::Request &req,
 
     init_com_pos[2] = req.COM_height;
     final_com_pos[2] = 0.71;
-    robot->generalTrajGen(req.dt, 2, init_com_pos, final_com_pos, init_com_orient, final_com_orient,
-                          init_lankle_pos, final_lankle_pos, init_lankle_orient, final_lankle_orient,
-                          init_rankle_pos, final_rankle_pos, init_rankle_orient, final_rankle_orient);
+    // robot->generalTrajGen(req.dt, 2, init_com_pos, final_com_pos, init_com_orient, final_com_orient,
+    //                       init_lankle_pos, final_lankle_pos, init_lankle_orient, final_lankle_orient,
+    //                       init_rankle_pos, final_rankle_pos, init_rankle_orient, final_rankle_orient);
 
     int iter = 0;
     int final_iter = robot->getTrajSize();
     // int final_iter = req.t_step + 4;
 
+    vector<double> right_arm_traj;
+    vector<double> left_arm_traj;
+    handMotion(right_arm_traj, left_arm_traj, req.t_step, req.step_count, 0.2, req.dt);
+
     double jnt_command[12];
     int status;
 
-    while (iter < final_iter)
+    while (iter < right_arm_traj.size())
     {
-        double config[12];
-        double jnt_vel[12];
-        double left_ft[3] = {-currentLFT_[0], -currentLFT_[2], -currentLFT_[1]};
-        double right_ft[3] = {-currentRFT_[0], -currentRFT_[2], -currentRFT_[1]};
-        int right_bump[4] = {currentRBump_[0], currentRBump_[1], currentRBump_[2], currentRBump_[3]};
-        int left_bump[4] = {currentLBump_[0], currentLBump_[1], currentLBump_[2], currentLBump_[3]};
-        double accelerometer[3] = {baseAcc_[0], baseAcc_[1], baseAcc_[2]};
-        double gyro[3] = {baseAngVel_[0], baseAngVel_[1], baseAngVel_[2]};
+        motorCommandArray_[13] = -int(right_arm_traj[iter] * encoderResolution[0] * harmonicRatio[0] / M_PI / 2);
+        motorCommandArray_[16] = int(left_arm_traj[iter] * encoderResolution[0] * harmonicRatio[0] / M_PI / 2);
+        cout << motorCommandArray_[13] << ", " << motorCommandArray_[16] << endl;
+        // double config[12];
+        // double jnt_vel[12];
+        // double left_ft[3] = {-currentLFT_[0], -currentLFT_[2], -currentLFT_[1]};
+        // double right_ft[3] = {-currentRFT_[0], -currentRFT_[2], -currentRFT_[1]};
+        // int right_bump[4] = {currentRBump_[0], currentRBump_[1], currentRBump_[2], currentRBump_[3]};
+        // int left_bump[4] = {currentLBump_[0], currentLBump_[1], currentLBump_[2], currentLBump_[3]};
+        // double accelerometer[3] = {baseAcc_[0], baseAcc_[1], baseAcc_[2]};
+        // double gyro[3] = {baseAngVel_[0], baseAngVel_[1], baseAngVel_[2]};
 
-        for (int i = 0; i < 12; i++)
-        {
-            config[i] = commandConfig_[2][i];
-            jnt_vel[i] = (commandConfig_[0][i] - 4 * commandConfig_[1][i] + 3 * commandConfig_[2][i]) / (2 * req.dt);
-        }
+        // for (int i = 0; i < 12; i++)
+        // {
+        //     config[i] = commandConfig_[2][i];
+        //     jnt_vel[i] = (commandConfig_[0][i] - 4 * commandConfig_[1][i] + 3 * commandConfig_[2][i]) / (2 * req.dt);
+        // }
 
-        robot->getJointAngs(iter, config, jnt_vel, right_ft, left_ft, right_bump,
-                            left_bump, gyro, accelerometer, jnt_command, status);
-                if (status != 0)
-        {
-            cout << "Node was shut down due to Ankle Collision!" << endl;
-            return false;
-        }
-        computeLowerLimbJointMotion(jnt_command, iter);
+        // robot->getJointAngs(iter, config, jnt_vel, right_ft, left_ft, right_bump,
+        //                     left_bump, gyro, accelerometer, jnt_command, status);
+        //         if (status != 0)
+        // {
+        //     cout << "Node was shut down due to Ankle Collision!" << endl;
+        //     return false;
+        // }
+        // computeLowerLimbJointMotion(jnt_command, iter);
         sendCommand();
         ros::spinOnce();
         rate_.sleep();
@@ -772,6 +779,44 @@ bool RobotManager::computeLowerLimbJointMotion(double jnt_command[], int iter)
             return false;
         }
     }
+}
+
+void RobotManager::handMotion(vector<double> &right_traj, vector<double> &left_traj, 
+                              double t_step, int step_count, double max_angle, double dt, bool isLeftFirst)
+{
+    double delta_q = 2 * max_angle / (t_step / dt);
+    int delta_sign = 1;
+    if(!isLeftFirst)
+        delta_sign = -1;
+    
+    vector<double> q_r(step_count * t_step / dt, 0);
+    vector<double> q_l(step_count * t_step / dt, 0);
+
+    for (int i = 1; i<=step_count; i++){
+        for (int j = 0; j<=t_step / dt -1; j++){
+            if (i == 1)
+            {
+                int k = j + 1;
+                q_r[k] = q_r[k-1] + delta_sign * delta_q/2;
+                q_l[k] = q_l[k-1] - delta_sign * delta_q/2;
+            } 
+            else if(i == step_count)
+            {
+                
+                int idx = (i-1) * t_step / dt + j;
+                q_r[idx] = q_r[idx-1] + delta_sign * pow((-1),(i-1)) * delta_q/2;
+                q_l[idx] = q_l[idx-1] - delta_sign * pow((-1),(i-1)) * delta_q/2;
+            }
+            else 
+            {
+                int idx = (i-1) * t_step / dt + j;
+                q_r[idx] = q_r[idx - 1] + delta_sign * pow((-1),(i-1)) * delta_q;
+                q_l[idx] = q_l[idx - 1] - delta_sign * pow((-1),(i-1)) * delta_q;
+            }
+        }
+    }
+    right_traj = q_r;
+    left_traj = q_l;
 }
 
 void RobotManager::keyboardHandler(const std_msgs::Int32 &msg)

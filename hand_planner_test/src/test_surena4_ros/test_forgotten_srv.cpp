@@ -15,6 +15,7 @@
 #include <string>
 #include "hand_planner_test/move_hand_single.h"
 #include "hand_planner_test/move_hand_both.h"
+#include "hand_planner_test/home_service.h"
 
 
 using namespace  std;
@@ -24,9 +25,23 @@ class test_forgotten_srv{
     public:
         test_forgotten_srv(ros::NodeHandle *n){
             trajectory_data_pub  = n->advertise<std_msgs::Int32MultiArray>("jointdata/qc",100);
+            JointQcSub  = n->subscribe("jointdata/qc",100, &test_forgotten_srv::jointQC_sub,this);
             move_hand_single_service = n->advertiseService("move_hand_single_srv", &test_forgotten_srv::single,this);
             move_hand_both_service = n->advertiseService("move_hand_both_srv", &test_forgotten_srv::both,this);
+            home_service = n->advertiseService("home_srv", &test_forgotten_srv::home,this);
         }
+
+        void jointQC_sub(const std_msgs::Int32MultiArray::ConstPtr & qcArray){
+            int i = 0;
+            // print all the remaining numbers
+            for(std::vector<int>::const_iterator it = qcArray->data.begin(); it != qcArray->data.end(); ++it)
+            {
+                QcArr[i] = *it;
+                i++;
+            }
+            cout<<QcArr[0]<<", "<<QcArr[1]<<", "<<QcArr[2]<<", "<<QcArr[3]<<", "<<QcArr[4]<<", "<<QcArr[5]<<", "<<QcArr[6]<<", "<<QcArr[7]<<", "<<QcArr[8]<<", "<<QcArr[9]<<", "<<QcArr[10]<<", "<<QcArr[11]<<", "<<QcArr[12]<<", "<<QcArr[13]<<", "<<QcArr[14]<<", "<<QcArr[15]<<", "<<QcArr[16]<<", "<<QcArr[17]<<", "<<QcArr[18]<<", "<<QcArr[19]<<endl;
+            return;
+            }
 
         MatrixXd scenario_target_R (string scenario, int i, VectorXd ee_pos, string ee_ini_pos){
             MatrixXd result_r(6,3);
@@ -38,12 +53,12 @@ class test_forgotten_srv{
             q_init_r.resize(7); 
             if (scenario=="shakeHands"){
                 r_middle_r<<0.35,-0.1,-0.2  ; //shakehands
-                r_target_r<<0.3,-0.05,-0.35;
+                r_target_r<<0.3,-0.03,-0.3;
                 R_target_r=hand_func_R.rot(2,-65*M_PI/180,3);
             }
             else if (scenario=="Respect"){
                 r_middle_r<<0.3,-0.1,-0.3  ; //respect
-                r_target_r<<0.23,0.12,-0.3;
+                r_target_r<<0.3,0.1,-0.3;
                 R_target_r=hand_func_R.rot(2,-80*M_PI/180,3)*hand_func_R.rot(1,60*M_PI/180,3);
             }
             else if (scenario=="byebye"){
@@ -53,12 +68,12 @@ class test_forgotten_srv{
             }
             else if (scenario=="home"){
                 r_middle_r<<0.3,-0.1,-0.25  ; //home
-                r_target_r<<0.1,-0.05,-0.46;
+                r_target_r<<0.15,-0.07,-0.43;
                 R_target_r=hand_func_R.rot(2,-20*M_PI/180,3);
             }
             else if (scenario=="fixed"){
                 r_middle_r<<0.2,-0.1,-0.35  ; //fixed
-                r_target_r<<0.1,-0.05,-0.46;
+                r_target_r<<0.15,-0.07,-0.43;
                 R_target_r=hand_func_R.rot(2,-20*M_PI/180,3);
             }
                 if (i==0){
@@ -108,13 +123,13 @@ class test_forgotten_srv{
             q_la.resize(7);
             q_init_l.resize(7);   
             if (scenario=="shakeHands"){
-                r_middle_l<<0.35,0.05,-0.2  ; //shakehands
-                r_target_l<<0.3,0.05,-0.35;
+                r_middle_l<<0.35,0.1,-0.2  ; //shakehands
+                r_target_l<<0.3,0.03,-0.3;
                 R_target_l=hand_func_L.rot(2,-65*M_PI/180,3);
             }
             else if (scenario=="Respect"){
                 r_middle_l<<0.3,0.1,-0.3  ; //respect
-                r_target_l<<0.23,-0.12,-0.3;
+                r_target_l<<0.3,-0.1,-0.3;
                 R_target_l=hand_func_L.rot(2,-80*M_PI/180,3)*hand_func_L.rot(1,-60*M_PI/180,3);
             }
             else if (scenario=="byebye"){
@@ -124,12 +139,12 @@ class test_forgotten_srv{
             }
             else if (scenario=="home"){
                 r_middle_l<<0.3,0.1,-0.25; //home
-                r_target_l<<0.1,0.05,-0.46;
+                r_target_l<<0.15,0.07,-0.43;
                 R_target_l=hand_func_L.rot(2,-20*M_PI/180,3);
             }
             else if (scenario=="fixed"){
                 r_middle_l<<0.2,0.1,-0.35  ; //fixed
-                r_target_l<<0.1,0.05,-0.46;
+                r_target_l<<0.15,0.07,-0.43;
                 R_target_l=hand_func_L.rot(2,-20*M_PI/180,3);
             }
                 if (i==0){
@@ -448,18 +463,18 @@ class test_forgotten_srv{
                     }
                     else{
                         if(req.mode=="righthand"){
-                            q_motor[12]=int(qref_r(0,id)*encoderResolution[0]*harmonicRatio[0]/M_PI/2); // be samte jelo
-                            q_motor[13]=-int(qref_r(1,id)*encoderResolution[0]*harmonicRatio[1]/M_PI/2); // be samte birun
-                            q_motor[14]=int(qref_r(2,id)*encoderResolution[1]*harmonicRatio[2]/M_PI/2); // be samte birun
-                            q_motor[15]=-int(qref_r(3,id)*encoderResolution[1]*harmonicRatio[3]/M_PI/2);// be samte bala
-                            cout<<q_motor[12]<<','<<q_motor[13]<<','<<q_motor[14]<<','<<q_motor[15]<<endl;
+                            q_motor[13]=int(qref_r(0,id)*encoderResolution[0]*harmonicRatio[0]/M_PI/2); // be samte jelo ok
+                            q_motor[15]=-int(qref_r(1,id)*encoderResolution[0]*harmonicRatio[1]/M_PI/2); // be samte birun ok
+                            q_motor[14]=int(qref_r(2,id)*encoderResolution[1]*harmonicRatio[2]/M_PI/2); // be samte birun 0k
+                            q_motor[12]=-int(qref_r(3,id)*encoderResolution[1]*harmonicRatio[3]/M_PI/2);// be samte bala
+                            //cout<<q_motor[12]<<','<<q_motor[13]<<','<<q_motor[14]<<','<<q_motor[15]<<endl;
                         }
                         else if(req.mode=="lefthand"){
                             q_motor[16]=-int(qref_l(0,id)*encoderResolution[0]*harmonicRatio[0]/M_PI/2);
                             q_motor[17]=-int(qref_l(1,id)*encoderResolution[0]*harmonicRatio[1]/M_PI/2);
                             q_motor[18]=int(qref_l(2,id)*encoderResolution[1]*harmonicRatio[2]/M_PI/2);
                             q_motor[19]=int(qref_l(3,id)*encoderResolution[1]*harmonicRatio[3]/M_PI/2);
-                            cout<<q_motor[16]<<','<<q_motor[17]<<','<<q_motor[18]<<','<<q_motor[19]<<endl;
+                            //cout<<q_motor[16]<<','<<q_motor[17]<<','<<q_motor[18]<<','<<q_motor[19]<<endl;
                         }
                         
                         trajectory_data.data.clear();
@@ -555,12 +570,71 @@ class test_forgotten_srv{
             return true;
         }
 
+        bool home(hand_planner_test::home_service::Request  &req, hand_planner_test::home_service::Response &res)
+        {
+            ros::Rate rate_(rate);
+            double t_local = 0;
+            int count = 0;
+            q_motor.resize(20,0);
+            q_gazebo.resize(29,0);
+
+            while (count<int(req.T_home/T))
+            {
+                    if (simulation) {
+                            if(req.mode=="righthand"){
+                                q_gazebo[15]=qref_r(0,qref_r.cols()-1) + hand_func_R.move2pose(-qref_r(0,qref_r.cols()-1), t_local, 0, req.T_home);  
+                                q_gazebo[16]=qref_r(1,qref_r.cols()-1) + hand_func_R.move2pose(-qref_r(1,qref_r.cols()-1), t_local, 0, req.T_home);  
+                                q_gazebo[17]=qref_r(2,qref_r.cols()-1) + hand_func_R.move2pose(-qref_r(2,qref_r.cols()-1), t_local, 0, req.T_home);  
+                                q_gazebo[18]=qref_r(3,qref_r.cols()-1) + hand_func_R.move2pose(-qref_r(3,qref_r.cols()-1), t_local, 0, req.T_home);
+                                hand_func_R.SendGazebo(q_gazebo);
+                                cout<<q_gazebo[15]<<','<<q_gazebo[16]<<','<<q_gazebo[17]<<','<<q_gazebo[18]<<','<<q_gazebo[19]<<','<<q_gazebo[20]<<','<<q_gazebo[21]<<endl;
+                            }
+                            else if(req.mode=="lefthand"){
+                                q_gazebo[22]=qref_l(0,qref_r.cols()-1) + hand_func_R.move2pose(-qref_l(0,qref_r.cols()-1), t_local, 0, req.T_home);  
+                                q_gazebo[23]=qref_l(1,qref_r.cols()-1) + hand_func_R.move2pose(-qref_l(1,qref_r.cols()-1), t_local, 0, req.T_home);  
+                                q_gazebo[24]=qref_l(2,qref_r.cols()-1) + hand_func_R.move2pose(-qref_l(2,qref_r.cols()-1), t_local, 0, req.T_home);  
+                                q_gazebo[25]=qref_l(3,qref_r.cols()-1) + hand_func_R.move2pose(-qref_l(3,qref_r.cols()-1), t_local, 0, req.T_home);  
+                                hand_func_L.SendGazebo(q_gazebo);
+                                // cout<<q_gazebo[22]<<','<<q_gazebo[23]<<','<<q_gazebo[24]<<','<<q_gazebo[25]<<','<<q_gazebo[26]<<','<<q_gazebo[27]<<','<<q_gazebo[28]<<endl;
+                            }                    
+                    }
+                    else {
+                        if (req.mode == "righthand"){
+                            for (int i=12; i<16; i++){
+                                q_motor[i] = int(QcArr[i] + hand_func_R.move2pose(-QcArr[i], t_local, 0, req.T_home));        
+                            } 
+                            }
+                        else if (req.mode == "lefthand"){
+                            for (int i=16; i<20; i++){
+                                q_motor[i] = int(QcArr[i] + hand_func_R.move2pose(-QcArr[i], t_local, 0, req.T_home));
+                            }
+                            }
+                        trajectory_data.data.clear();
+
+                        for(int  i = 0; i < 20; i++)
+                        {
+                            trajectory_data.data.push_back(q_motor[i]);
+                        }
+                        trajectory_data_pub.publish(trajectory_data); 
+                        ros::spinOnce();
+                        rate_.sleep();
+                        // cout<<q_motor[0]<<", "<<q_motor[1]<<", "<<q_motor[2]<<", "<<q_motor[3]<<", "<<q_motor[4]<<", "<<q_motor[5]<<", "<<q_motor[6]<<", "<<q_motor[7]<<", "<<q_motor[8]<<", "<<q_motor[9]<<", "<<q_motor[10]<<", "<<q_motor[11]<<", "<<q_motor[12]<<", "<<q_motor[13]<<", "<<q_motor[14]<<", "<<q_motor[15]<<", "<<q_motor[16]<<", "<<q_motor[17]<<", "<<q_motor[18]<<", "<<q_motor[19]<<endl;
+                    }
+                    t_local+=T;
+                    count = count + 1;   
+                }
+                res.home = "Done";
+
+                return true; 
+        }
+
     private:
         std_msgs::Int32MultiArray trajectory_data;
         ros::Publisher  trajectory_data_pub;
         ros::ServiceServer move_hand_single_service;
         ros::ServiceServer move_hand_both_service;
-
+        ros::ServiceServer home_service;
+        ros::Subscriber  JointQcSub;
         MinimumJerkInterpolation coef_generator;
 
         MatrixXd X_coef_r;    MatrixXd X_coef_l;        
@@ -625,6 +699,7 @@ class test_forgotten_srv{
         bool simulation = false;
         int encoderResolution[2] = {4096*4, 2048*4};
         int harmonicRatio[4] = {100, 100, 100, 400};
+        int QcArr[20];
 };
 
 

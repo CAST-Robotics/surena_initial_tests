@@ -63,6 +63,7 @@ find_package(catkin REQUIRED COMPONENTS
    move_hand_single.srv
    move_hand_both.srv
    gripOnline.srv
+   home_service.srv
  )
 
 ## Generate actions in the 'action' folder
@@ -152,23 +153,23 @@ include_directories(
 
 #add_executable( test_node_cpp src/surena4/s5Version2_test_r.cpp src/surena4/S5mod_right_hand.cpp src/surena4/MinimumJerkInterpolation.cpp)
 
-#add_executable(hand_trajectory src/test_surena4_ros/test_forgotten_srv.cpp src/test_surena4_ros/S5mod_right_hand.cpp src/test_surena4_ros/S5mod_left_hand.cpp src/test_surena4_ros/MinimumJerkInterpolation.cpp)
-#target_link_libraries(hand_trajectory ${catkin_LIBRARIES})
-#add_dependencies(hand_trajectory hand_planner_test_gencpp)
+add_executable(hand_trajectory src/test_surena4_ros/test_forgotten_srv.cpp src/test_surena4_ros/S5mod_right_hand.cpp src/test_surena4_ros/S5mod_left_hand.cpp src/test_surena4_ros/MinimumJerkInterpolation.cpp)
+target_link_libraries(hand_trajectory ${catkin_LIBRARIES})
+add_dependencies(hand_trajectory hand_planner_test_gencpp)
 
-add_executable(hand_gripOnline src/test_surena4_ros/gripOnline.cpp src/test_surena4_ros/S5mod_right_hand.cpp src/test_surena4_ros/S5mod_left_hand.cpp src/test_surena4_ros/MinimumJerkInterpolation.cpp)
-target_link_libraries(hand_gripOnline ${catkin_LIBRARIES})
-add_dependencies(hand_gripOnline hand_planner_test_gencpp)
+#add_executable(hand_gripOnline src/test_surena4_ros/gripOnline.cpp src/test_surena4_ros/S5mod_right_hand.cpp src/test_surena4_ros/S5mod_left_hand.cpp src/test_surena4_ros/MinimumJerkInterpolation.cpp)
+#target_link_libraries(hand_gripOnline ${catkin_LIBRARIES})
+#add_dependencies(hand_gripOnline hand_planner_test_gencpp)
 
-add_executable(CAMERA_AI src/test_surena4_ros/camera_ai_node.cpp)
-target_link_libraries(CAMERA_AI ${catkin_LIBRARIES})
-add_dependencies(CAMERA_AI hand_planner_test_gencpp)
+#add_executable(CAMERA_AI src/test_surena4_ros/camera_ai_node.cpp)
+#target_link_libraries(CAMERA_AI ${catkin_LIBRARIES})
+#add_dependencies(CAMERA_AI hand_planner_test_gencpp)
 
-add_executable(CAMERA_HEAD src/test_surena4_ros/camera_ai_head.cpp)
-target_link_libraries(CAMERA_HEAD ${catkin_LIBRARIES})
+#add_executable(CAMERA_HEAD src/test_surena4_ros/camera_ai_head.cpp)
+#target_link_libraries(CAMERA_HEAD ${catkin_LIBRARIES})
 
-add_executable(head_sub src/test_surena4_ros/head_code.cpp)
-target_link_libraries(head_sub ${catkin_LIBRARIES})
+#add_executable(head_sub src/test_surena4_ros/head_code.cpp)
+#target_link_libraries(head_sub ${catkin_LIBRARIES})
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the

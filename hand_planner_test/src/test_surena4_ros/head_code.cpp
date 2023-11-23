@@ -13,6 +13,7 @@
 #include <string>
 #include <geometry_msgs/PoseArray.h>
 #include<std_msgs/Int32MultiArray.h>
+#include "hand_planner_test/DetectionInfoArray.h"
 #include "ros/ros.h"
 using namespace std;
 using namespace Eigen;
@@ -24,23 +25,44 @@ double h_pitch = 0;
 double h_roll = 0;
 double h_yaw = 0;
 VectorXd camera(3);
-double Kp = 0.8;
-double Ky = 0.8;
+VectorXd temp(3);
+double Kp = 0.01;
+double Ky = -0.01;
 double theta_pitch; 
 double sai_roll;
 double phi_yaw;
-int n = 0;
-int N = 4000;
-double x = 1;
-double y = 0.0005;
-double z = 0.0005;
-MatrixXd target_to_camera(1,3);
-MatrixXd TEMP(N,3);
+double dist;
+double y, z;
+int obj_id;
+double a = 0.5; // 0.55
+double b = 0.4; // 0.385
+double X0 = 0.5;
+double X = 1;
+double Y, Z, Y0, Z0, L0;
+int L = 640; int W = 480;
 
-void object_detect(const geometry_msgs::PoseArray &msg){
-            x = msg.poses[0].position.x;
-            y = msg.poses[0].position.y;
-            z = msg.poses[0].position.z;
+void object_detect(const hand_planner_test::DetectionInfoArray & msg){
+    if (msg.detections[0].class_id == 41 && msg.detections[0].distance != 0){
+        dist = (msg.detections[0].distance)/1000;
+        y = (msg.detections[0].x + (msg.detections[0].width)/2);
+        z = (msg.detections[0].y + (msg.detections[0].height)/2);
+
+        Y0 = -(y-L/2)/L*a;
+        Z0 = -(z-W/2)/W*b;
+        L0 = sqrt(pow(X0,2)+pow(Y0,2)+pow(Z0,2));
+
+        X = X0*dist/L0;
+        Y = Y0*dist/L0;
+        Z = Z0*dist/L0;
+        temp<<X,Y,Z;
+        
+        }
+    // else{
+    //     X = temp(0);
+    //     Y = 0;
+    //     Z = 0;
+    // }
+    cout<<"X: "<<X<<", Y: "<<Y<<", Z: "<<Z<<endl;
             }
 
 MatrixXd ObjToNeck(VectorXd camera, double h_pitch, double h_roll, double h_yaw, double PtoR, double YtoP) {
@@ -109,29 +131,19 @@ MatrixXd returnAngles(MatrixXd T_EEtobase) {
 
 int main(int argc, char **argv) 
 {
-    target_to_camera << x, y, z;
     ros::init(argc, argv, "head_node");
     ros::NodeHandle nh;
-    ros::Subscriber sub = nh.subscribe("Camera_Ai", 100, object_detect);
+    ros::Subscriber sub = nh.subscribe("/detection_info", 1, object_detect);
     ros::Publisher  trajectory_data_pub  = nh.advertise<std_msgs::Int32MultiArray>("jointdata/qc",100);
     std_msgs::Int32MultiArray trajectory_data;
     ros::Rate rate_(200);
 
-    MatrixXd T_EEtobase(4, 4);
-    MatrixXd init_angle(3,1);
-    MatrixXd curr_angle(3,1);
-    camera << 0.1248, 0, 0.06746;
-    T_EEtobase << ObjToNeck(camera, h_pitch, h_roll, h_yaw, PtoR, YtoP);
-    init_angle <<returnAngles(T_EEtobase);
-    double PHI = h_yaw;
-    double THETA = h_pitch; 
+    // MatrixXd T_EEtobase(4, 4);
+    // camera << 0.1248, 0, 0.06746;
+    // T_EEtobase << ObjToNeck(camera, h_pitch, h_roll, h_yaw, PtoR, YtoP);
+    // temp << 0.35, -0.05, -0.2;
     double time = 0;
-    double sx = 0;
-    double sy = 0;
-    double sz = 0;
-    double tempY = 0;
-    double tempP = 0;
-
+    temp(0) = 1;
     vector<int> pitch_range = {-30, 30};
     vector<int> roll_range = {-50, 50};
     vector<int> yaw_range = {-90, 90};
@@ -140,79 +152,51 @@ int main(int argc, char **argv)
     vector<int> yaw_command_range = {90, 210};
     vector<double> head_command(23,0);
 
-    ofstream test;
-    test.open("/home/cast/catkin_ws/src/hand_planner_test/src/test_surena4_ros/test.txt", std::ofstream::out);
-    ofstream testP;
-    testP.open("/home/cast/catkin_ws/src/hand_planner_test/src/test_surena4_ros/testP.txt", std::ofstream::out);
-    ofstream testY;
-    testY.open("/home/cast/catkin_ws/src/hand_planner_test/src/test_surena4_ros/testY.txt", std::ofstream::out);
+    ofstream testYaw;
+    testYaw.open("/home/surenav/DynCont/Code/WalkTest/src/hand_planner_test/src/testYaw.txt", std::ofstream::out);
+    ofstream testPitch;
+    testPitch.open("/home/surenav/DynCont/Code/WalkTest/src/hand_planner_test/src/testPitch.txt", std::ofstream::out);
+    
+    while (time < 180) {
 
-    while (time < 20) {
+        if (abs(Y) > 0.02) {
 
-        TEMP.block(n,0,1,3) << target_to_camera;
-        target_to_camera << x, y, z;
-
-        if (n>1) {
-            if (target_to_camera(0) == TEMP(n,0)){
-                sx += 1;
-            }       
-            else {
-                sx = 0;
+            h_yaw += Ky*atan2(Y,X); // h_yaw += Ky*atan2(Y,X);
+            if (abs(h_yaw)*180/M_PI>90){
+                if (h_yaw > 0) {
+                    h_yaw = 90*M_PI/180;
+                }
+                else{
+                    h_yaw = -90*M_PI/180;
+                    }
             }
-            if (target_to_camera(1) == TEMP(n,1)){
-                sy += 1;
-            }
-            else {
-                sy = 0;
-            }
-            if (target_to_camera(2) == TEMP(n,2)){
-                sz += 1;
-            }
-            else {
-                sz = 0;
-            }
+            cout<<"Y is out of center"<<endl;
         }
-
-        if (abs((PHI-atan2(target_to_camera(1),target_to_camera(0)))*180/M_PI) > 0.015) {
-            if (n == 0){
-                h_yaw = h_yaw + Ky*(atan2(target_to_camera(1),target_to_camera(0)));
-            }
-            else{
-                h_yaw = h_yaw + Ky*(atan2(target_to_camera(1),target_to_camera(0))-atan2(TEMP(n-sy,1),TEMP(n-sx,0)));
-                tempY = h_yaw;
-                testY << "n=" << n << ",   "<<"target(1)=" <<target_to_camera(1)<<",   "<<"target(0)="<<target_to_camera(0)<<",   "<<"sy="<<sy<<",   "<<"sx="<<sx<<",   "<<"TEMP(1)="<<TEMP(n-sy,1)<<",   "<<"TEMP(0)="<<TEMP(n-sx,0)<<",  "<<"h_yaw="<<h_yaw*180/M_PI<<",  "<<"error="<<abs((PHI-atan2(target_to_camera(1),target_to_camera(0)))*180/M_PI)<<endl;
-                // test << "h_yaw = "<<h_yaw*180/M_PI <<endl;
-            }
-            }
-        else{
-            h_yaw = tempY;
-            // test << "h_yaw = "<<h_yaw*180/M_PI <<endl;
-            testY << "n=" << n << ",   "<<"target(1)=" <<target_to_camera(1)<<",   "<<"target(0)="<<target_to_camera(0)<<",   "<<"sy="<<sy<<",   "<<"sx="<<sx<<",   "<<"TEMP(1)="<<TEMP(n-sy,1)<<",   "<<"TEMP(0)="<<TEMP(n-sx,0)<<",  "<<"h_yaw="<<h_yaw*180/M_PI<<",  "<<"error="<<abs((PHI-atan2(target_to_camera(1),target_to_camera(0)))*180/M_PI)<<endl;
-             }
         
 
-        if (abs(180/M_PI*(THETA-atan2(target_to_camera(2),target_to_camera(0)))) > 0.015){
-            if (n == 0){
-                h_pitch = h_pitch + Kp*(atan2(target_to_camera(2),target_to_camera(0)));
-            }
-            else{
-                h_pitch = h_pitch + Kp*(atan2(target_to_camera(2),target_to_camera(0))-atan2(TEMP(n-sz,2),TEMP(n-sx,0))); 
-                tempP = h_pitch;  
-                testP << "n=" << n << ",   "<<"target(2)=" <<target_to_camera(2)<<",   "<<"target(0)="<<target_to_camera(0)<<",   "<<"sz="<<sz<<",   "<<"sx="<<sx<<",   "<<"TEMP(2)="<<TEMP(n-sz,2)<<",   "<<"TEMP(0)="<<TEMP(n-sx,0)<<",  "<<"h_pitch="<<h_pitch*180/M_PI<<",  "<<"error="<<abs((THETA-atan2(target_to_camera(2),target_to_camera(0)))*180/M_PI)<<endl;
-            }
-            }
-        else {
-            h_pitch = tempP;
-            testP << "n=" << n << ",   "<<"target(2)=" <<target_to_camera(2)<<",   "<<"target(0)="<<target_to_camera(0)<<",   "<<"sz="<<sz<<",   "<<"sx="<<sx<<",   "<<"TEMP(2)="<<TEMP(n-sz,2)<<",   "<<"TEMP(0)="<<TEMP(n-sx,0)<<",  "<<"h_pitch="<<h_pitch*180/M_PI<<",  "<<"error="<<abs((THETA-atan2(target_to_camera(2),target_to_camera(0)))*180/M_PI)<<endl;
-            }
+        if (abs(Z) > 0.03) {
 
-        T_EEtobase << ObjToNeck(camera, h_pitch, h_roll, h_yaw, PtoR, YtoP);
-        curr_angle << returnAngles(T_EEtobase);
-        PHI = curr_angle(0)-init_angle(0);
-        THETA = curr_angle(2)-init_angle(2);
-    
-        head_command[21] = int(roll_command_range[0] + (roll_command_range[1] - roll_command_range[0]) * ((-(h_roll*180/M_PI) - (roll_range[0])) / (roll_range[1] - (roll_range[0]))));
-        head_command[20] = int(pitch_command_range[0] + (pitch_command_range[1] - pitch_command_range[0]) * ((-(h_pitch*180/M_PI) - pitch_range[0]) / (pitch_range[1] - pitch_range[0])));
+            h_pitch += Kp*atan2(Z,sqrt(pow(Y,2)+pow(X,2)));
+            if (abs(h_pitch)*180/M_PI>25){
+                if (h_pitch > 0) {
+                    h_pitch = 25*M_PI/180;
+                }
+                else{
+                    h_pitch = -25*M_PI/180;
+                    }
+            }
+            cout<<"Z is out of center"<<endl; 
+        }
+
+        testYaw <<"time: "<<time<<"/ X: "<<X<<"/ Y: "<<Y<<"/ h_yaw: "<<h_yaw*180/M_PI<<"/ head_command: "<<head_command[22]<<endl;
+        testPitch <<"time: "<<time<<"/ X: "<<X<<"/ Z: "<<Z<<"/ h_pitch: "<<h_pitch*180/M_PI<<"/ head_command: "<<head_command[21]<<endl;
+
+        // if (time < 5) {h_pitch -= 0.01*M_PI/180;}
+        // else {h_pitch += 0.01*M_PI/180;}
+        // h_pitch -= 0.01*M_PI/180; // for 10 sec
+
+        head_command[21] = int(pitch_command_range[0] + (pitch_command_range[1] - pitch_command_range[0]) * ((-(h_pitch*180/M_PI) - pitch_range[0]) / (pitch_range[1] - pitch_range[0])));
+        head_command[20] = int(roll_command_range[0] + (roll_command_range[1] - roll_command_range[0]) * ((-(h_roll*180/M_PI) - (roll_range[0])) / (roll_range[1] - (roll_range[0]))));
         head_command[22] = int(yaw_command_range[0] + (yaw_command_range[1] - yaw_command_range[0]) * ((-(h_yaw*180/M_PI) - yaw_range[0]) / (yaw_range[1] - yaw_range[0])));
 
         trajectory_data.data.clear();
@@ -222,16 +206,12 @@ int main(int argc, char **argv)
         }
         trajectory_data_pub.publish(trajectory_data);
 
-        n = n + 1;
         time += 0.005;
-        ROS_INFO("x=%f, y=%f, z=%f", x, y, z);
         ros::spinOnce();
         rate_.sleep();
 
     }
-    
-    testP.close();
-    testY.close();
-    test.close();
+    testYaw.close();
+    testPitch.close();
     return 0;
 }

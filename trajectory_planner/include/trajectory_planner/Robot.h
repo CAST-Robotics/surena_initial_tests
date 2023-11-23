@@ -1,6 +1,7 @@
 #pragma once
 
 #include <ros/ros.h>
+#include <ros/package.h>
 #include <ros/console.h>
 #include <std_srvs/Empty.h>
 #include <geometry_msgs/Point.h>
@@ -59,7 +60,7 @@ public:
                       double accelerometer[3], double jnt_command[12], int &status);
     bool trajGen(int step_count, double t_step, double alpha, double t_double_support,
                  double COM_height, double step_length, double step_width, double dt,
-                 double theta, double ankle_height, double step_height, double slope, double com_offset);
+                 double theta, double ankle_height, double step_height, double slope, double com_offset, bool is_config);
     bool generalTrajGen(double dt, double time, double init_com_pos[3], double final_com_pos[3], double init_com_orient[3], double final_com_orient[3],
                         double init_lankle_pos[3], double final_lankle_pos[3], double init_lankle_orient[3], double final_lankle_orient[3],
                         double init_rankle_pos[3], double final_rankle_pos[3], double init_rankle_orient[3], double final_rankle_orient[3]);

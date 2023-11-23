@@ -664,31 +664,66 @@ void Robot::publishZMPPose()
 
 bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double_support,
                     double COM_height, double step_length, double step_width, double dt,
-                    double theta, double ankle_height, double step_height, double slope, double com_offset)
+                    double theta, double ankle_height, double step_height, double slope, double com_offset, bool is_config)
 {
     /*
         ROS service for generating robot COM & ankles trajectories
     */
-    int trajectory_size = int(((step_count + 2) * t_step) / dt);
-    COM_height_ = COM_height;
-    dt_ = dt;
 
-    DCMPlanner *trajectoryPlanner = new DCMPlanner(COM_height_, t_step, t_double_support, dt_, step_count + 2, alpha, theta);
-    Ankle *anklePlanner = new Ankle(t_step, t_double_support, ankle_height, alpha, step_count, dt_, theta, slope);
-    vector<Vector3d> dcm_rf(step_count + 2);
-    vector<Vector3d> ankle_rf(step_count + 2);
+    string walk_config_path = ros::package::getPath("trajectory_planner") + "/config/walk_config.json";
+    std::ifstream f(walk_config_path);
+    json walk_config = json::parse(f);
 
-    if (theta == 0.0)
-    { // Straight or Diagonal Walk
-        generateStraightFootStep(ankle_rf, dcm_rf, step_width, step_length, step_height, step_count, com_offset);
+    if (!is_config)
+        step_count += 2;
+    else  
+        step_count = walk_config["footsteps"].size();
+
+    vector<Vector3d> ankle_rf(step_count);
+    vector<Vector3d> dcm_rf(step_count);
+    vector<double> theta_rf(step_count);
+
+    if (is_config == true)
+    { 
+        COM_height = walk_config["COM_height"];
+        t_double_support = walk_config["t_double_support"]; 
+        t_step = walk_config["t_step"];
+        alpha = walk_config["alpha"];
+        ankle_height = walk_config["ankle_height"];
+        com_offset = walk_config["com_offset"];
+
+        for (int i = 0; i < step_count; i++)
+        {
+            ankle_rf[i] << walk_config["footsteps"][i][0], walk_config["footsteps"][i][1], walk_config["footsteps"][i][2];
+            theta_rf[i] = walk_config["footsteps"][i][3];
+
+            dcm_rf[i] = ankle_rf[i];
+            dcm_rf[i](1) -= pow(-1, i) * com_offset;
+        }
+        dcm_rf[0] = Vector3d::Zero(3);
+        dcm_rf[step_count-1] = 0.5 * (ankle_rf[step_count-1] + ankle_rf[step_count-2]); 
     }
     else
-    { // Turning Walk
-        generateTurnFootStep(ankle_rf, dcm_rf, step_length, step_height, step_count, theta, com_offset);
+    {
+        if (theta == 0.0)
+        { // Straight or Diagonal Walk
+            generateStraightFootStep(ankle_rf, dcm_rf, step_width, step_length, step_height, step_count, com_offset);
+        }
+        else
+        { // Turning Walk
+            generateTurnFootStep(ankle_rf, dcm_rf, step_length, step_height, step_count, theta, com_offset);
+        }
     }
 
-    // publishFootStep(ankle_rf, step_count);
+    int trajectory_size = int(((step_count) * t_step) / dt);
+    DCMPlanner *trajectoryPlanner = new DCMPlanner(COM_height, t_step, t_double_support, dt, step_count, alpha, theta);
+    Ankle *anklePlanner = new Ankle(t_step, t_double_support, ankle_height, alpha, step_count, dt, theta, slope);
 
+    for (int i = 0; i < step_count; i++)
+    {
+        cout << dcm_rf[i][0] << " , " << dcm_rf[i][1] << " , " << dcm_rf[i][2] << endl;
+    }
+    
     int sign = abs(step_length) / step_length;
     trajectoryPlanner->setFoot(dcm_rf, -sign);
     xiDesired_ = trajectoryPlanner->getXiTrajectory();
@@ -699,7 +734,7 @@ bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double
     onlineWalk_->setBaseHeight(COM_height);
     onlineWalk_->setBaseIdle(shank_ + thigh_);
     onlineWalk_->setBaseLowHeight(0.65);
-    onlineWalk_->setInitCoM(Vector3d(0.0, 0.0, COM_height_));
+    onlineWalk_->setInitCoM(Vector3d(0.0, 0.0, COM_height));
 
     vector<Vector3d> com_pos = trajectoryPlanner->getCoM();
     CoMPos_.insert(CoMPos_.end(), com_pos.begin(), com_pos.end());

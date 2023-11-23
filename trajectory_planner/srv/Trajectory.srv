@@ -10,5 +10,6 @@ float64 dt
 float64 theta
 float64 step_height
 float64 com_offset
+bool is_config
 ---
 bool result

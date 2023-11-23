@@ -34,6 +34,8 @@
 using namespace std;
 using namespace Eigen;
 
+using json = nlohmann::json;
+
 class RobotManager
 {
 public:

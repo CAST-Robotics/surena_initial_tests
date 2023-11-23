@@ -38,7 +38,7 @@ RobotManager::RobotManager(ros::NodeHandle *n)
     isWalkingWithKeyboard = false;
 
     int temp_ratio[12] = {100, 100, 50, 80, 100, 100, 50, 80, 120, 120, 120, 120};
-    int temp_home_abs[12] = {120586, 140898, 135849, 8159, 130104, 130283, 143105, 145631, 123654, 63488, 133626, 139984};
+    int temp_home_abs[12] = {121482, 141026, 128809, 9439, 134584, 130539, 144401, 145695, 131590, 62400, 130202, 141072};
     int temp_abs_high[12] = {108426, 119010, 89733, 136440, 71608, 102443, 119697, 82527, 168562, 160000, 191978, 111376};
     int temp_abs_low[12] = {145354, 183778, 194153, 7000, 203256, 160491, 150225, 180000, 61510, 61000, 61482, 172752};
     int temp_abs2inc_dir[12] = {1, 1, -1, -1, -1, 1, 1, 1, -1, 1, 1, 1};
@@ -607,10 +607,9 @@ bool RobotManager::walk(trajectory_planner::Trajectory::Request &req,
     double final_rankle_pos[3] = {0, -0.0975, 0};
     double final_rankle_orient[3] = {0, 0, 0};
 
-    robot->generalTrajGen(dt, 2, init_com_pos, final_com_pos, init_com_orient, final_com_orient,
-                          init_lankle_pos, final_lankle_pos, init_lankle_orient, final_lankle_orient,
-                          init_rankle_pos, final_rankle_pos, init_rankle_orient, final_rankle_orient);
-
+    // robot->generalTrajGen(req.dt, 2, init_com_pos, final_com_pos, init_com_orient, final_com_orient,
+    //                       init_lankle_pos, final_lankle_pos, init_lankle_orient, final_lankle_orient,
+    //                       init_rankle_pos, final_rankle_pos, init_rankle_orient, final_rankle_orient);
     // general_traj.request.time = req.t_step;
     // general_traj.request.init_com_pos = {0, 0, req.COM_height};
     // general_traj.request.final_com_pos = {0, 0, req.COM_height};
@@ -630,17 +629,17 @@ bool RobotManager::walk(trajectory_planner::Trajectory::Request &req,
 
     init_com_pos[2] = COM_height;
     final_com_pos[2] = 0.71;
-    robot->generalTrajGen(dt, 2, init_com_pos, final_com_pos, init_com_orient, final_com_orient,
-                          init_lankle_pos, final_lankle_pos, init_lankle_orient, final_lankle_orient,
-                          init_rankle_pos, final_rankle_pos, init_rankle_orient, final_rankle_orient);
+    // robot->generalTrajGen(req.dt, 2, init_com_pos, final_com_pos, init_com_orient, final_com_orient,
+    //                       init_lankle_pos, final_lankle_pos, init_lankle_orient, final_lankle_orient,
+    //                       init_rankle_pos, final_rankle_pos, init_rankle_orient, final_rankle_orient);
 
     int iter = 0;
     int final_iter = robot->getTrajSize();
     // int final_iter = req.t_step + 4;
 
-    // vector<double> right_arm_traj;
-    // vector<double> left_arm_traj;
-    // handMotion(right_arm_traj, left_arm_traj, req.t_step, req.step_count, 0.2, req.dt);
+    // // vector<double> right_arm_traj;
+    // // vector<double> left_arm_traj;
+    // // handMotion(right_arm_traj, left_arm_traj, req.t_step, req.step_count, 0.2, req.dt);
 
     double jnt_command[12];
     int status;
@@ -658,13 +657,11 @@ bool RobotManager::walk(trajectory_planner::Trajectory::Request &req,
         int left_bump[4] = {currentLBump_[0], currentLBump_[1], currentLBump_[2], currentLBump_[3]};
         double accelerometer[3] = {baseAcc_[0], baseAcc_[1], baseAcc_[2]};
         double gyro[3] = {baseAngVel_[0], baseAngVel_[1], baseAngVel_[2]};
-
         for (int i = 0; i < 12; i++)
         {
             config[i] = commandConfig_[2][i];
             jnt_vel[i] = (commandConfig_[0][i] - 4 * commandConfig_[1][i] + 3 * commandConfig_[2][i]) / (2 * dt);
         }
-
         robot->getJointAngs(iter, config, jnt_vel, right_ft, left_ft, right_bump,
                             left_bump, gyro, accelerometer, jnt_command, status);
         if (status != 0)

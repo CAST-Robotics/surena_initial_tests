@@ -129,10 +129,11 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
         {
             bumpSensorCalibrated_ = true;
             runFootLenController(iter, f_l, f_r, traj_index);
+            if(bump_l[0] != 0){
+                runBumpFootOrientController(iter, bump_r, bump_l);
 
-            runBumpFootOrientController(iter, bump_r, bump_l);
-
-            runEarlyContactController(iter, bump_r, bump_l);
+                runEarlyContactController(iter, bump_r, bump_l);
+            }
 
             // runFootOrientController();
 

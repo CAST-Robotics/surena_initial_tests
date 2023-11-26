@@ -14,7 +14,9 @@
 #include "fstream"
 #include <string>
 #include <geometry_msgs/PoseArray.h>
-
+#include<std_msgs/Int32MultiArray.h>
+#include "hand_planner_test/DetectionInfoArray.h"
+#include "ros/ros.h"
 #include "hand_planner_test/move_hand_single.h"
 #include "hand_planner_test/move_hand_both.h"
 #include "hand_planner_test/gripOnline.h"
@@ -27,21 +29,35 @@ class test_forgotten_srv{
     public:
         test_forgotten_srv(ros::NodeHandle *n){
             trajectory_data_pub  = n->advertise<std_msgs::Int32MultiArray>("jointdata/qc",100);
-            camera_data_sub  = n->subscribe("Camera_Ai",100, &test_forgotten_srv::object_detect,this);
+            camera_data_sub  = n->subscribe("/detection_info", 1, &test_forgotten_srv::object_detect,this);
             move_hand_single_service = n->advertiseService("move_hand_single_srv", &test_forgotten_srv::single,this);
             move_hand_both_service = n->advertiseService("move_hand_both_srv", &test_forgotten_srv::both,this);
             grip_Online_seivice = n->advertiseService("grip_Online_srv", &test_forgotten_srv::grip_Online,this);
         }
-        void object_detect(const geometry_msgs::PoseArray & msg){
-            x = msg.poses[0].position.x;
-            y = msg.poses[0].position.y;
-            z = msg.poses[0].position.z;
+        void object_detect(const hand_planner_test::DetectionInfoArray & msg){
+            if (msg.detections[0].class_id == 41 && msg.detections[0].distance != 0){
+                dist = (msg.detections[0].distance)/1000;
+                y = (msg.detections[0].x + (msg.detections[0].width)/2);
+                z = (msg.detections[0].y + (msg.detections[0].height)/2);
 
-            // cout<<x<<endl;
-            // cout<<y<<endl;
-            // cout<<z<<endl;
-            // cout<<"--"<<endl;
+                Y0 = -(y-L/2)/L*a;
+                Z0 = -(z-W/2)/W*b;
+                L0 = sqrt(pow(X0,2)+pow(Y0,2)+pow(Z0,2));
 
+                X = X0*dist/L0;
+                Y = Y0*dist/L0;
+                Z = Z0*dist/L0;
+                tempX = X;
+                tempY = Y;
+                tempZ = Z;
+        
+            }
+            else{
+                X = tempX;
+                Y = tempY;
+                Z = tempZ;
+            }
+            // cout<<"camera-> "<<"X: "<<X<<", Y: "<<Y<<", Z: "<<Z<<endl;
             }
 
         MatrixXd scenario_target_R (string scenario, int i, VectorXd ee_pos, string ee_ini_pos){
@@ -580,9 +596,7 @@ class test_forgotten_srv{
             return sqrt(s);
         }
 
-
         bool grip_Online(hand_planner_test::gripOnline::Request  &req, hand_planner_test::gripOnline::Response &res){
-
             ros::Rate rate_(rate);
             ofstream fw;
             fw.open("/home/surenav/DynCont/Code/WalkTest/src/hand_planner_test/src/test_surena4_ros/gripOnline.txt", std::ofstream::out);
@@ -601,24 +615,20 @@ class test_forgotten_srv{
             right_hand hand_r;
             right_hand hand0_r(q_ra,camera_target,R_target_r,0,0);
             r_right_palm=hand0_r.r_right_palm;
-            x0 = x;
-            y0 = y;
-            z0 = z;
-            while (t_grip<=40 || (norm(r_right_palm - camera_target)>0.015)) {
-            camera_target << x, y, z;
 
-            if (x!=x0 || y!=y0 || z!=z0) {
-                x0 = x; y0 = y; z0 = z; // defines target switching
-                cout<<r_right_palm<<endl;
-                cout<<t_grip<<endl;
-            }
+            while ((abs(r_right_palm(0) - camera_target(0))>0.025 || abs(r_right_palm(1) - camera_target(1))>0.025 || abs(r_right_palm(2) - camera_target(2))>0.025) || t_grip<=60) { //t_grip<=40 || 
+            camera_target<< X, Y, Z;
 
             R_target_r = hand_func_R.rot(2,-65*M_PI/180,3);
             // R_target_r = hand_func_R.rot(3,90*M_PI/180,3)*hand_func_R.rot(1,-180*M_PI/180,3);
-            V_r << 1.1*(camera_target - r_right_palm);
-
-            // cout<<r_right_palm<<endl;
-            // cout<<"--"<<endl;
+            V_r << 0.8*(camera_target - r_right_palm);
+            if ((abs(r_right_palm(0) - camera_target(0))>0.025 || abs(r_right_palm(1) - camera_target(1))>0.025 || abs(r_right_palm(2) - camera_target(2))>0.025)) {
+                cout<<"palmX: "<<r_right_palm(0)<<"/ X: "<<X<<"  palmY: "<<r_right_palm(1)<<"/ Y: "<<Y<<"  palmZ: "<<r_right_palm(2)<<"/ Z: "<<Z<<endl;
+                cout<<"--"<<endl;
+            }
+            else {
+                cout<< "TARGET RICHED"<<endl;
+            }
             
             
             hand_r.update_right_hand(q_ra,V_r,camera_target,R_target_r);
@@ -644,7 +654,7 @@ class test_forgotten_srv{
                 q_motor[13]=-int((q_ra(1)-q_init_r(1))*encoderResolution[0]*harmonicRatio[1]/M_PI/2); // be samte birun
                 q_motor[14]=int((q_ra(2)-q_init_r(2))*encoderResolution[1]*harmonicRatio[2]/M_PI/2); // be samte birun
                 q_motor[15]=-int((q_ra(3)-q_init_r(3))*encoderResolution[1]*harmonicRatio[3]/M_PI/2);// be samte bala
-                cout<<q_motor[12]<<','<<q_motor[13]<<','<<q_motor[14]<<','<<q_motor[15]<<endl;
+                // cout<<q_motor[12]<<','<<q_motor[13]<<','<<q_motor[14]<<','<<q_motor[15]<<endl;
                 
                 trajectory_data.data.clear();
                 for(int  i = 0; i < 20; i++)
@@ -683,11 +693,17 @@ class test_forgotten_srv{
         ros::ServiceServer move_hand_single_service;
         ros::ServiceServer move_hand_both_service;
         ros::ServiceServer grip_Online_seivice;
-        geometry_msgs::PoseArray camera_msg;
 
-        double x = 0.0; double x0 = 0.0;
-        double y = 0.0; double y0 = 0.0;
-        double z = 0.0; double z0 = 0.0;
+        double dist;
+        double y, z;
+        double a = 0.5; // 0.55
+        double b = 0.4; // 0.385
+        double X0 = 0.5;
+        double X = 1;
+        double Y, Z, Y0, Z0, L0;
+        int L = 640; int W = 480;
+        double tempX = 1;
+        double tempY, tempZ;
 
         MinimumJerkInterpolation coef_generator;
 

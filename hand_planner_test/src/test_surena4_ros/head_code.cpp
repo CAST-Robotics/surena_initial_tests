@@ -55,13 +55,13 @@ void object_detect(const hand_planner_test::DetectionInfoArray & msg){
         Y = Y0*dist/L0;
         Z = Z0*dist/L0;
         temp<<X,Y,Z;
-        
+        //cout<<"X: "<<X<<", Y: "<<Y<<", Z: "<<Z<<endl;
         }
-    // else{
-    //     X = temp(0);
-    //     Y = 0;
-    //     Z = 0;
-    // }
+    else{
+        X = temp(0);
+        Y = temp(1);
+        Z = temp(2);
+    }
     cout<<"X: "<<X<<", Y: "<<Y<<", Z: "<<Z<<endl;
             }
 
@@ -157,36 +157,46 @@ int main(int argc, char **argv)
     ofstream testPitch;
     testPitch.open("/home/surenav/DynCont/Code/WalkTest/src/hand_planner_test/src/testPitch.txt", std::ofstream::out);
     
-    while (time < 180) {
+    while (time < 10) {
 
-        if (abs(Y) > 0.02) {
+        // if (abs(Y) > 0.02) {
 
-            h_yaw += Ky*atan2(Y,X); // h_yaw += Ky*atan2(Y,X);
-            if (abs(h_yaw)*180/M_PI>90){
-                if (h_yaw > 0) {
-                    h_yaw = 90*M_PI/180;
-                }
-                else{
-                    h_yaw = -90*M_PI/180;
-                    }
-            }
-            cout<<"Y is out of center"<<endl;
-        }
+        //     if (abs(h_yaw) < abs(atan2(Y,X))) {
+        //         h_yaw += Ky*atan2(Y,X);
+        //     }
+        //     else {
+        //         h_yaw = -atan2(Y,X);
+        //     }
+        //     if (abs(h_yaw)*180/M_PI>90){
+        //         if (h_yaw > 0) {
+        //             h_yaw = 90*M_PI/180;
+        //         }
+        //         else{
+        //             h_yaw = -90*M_PI/180;
+        //             }
+        //     }
+        //     cout<<"h_yaw: "<<h_yaw<<endl;
+        // }
         
 
-        if (abs(Z) > 0.03) {
-
-            h_pitch += Kp*atan2(Z,sqrt(pow(Y,2)+pow(X,2)));
-            if (abs(h_pitch)*180/M_PI>25){
-                if (h_pitch > 0) {
-                    h_pitch = 25*M_PI/180;
-                }
-                else{
-                    h_pitch = -25*M_PI/180;
-                    }
-            }
-            cout<<"Z is out of center"<<endl; 
-        }
+        // if (abs(Z) > 0.03) {
+            
+        //     if (abs(h_pitch) < abs(atan2(Z,sqrt(pow(Y,2)+pow(X,2))))) {
+        //         h_pitch += Kp*atan2(Z,sqrt(pow(Y,2)+pow(X,2)));
+        //     }
+        //     else {
+        //         h_pitch = atan2(Z,sqrt(pow(Y,2)+pow(X,2)));
+        //     }
+        //     if (abs(h_pitch)*180/M_PI>25){
+        //         if (h_pitch > 0) {
+        //             h_pitch = 25*M_PI/180;
+        //         }
+        //         else{
+        //             h_pitch = -25*M_PI/180;
+        //             }
+        //     }
+        //     cout<<"h_pitch: "<<h_pitch<<endl; 
+        // }
 
         testYaw <<"time: "<<time<<"/ X: "<<X<<"/ Y: "<<Y<<"/ h_yaw: "<<h_yaw*180/M_PI<<"/ head_command: "<<head_command[22]<<endl;
         testPitch <<"time: "<<time<<"/ X: "<<X<<"/ Z: "<<Z<<"/ h_pitch: "<<h_pitch*180/M_PI<<"/ head_command: "<<head_command[21]<<endl;
@@ -194,6 +204,7 @@ int main(int argc, char **argv)
         // if (time < 5) {h_pitch -= 0.01*M_PI/180;}
         // else {h_pitch += 0.01*M_PI/180;}
         // h_pitch -= 0.01*M_PI/180; // for 10 sec
+        h_yaw -= 0.01*M_PI/180; // for 10 sec
 
         head_command[21] = int(pitch_command_range[0] + (pitch_command_range[1] - pitch_command_range[0]) * ((-(h_pitch*180/M_PI) - pitch_range[0]) / (pitch_range[1] - pitch_range[0])));
         head_command[20] = int(roll_command_range[0] + (roll_command_range[1] - roll_command_range[0]) * ((-(h_roll*180/M_PI) - (roll_range[0])) / (roll_range[1] - (roll_range[0]))));

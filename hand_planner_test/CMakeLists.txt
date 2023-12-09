@@ -168,8 +168,8 @@ add_dependencies(hand_gripOnline hand_planner_test_gencpp)
 #add_executable(CAMERA_HEAD src/test_surena4_ros/camera_ai_head.cpp)
 #target_link_libraries(CAMERA_HEAD ${catkin_LIBRARIES})
 
-#add_executable(head_sub src/test_surena4_ros/head_code.cpp)
-#target_link_libraries(head_sub ${catkin_LIBRARIES})
+add_executable(head_sub src/test_surena4_ros/head_code.cpp)
+target_link_libraries(head_sub ${catkin_LIBRARIES})
 
 ## Rename C++ executable without prefix
 ## The above recommended prefix causes long target names, the following renames the

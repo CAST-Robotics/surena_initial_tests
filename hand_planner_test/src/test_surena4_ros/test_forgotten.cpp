@@ -75,30 +75,30 @@ MatrixXd scenario_target_R (string scenario, int i, VectorXd ee_pos){
     MatrixXd result_r(6,3);
     
 if (scenario=="shakeHands"){
-    r_middle_r<<0.2,-0.1,-0.35  ; //shakehands
-    r_target_r<<0.3,-0.05,-0.35;
+    r_middle_r<<0.35,-0.1,-0.2  ; //shakehands
+    r_target_r<<0.3,-0.03,-0.3;
     R_target_r=hand_func_R.rot(2,-65*M_PI/180,3);
 }
 else if (scenario=="Respect"){
     r_middle_r<<0.3,-0.1,-0.3  ; //respect
     r_target_r<<0.3,0.1,-0.3;
     R_target_r=hand_func_R.rot(2,-80*M_PI/180,3)*hand_func_R.rot(1,60*M_PI/180,3);
-}
+ }
 else if (scenario=="byebye"){
     r_middle_r<<0.35,-0.2,-0.15  ; //ByeBye
     r_target_r<<0.3,-0.1,0.22;
     R_target_r=hand_func_R.rot(3,90*M_PI/180,3)*hand_func_R.rot(1,-180*M_PI/180,3);
-}
+ 
 else if (scenario=="home"){
-    r_middle_r<<0.2,-0.1,-0.35  ; //home
-    r_target_r<<0.1,-0.05,-0.46;
+    r_middle_r<<0.3,-0.1,-0.25  ; //home
+    r_target_r<<0.15,-0.07,-0.43;
     R_target_r=hand_func_R.rot(2,-20*M_PI/180,3);
-}
+ }
 else if (scenario=="fixed"){
     r_middle_r<<0.2,-0.1,-0.35  ; //fixed
-    r_target_r<<0.1,-0.05,-0.46;
+    r_target_r<<0.15,-0.07,-0.43;
     R_target_r=hand_func_R.rot(2,-20*M_PI/180,3);
-}
+ }
     if (i==0){
         q_ra<<10*M_PI/180,-10*M_PI/180,0,-25*M_PI/180,0,0,0; // initial condition
         q_init_r = q_ra;
@@ -133,8 +133,8 @@ MatrixXd scenario_target_L (string scenario, int i, VectorXd ee_pos){
     MatrixXd result_l(6,3);
     
 if (scenario=="shakeHands"){
-    r_middle_l<<0.2,0.1,-0.35  ; //shakehands
-    r_target_l<<0.3,0.05,-0.35;
+    r_middle_l<<0.35,0.1,-0.2  ; //shakehands
+    r_target_l<<0.3,0.03,-0.3;
     R_target_l=hand_func_L.rot(2,-65*M_PI/180,3);
 }
 else if (scenario=="Respect"){
@@ -148,13 +148,13 @@ else if (scenario=="byebye"){
     R_target_l=hand_func_L.rot(3,90*M_PI/180,3)*hand_func_L.rot(2,-180*M_PI/180,3);
 }
 else if (scenario=="home"){
-    r_middle_l<<0.2,0.1,-0.35  ; //home
-    r_target_l<<0.1,0.05,-0.46;
+    r_middle_l<<0.3,0.1,-0.25; //home
+    r_target_l<<0.15,0.07,-0.43;
     R_target_l=hand_func_L.rot(2,-20*M_PI/180,3);
-}
+ }
 else if (scenario=="fixed"){
     r_middle_l<<0.2,0.1,-0.35  ; //fixed
-    r_target_l<<0.1,0.05,-0.46;
+    r_target_l<<0.15,0.07,-0.43;
     R_target_l=hand_func_L.rot(2,-20*M_PI/180,3);
 }
     if (i==0){

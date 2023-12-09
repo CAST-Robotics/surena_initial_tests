@@ -14,12 +14,13 @@
 #include "fstream"
 #include <string>
 #include <geometry_msgs/PoseArray.h>
-#include<std_msgs/Int32MultiArray.h>
+#include <std_msgs/Int32MultiArray.h>
 #include "hand_planner_test/DetectionInfoArray.h"
 #include "ros/ros.h"
 #include "hand_planner_test/move_hand_single.h"
 #include "hand_planner_test/move_hand_both.h"
 #include "hand_planner_test/gripOnline.h"
+#include "hand_planner_test/home_service.h"
 
 using namespace  std;
 using namespace  Eigen;
@@ -30,9 +31,11 @@ class test_forgotten_srv{
         test_forgotten_srv(ros::NodeHandle *n){
             trajectory_data_pub  = n->advertise<std_msgs::Int32MultiArray>("jointdata/qc",100);
             camera_data_sub  = n->subscribe("/detection_info", 1, &test_forgotten_srv::object_detect,this);
+            JointQcSub  = n->subscribe("jointdata/qc",100, &test_forgotten_srv::jointQC_sub,this);
             move_hand_single_service = n->advertiseService("move_hand_single_srv", &test_forgotten_srv::single,this);
             move_hand_both_service = n->advertiseService("move_hand_both_srv", &test_forgotten_srv::both,this);
             grip_Online_seivice = n->advertiseService("grip_Online_srv", &test_forgotten_srv::grip_Online,this);
+            home_service = n->advertiseService("home_srv", &test_forgotten_srv::home,this);
         }
         void object_detect(const hand_planner_test::DetectionInfoArray & msg){
             if (msg.detections[0].class_id == 41 && msg.detections[0].distance != 0){
@@ -60,6 +63,18 @@ class test_forgotten_srv{
             // cout<<"camera-> "<<"X: "<<X<<", Y: "<<Y<<", Z: "<<Z<<endl;
             }
 
+        void jointQC_sub(const std_msgs::Int32MultiArray::ConstPtr & qcArray){
+            int i = 0;
+            // print all the remaining numbers
+            for(std::vector<int>::const_iterator it = qcArray->data.begin(); it != qcArray->data.end(); ++it)
+            {
+                QcArr[i] = *it;
+                i++;
+            }
+            //cout<<QcArr[0]<<", "<<QcArr[1]<<", "<<QcArr[2]<<", "<<QcArr[3]<<", "<<QcArr[4]<<", "<<QcArr[5]<<", "<<QcArr[6]<<", "<<QcArr[7]<<", "<<QcArr[8]<<", "<<QcArr[9]<<", "<<QcArr[10]<<", "<<QcArr[11]<<", "<<QcArr[12]<<", "<<QcArr[13]<<", "<<QcArr[14]<<", "<<QcArr[15]<<", "<<QcArr[16]<<", "<<QcArr[17]<<", "<<QcArr[18]<<", "<<QcArr[19]<<endl;
+            return;
+            }
+
         MatrixXd scenario_target_R (string scenario, int i, VectorXd ee_pos, string ee_ini_pos){
             MatrixXd result_r(6,3);
             r_start_r.resize(3);
@@ -70,7 +85,7 @@ class test_forgotten_srv{
             q_init_r.resize(7); 
             if (scenario=="shakeHands"){
                 r_middle_r<<0.35,-0.1,-0.2  ; //shakehands
-                r_target_r<<0.3,-0.05,-0.35;
+                r_target_r<<0.3,-0.03,-0.3;
                 R_target_r=hand_func_R.rot(2,-65*M_PI/180,3);
             }
             else if (scenario=="Respect"){
@@ -85,18 +100,18 @@ class test_forgotten_srv{
             }
             else if (scenario=="home"){
                 r_middle_r<<0.3,-0.1,-0.25  ; //home
-                r_target_r<<0.1,-0.05,-0.46;
+                r_target_r<<0.15,-0.07,-0.43;
                 R_target_r=hand_func_R.rot(2,-20*M_PI/180,3);
             }
             else if (scenario=="fixed"){
                 r_middle_r<<0.2,-0.1,-0.35  ; //fixed
-                r_target_r<<0.1,-0.05,-0.46;
+                r_target_r<<0.15,-0.07,-0.43;
                 R_target_r=hand_func_R.rot(2,-20*M_PI/180,3);
             }
                 if (i==0){
                     if (ee_ini_pos=="init") {
-                        q_ra<<-12.3*M_PI/180,-5*M_PI/180,38*M_PI/180,-5*M_PI/180,0,0,0; // initial condition
-                        // q_ra<<-10*M_PI/180,-10*M_PI/180,0,-25*M_PI/180,0,0,0; // initial condition
+                        //q_ra<<-12.3*M_PI/180,-5*M_PI/180,38*M_PI/180,-5*M_PI/180,0,0,0; // initial condition
+                        q_ra<<10*M_PI/180,-10*M_PI/180,0,-25*M_PI/180,0,0,0; // initial condition
                         q_init_r = q_ra;
                         // define right_hand objs
                         right_hand hand0_r(q_ra,r_target_r,R_target_r,0,0);
@@ -140,8 +155,8 @@ class test_forgotten_srv{
             q_la.resize(7);
             q_init_l.resize(7);   
             if (scenario=="shakeHands"){
-                r_middle_l<<0.35,0.05,-0.2  ; //shakehands
-                r_target_l<<0.3,0.05,-0.35;
+                r_middle_l<<0.35,0.1,-0.2  ; //shakehands
+                r_target_l<<0.3,0.03,-0.3;
                 R_target_l=hand_func_L.rot(2,-65*M_PI/180,3);
             }
             else if (scenario=="Respect"){
@@ -156,18 +171,18 @@ class test_forgotten_srv{
             }
             else if (scenario=="home"){
                 r_middle_l<<0.3,0.1,-0.25; //home
-                r_target_l<<0.1,0.05,-0.46;
+                r_target_l<<0.15,0.07,-0.43;
                 R_target_l=hand_func_L.rot(2,-20*M_PI/180,3);
             }
             else if (scenario=="fixed"){
                 r_middle_l<<0.2,0.1,-0.35  ; //fixed
-                r_target_l<<0.1,0.05,-0.46;
+                r_target_l<<0.15,0.07,-0.43;
                 R_target_l=hand_func_L.rot(2,-20*M_PI/180,3);
             }
                 if (i==0){
                     if (ee_ini_pos=="init") {
-                        q_la<<-12.3*M_PI/180,5*M_PI/180,-38*M_PI/180,-5*M_PI/180,0,0,0; // initial condition
-                        // q_la<<10*M_PI/180, 10*M_PI/180,0,-25*M_PI/180,0,0,0; // initial condition
+                        //q_la<<-12.3*M_PI/180,5*M_PI/180,-38*M_PI/180,-5*M_PI/180,0,0,0; // initial condition
+                        q_la<<10*M_PI/180, 10*M_PI/180,0,-25*M_PI/180,0,0,0; // initial condition
                         q_init_l = q_la;
                         // define right_hand objs
                         left_hand hand0_l( q_la, r_target_l,  R_target_l,0,0);
@@ -479,31 +494,31 @@ class test_forgotten_srv{
                     }                    
 
                     }
-                    else{
-                        if(req.mode=="righthand"){
-                            q_motor[12]=int(qref_r(0,id)*encoderResolution[0]*harmonicRatio[0]/M_PI/2); // be samte jelo
-                            q_motor[13]=-int(qref_r(1,id)*encoderResolution[0]*harmonicRatio[1]/M_PI/2); // be samte birun
-                            q_motor[14]=int(qref_r(2,id)*encoderResolution[1]*harmonicRatio[2]/M_PI/2); // be samte birun
-                            q_motor[15]=-int(qref_r(3,id)*encoderResolution[1]*harmonicRatio[3]/M_PI/2);// be samte bala
-                            // cout<<q_motor[12]<<','<<q_motor[13]<<','<<q_motor[14]<<','<<q_motor[15]<<endl;
-                        }
-                        else if(req.mode=="lefthand"){
-                            q_motor[16]=-int(qref_l(0,id)*encoderResolution[0]*harmonicRatio[0]/M_PI/2);
-                            q_motor[17]=-int(qref_l(1,id)*encoderResolution[0]*harmonicRatio[1]/M_PI/2);
-                            q_motor[18]=int(qref_l(2,id)*encoderResolution[1]*harmonicRatio[2]/M_PI/2);
-                            q_motor[19]=int(qref_l(3,id)*encoderResolution[1]*harmonicRatio[3]/M_PI/2);
-                            // cout<<q_motor[16]<<','<<q_motor[17]<<','<<q_motor[18]<<','<<q_motor[19]<<endl;
-                        }
-                        
-                        trajectory_data.data.clear();
-                        for(int  i = 0; i < 20; i++)
-                        {
-                            trajectory_data.data.push_back(q_motor[i]);
-                        }
-                        trajectory_data_pub.publish(trajectory_data);    
-                        ros::spinOnce();
-                        rate_.sleep();
+                else{
+                    if(req.mode=="righthand"){
+                        q_motor[12]=0;//int(qref_r(0,id)*encoderResolution[0]*harmonicRatio[0]/M_PI/2); // be samte jelo
+                        q_motor[13]=0;//-int(qref_r(1,id)*encoderResolution[0]*harmonicRatio[1]/M_PI/2); // be samte birun
+                        q_motor[14]=0;//int(qref_r(2,id)*encoderResolution[1]*harmonicRatio[2]/M_PI/2); // be samte birun
+                        q_motor[15]=-int(qref_r(3,id)*encoderResolution[1]*harmonicRatio[3]/M_PI/2);// be samte bala
+                        cout<<q_motor[12]<<','<<q_motor[13]<<','<<q_motor[14]<<','<<q_motor[15]<<endl;
                     }
+                    else if(req.mode=="lefthand"){
+                        q_motor[16]=-int(qref_l(0,id)*encoderResolution[0]*harmonicRatio[0]/M_PI/2);
+                        q_motor[17]=-int(qref_l(1,id)*encoderResolution[0]*harmonicRatio[1]/M_PI/2);
+                        q_motor[18]=int(qref_l(2,id)*encoderResolution[1]*harmonicRatio[2]/M_PI/2);
+                        q_motor[19]=int(qref_l(3,id)*encoderResolution[1]*harmonicRatio[3]/M_PI/2);
+                        // cout<<q_motor[16]<<','<<q_motor[17]<<','<<q_motor[18]<<','<<q_motor[19]<<endl;
+                    }
+                    
+                    trajectory_data.data.clear();
+                    for(int  i = 0; i < 20; i++)
+                    {
+                        trajectory_data.data.push_back(q_motor[i]);
+                    }
+                    trajectory_data_pub.publish(trajectory_data);    
+                    ros::spinOnce();
+                    rate_.sleep();
+                }
             id++;
             }
             sum_l = 0;
@@ -588,6 +603,64 @@ class test_forgotten_srv{
             return true;
         }
 
+        bool home(hand_planner_test::home_service::Request  &req, hand_planner_test::home_service::Response &res)
+        {
+            ros::Rate rate_(rate);
+            double t_local = 0;
+            int count = 0;
+            q_motor.resize(20,0);
+            q_gazebo.resize(29,0);
+
+            while (count<int(req.T_home/T))
+            {
+                    if (simulation) {
+                            if(req.mode=="righthand"){
+                                q_gazebo[15]=qref_r(0,qref_r.cols()-1) + hand_func_R.move2pose(-qref_r(0,qref_r.cols()-1), t_local, 0, req.T_home);  
+                                q_gazebo[16]=qref_r(1,qref_r.cols()-1) + hand_func_R.move2pose(-qref_r(1,qref_r.cols()-1), t_local, 0, req.T_home);  
+                                q_gazebo[17]=qref_r(2,qref_r.cols()-1) + hand_func_R.move2pose(-qref_r(2,qref_r.cols()-1), t_local, 0, req.T_home);  
+                                q_gazebo[18]=qref_r(3,qref_r.cols()-1) + hand_func_R.move2pose(-qref_r(3,qref_r.cols()-1), t_local, 0, req.T_home);
+                                hand_func_R.SendGazebo(q_gazebo);
+                                cout<<q_gazebo[15]<<','<<q_gazebo[16]<<','<<q_gazebo[17]<<','<<q_gazebo[18]<<','<<q_gazebo[19]<<','<<q_gazebo[20]<<','<<q_gazebo[21]<<endl;
+                            }
+                            else if(req.mode=="lefthand"){
+                                q_gazebo[22]=qref_l(0,qref_r.cols()-1) + hand_func_R.move2pose(-qref_l(0,qref_r.cols()-1), t_local, 0, req.T_home);  
+                                q_gazebo[23]=qref_l(1,qref_r.cols()-1) + hand_func_R.move2pose(-qref_l(1,qref_r.cols()-1), t_local, 0, req.T_home);  
+                                q_gazebo[24]=qref_l(2,qref_r.cols()-1) + hand_func_R.move2pose(-qref_l(2,qref_r.cols()-1), t_local, 0, req.T_home);  
+                                q_gazebo[25]=qref_l(3,qref_r.cols()-1) + hand_func_R.move2pose(-qref_l(3,qref_r.cols()-1), t_local, 0, req.T_home);  
+                                hand_func_L.SendGazebo(q_gazebo);
+                                // cout<<q_gazebo[22]<<','<<q_gazebo[23]<<','<<q_gazebo[24]<<','<<q_gazebo[25]<<','<<q_gazebo[26]<<','<<q_gazebo[27]<<','<<q_gazebo[28]<<endl;
+                            }                    
+                    }
+                    else {
+                        if (req.mode == "righthand"){
+                            for (int i=12; i<16; i++){
+                                q_motor[i] = int(QcArr[i] + hand_func_R.move2pose(-QcArr[i], t_local, 0, req.T_home));        
+                            } 
+                            }
+                        else if (req.mode == "lefthand"){
+                            for (int i=16; i<20; i++){
+                                q_motor[i] = int(QcArr[i] + hand_func_R.move2pose(-QcArr[i], t_local, 0, req.T_home));
+                            }
+                            }
+                        trajectory_data.data.clear();
+
+                        for(int  i = 0; i < 20; i++)
+                        {
+                            trajectory_data.data.push_back(q_motor[i]);
+                        }
+                        trajectory_data_pub.publish(trajectory_data); 
+                        ros::spinOnce();
+                        rate_.sleep();
+                        cout<<q_motor[0]<<", "<<q_motor[1]<<", "<<q_motor[2]<<", "<<q_motor[3]<<", "<<q_motor[4]<<", "<<q_motor[5]<<", "<<q_motor[6]<<", "<<q_motor[7]<<", "<<q_motor[8]<<", "<<q_motor[9]<<", "<<q_motor[10]<<", "<<q_motor[11]<<", "<<q_motor[12]<<", "<<q_motor[13]<<", "<<q_motor[14]<<", "<<q_motor[15]<<", "<<q_motor[16]<<", "<<q_motor[17]<<", "<<q_motor[18]<<", "<<q_motor[19]<<endl;
+                    }
+                    t_local+=T;
+                    count = count + 1;   
+                }
+                res.home = "Done";
+
+                return true; 
+        }
+
         double norm(VectorXd V){
             double s=0;
             for (int i = 0; i < V.rows(); ++i) {
@@ -608,6 +681,9 @@ class test_forgotten_srv{
             r_right_palm.resize(3);
             R_target_r.resize(3,3);
             V_r.resize(3);
+            T_EEtobase.resize(4, 4);
+            camera.resize(3);
+            camera << 0.1248, 0, 0.06746;
             q_ra<<-12.3*M_PI/180,-5*M_PI/180,38*M_PI/180,-4*M_PI/180,0,0,0; // initial condition
             q_init_r = q_ra;
 
@@ -623,7 +699,7 @@ class test_forgotten_srv{
             // R_target_r = hand_func_R.rot(3,90*M_PI/180,3)*hand_func_R.rot(1,-180*M_PI/180,3);
             V_r << 0.8*(camera_target - r_right_palm);
             if ((abs(r_right_palm(0) - camera_target(0))>0.025 || abs(r_right_palm(1) - camera_target(1))>0.025 || abs(r_right_palm(2) - camera_target(2))>0.025)) {
-                cout<<"palmX: "<<r_right_palm(0)<<"/ X: "<<X<<"  palmY: "<<r_right_palm(1)<<"/ Y: "<<Y<<"  palmZ: "<<r_right_palm(2)<<"/ Z: "<<Z<<endl;
+                cout<<"palmX: "<<r_right_palm(0)<<"/ X: "<<X<<"  palmY: "<<r_right_palm(1)<<"/ Y: "<<Y<<"  palmZ: "<<r_right_palm(2)<<"/ Z: "<<Z<<"/ baseX: "<<T_EEtobase(0)<<"/ baseY: "<<T_EEtobase(1)<<"/ baseZ: "<<T_EEtobase(2)<<endl;
                 cout<<"--"<<endl;
             }
             else {
@@ -640,6 +716,45 @@ class test_forgotten_srv{
             sai_r=hand_r.sai;
             phi_r=hand_r.phi;
 
+            if (abs(Y) > 0.02) {
+
+                if (abs(h_yaw) < abs(atan2(Y,X))) {
+                    h_yaw += Ky*atan2(Y,X);
+                }
+                else {
+                    h_yaw = -atan2(Y,X);
+                }
+                if (abs(h_yaw)*180/M_PI>90){
+                    if (h_yaw > 0) {
+                        h_yaw = 90*M_PI/180;
+                    }
+                    else{
+                        h_yaw = -90*M_PI/180;
+                        }
+                }
+                // cout<<"h_yaw: "<<h_yaw<<endl;
+            }        
+            if (abs(Z) > 0.03) {
+                
+                if (abs(h_pitch) < abs(atan2(Z,sqrt(pow(Y,2)+pow(X,2))))) {
+                    h_pitch += Kp*atan2(Z,sqrt(pow(Y,2)+pow(X,2)));
+                }
+                else {
+                    h_pitch = atan2(Z,sqrt(pow(Y,2)+pow(X,2)));
+                }
+                if (abs(h_pitch)*180/M_PI>25){
+                    if (h_pitch > 0) {
+                        h_pitch = 25*M_PI/180;
+                    }
+                    else{
+                        h_pitch = -25*M_PI/180;
+                        }
+                }
+                // cout<<"h_pitch: "<<h_pitch<<endl; 
+            }
+            
+            T_EEtobase << hand_r.ObjToNeck(camera, h_pitch, h_roll, h_yaw, PtoR, YtoP);
+
             if (simulation) {
                 q_gazebo[15]=q_ra(0)-q_init_r(0);  
                 q_gazebo[16]=q_ra(1)-q_init_r(1); 
@@ -654,10 +769,14 @@ class test_forgotten_srv{
                 q_motor[13]=-int((q_ra(1)-q_init_r(1))*encoderResolution[0]*harmonicRatio[1]/M_PI/2); // be samte birun
                 q_motor[14]=int((q_ra(2)-q_init_r(2))*encoderResolution[1]*harmonicRatio[2]/M_PI/2); // be samte birun
                 q_motor[15]=-int((q_ra(3)-q_init_r(3))*encoderResolution[1]*harmonicRatio[3]/M_PI/2);// be samte bala
+                q_motor[21] = int(pitch_command_range[0] + (pitch_command_range[1] - pitch_command_range[0]) * ((-(h_pitch*180/M_PI) - pitch_range[0]) / (pitch_range[1] - pitch_range[0])));
+                q_motor[20] = int(roll_command_range[0] + (roll_command_range[1] - roll_command_range[0]) * ((-(h_roll*180/M_PI) - (roll_range[0])) / (roll_range[1] - (roll_range[0]))));
+                q_motor[22] = int(yaw_command_range[0] + (yaw_command_range[1] - yaw_command_range[0]) * ((-(h_yaw*180/M_PI) - yaw_range[0]) / (yaw_range[1] - yaw_range[0])));
+
                 // cout<<q_motor[12]<<','<<q_motor[13]<<','<<q_motor[14]<<','<<q_motor[15]<<endl;
                 
                 trajectory_data.data.clear();
-                for(int  i = 0; i < 20; i++)
+                for(int  i = 0; i < 23; i++)
                 {
                     trajectory_data.data.push_back(q_motor[i]);
                 }
@@ -693,6 +812,8 @@ class test_forgotten_srv{
         ros::ServiceServer move_hand_single_service;
         ros::ServiceServer move_hand_both_service;
         ros::ServiceServer grip_Online_seivice;
+        ros::ServiceServer home_service;
+        ros::Subscriber  JointQcSub;
 
         double dist;
         double y, z;
@@ -754,6 +875,8 @@ class test_forgotten_srv{
         double sum_r = 0;
         double sum_l = 0;
         double T = 0.005; 
+        double Kp = 0.01;
+        double Ky = -0.01;
 
         VectorXd q_end;
         MatrixXd qref_r;
@@ -770,6 +893,20 @@ class test_forgotten_srv{
         bool simulation = false;
         int encoderResolution[2] = {4096*4, 2048*4};
         int harmonicRatio[4] = {100, 100, 100, 400};
+        vector<int> pitch_range = {-30, 30};
+        vector<int> roll_range = {-50, 50};
+        vector<int> yaw_range = {-90, 90};
+        vector<int> pitch_command_range = {180, 110};
+        vector<int> roll_command_range = {100, 190};
+        vector<int> yaw_command_range = {90, 210};
+        double h_pitch = 0;
+        double h_roll = 0;
+        double h_yaw = 0;
+        double PtoR = 0.0825;
+        double YtoP = 0.06025;
+        MatrixXd T_EEtobase;
+        VectorXd camera;
+        int QcArr[20];
 };
 
 

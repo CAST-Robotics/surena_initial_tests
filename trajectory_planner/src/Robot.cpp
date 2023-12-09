@@ -129,11 +129,10 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
         {
             bumpSensorCalibrated_ = true;
             runFootLenController(iter, f_l, f_r, traj_index);
-            if(bump_l[0] != 0){
-                runBumpFootOrientController(iter, bump_r, bump_l);
 
-                runEarlyContactController(iter, bump_r, bump_l);
-            }
+            runBumpFootOrientController(iter, bump_r, bump_l);
+
+            runEarlyContactController(iter, bump_r, bump_l);
 
             // runFootOrientController();
 
@@ -244,11 +243,18 @@ void Robot::runEarlyContactController(int iter, int bump_r[], int bump_l[])
         delta_r_foot = onlineWalk_->earlyContactController(bump_r, r_bump_d, 0.0042, 3, true);
     else
         delta_r_foot = onlineWalk_->earlyContactController(bump_r, r_bump_d, 0.0, 3, true);
-
-    if (l_mean_bump < -20 && lAnklePos_[iter](2) < lAnklePos_[iter - 1](2))
-        delta_l_foot = onlineWalk_->earlyContactController(bump_l, l_bump_d, 0.0042, 3, false);
+    
+    if(bump_l[0] != 0)
+    {
+        if (l_mean_bump < -20 && lAnklePos_[iter](2) < lAnklePos_[iter - 1](2))
+            delta_l_foot = onlineWalk_->earlyContactController(bump_l, l_bump_d, 0.0042, 3, false);
+        else
+            delta_l_foot = onlineWalk_->earlyContactController(bump_l, l_bump_d, 0.0, 3, false);
+    }
     else
-        delta_l_foot = onlineWalk_->earlyContactController(bump_l, l_bump_d, 0.0, 3, false);
+    {
+        delta_l_foot = onlineWalk_->earlyContactController(bump_l, l_bump_d, 0.0, 0, false);
+    }
 
     // Vector3d delta_r_foot = onlineWalk_->earlyContactController(bump_r, r_bump_d, 0.007, 5, true);
     // Vector3d delta_l_foot = onlineWalk_->earlyContactController(bump_l, l_bump_d, 0.007, 5, false);

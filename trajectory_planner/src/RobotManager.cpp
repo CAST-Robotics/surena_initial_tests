@@ -581,10 +581,20 @@ bool RobotManager::walk(trajectory_planner::Trajectory::Request &req,
     this->emptyCommand();
     int rate = 200;
     ros::Rate rate_(rate);
+    double dt = 0.005;
+    double COM_height;
+
+    string walk_config_path = ros::package::getPath("trajectory_planner") + "/config/walk_config.json";
+    std::ifstream f(walk_config_path);
+    json walk_config = json::parse(f);
+    if (req.is_config)
+        COM_height = walk_config["COM_height"];
+    else
+        COM_height = req.COM_height;
 
     double init_com_pos[3] = {0, 0, 0.71};
     double init_com_orient[3] = {0, 0, 0};
-    double final_com_pos[3] = {0, 0, req.COM_height};
+    double final_com_pos[3] = {0, 0, COM_height};
     double final_com_orient[3] = {0, 0, 0};
 
     double init_lankle_pos[3] = {0, 0.0975, 0};
@@ -597,9 +607,9 @@ bool RobotManager::walk(trajectory_planner::Trajectory::Request &req,
     double final_rankle_pos[3] = {0, -0.0975, 0};
     double final_rankle_orient[3] = {0, 0, 0};
 
-    robot->generalTrajGen(req.dt, 2, init_com_pos, final_com_pos, init_com_orient, final_com_orient,
-                          init_lankle_pos, final_lankle_pos, init_lankle_orient, final_lankle_orient,
-                          init_rankle_pos, final_rankle_pos, init_rankle_orient, final_rankle_orient);
+    // robot->generalTrajGen(req.dt, 2, init_com_pos, final_com_pos, init_com_orient, final_com_orient,
+    //                       init_lankle_pos, final_lankle_pos, init_lankle_orient, final_lankle_orient,
+    //                       init_rankle_pos, final_rankle_pos, init_rankle_orient, final_rankle_orient);
     // general_traj.request.time = req.t_step;
     // general_traj.request.init_com_pos = {0, 0, req.COM_height};
     // general_traj.request.final_com_pos = {0, 0, req.COM_height};
@@ -613,29 +623,23 @@ bool RobotManager::walk(trajectory_planner::Trajectory::Request &req,
     // general_traj.request.final_rankle_pos = {0, -0.0975, 0.05};
     // generalTrajectory_.call(general_traj);
 
-    robot->trajGen(req.step_count, req.t_step, req.alpha, req.t_double_support, req.COM_height,
-                   req.step_length, req.step_width, req.dt, req.theta, req.ankle_height, req.step_height, 0, req.com_offset);
-    // if(traj_srv.response.result){
+    robot->trajGen(req.step_count, req.t_step, req.alpha, req.t_double_support, req.COM_height, req.step_length,
+                   req.step_width, dt, req.theta, req.ankle_height, req.step_height, 0, req.com_offset, req.is_config);
+    
 
-    // init_com_pos[2] = req.COM_height;
-    // final_com_pos[2] = req.COM_height;
-    // robot->generalTrajGen(req.dt, req.t_step, init_com_pos, final_com_pos, init_com_orient, final_com_orient,
+    init_com_pos[2] = COM_height;
+    final_com_pos[2] = 0.71;
+    // robot->generalTrajGen(req.dt, 2, init_com_pos, final_com_pos, init_com_orient, final_com_orient,
     //                       init_lankle_pos, final_lankle_pos, init_lankle_orient, final_lankle_orient,
     //                       init_rankle_pos, final_rankle_pos, init_rankle_orient, final_rankle_orient);
-
-    init_com_pos[2] = req.COM_height;
-    final_com_pos[2] = 0.71;
-    robot->generalTrajGen(req.dt, 2, init_com_pos, final_com_pos, init_com_orient, final_com_orient,
-                          init_lankle_pos, final_lankle_pos, init_lankle_orient, final_lankle_orient,
-                          init_rankle_pos, final_rankle_pos, init_rankle_orient, final_rankle_orient);
 
     int iter = 0;
     int final_iter = robot->getTrajSize();
     // int final_iter = req.t_step + 4;
 
-    // vector<double> right_arm_traj;
-    // vector<double> left_arm_traj;
-    // handMotion(right_arm_traj, left_arm_traj, req.t_step, req.step_count, 0.2, req.dt);
+    // // vector<double> right_arm_traj;
+    // // vector<double> left_arm_traj;
+    // // handMotion(right_arm_traj, left_arm_traj, req.t_step, req.step_count, 0.2, req.dt);
 
     double jnt_command[12];
     int status;
@@ -653,16 +657,14 @@ bool RobotManager::walk(trajectory_planner::Trajectory::Request &req,
         int left_bump[4] = {currentLBump_[0], currentLBump_[1], currentLBump_[2], currentLBump_[3]};
         double accelerometer[3] = {baseAcc_[0], baseAcc_[1], baseAcc_[2]};
         double gyro[3] = {baseAngVel_[0], baseAngVel_[1], baseAngVel_[2]};
-
         for (int i = 0; i < 12; i++)
         {
             config[i] = commandConfig_[2][i];
-            jnt_vel[i] = (commandConfig_[0][i] - 4 * commandConfig_[1][i] + 3 * commandConfig_[2][i]) / (2 * req.dt);
+            jnt_vel[i] = (commandConfig_[0][i] - 4 * commandConfig_[1][i] + 3 * commandConfig_[2][i]) / (2 * dt);
         }
-
         robot->getJointAngs(iter, config, jnt_vel, right_ft, left_ft, right_bump,
                             left_bump, gyro, accelerometer, jnt_command, status);
-                if (status != 0)
+        if (status != 0)
         {
             cout << "Node was shut down due to Ankle Collision!" << endl;
             return false;
@@ -833,6 +835,8 @@ void RobotManager::keyboardHandler(const std_msgs::Int32 &msg)
     double step_height = 0;
     double theta = 0.0;
     double slope = 0.0;
+    double offset = 0.0;
+    bool is_config = false;
 
     int command = msg.data;
 
@@ -845,7 +849,7 @@ void RobotManager::keyboardHandler(const std_msgs::Int32 &msg)
             step_length = 0.15;
             theta = 0.0;
             robot->trajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 
-                           step_width, dt, theta, ankle_height, step_height, slope, 0);
+                           step_width, dt, theta, ankle_height, step_height, slope, offset, is_config);
             isKeyboardTrajectoryEnabled = false;
             break;
 
@@ -854,7 +858,7 @@ void RobotManager::keyboardHandler(const std_msgs::Int32 &msg)
             step_length = -0.15;
             theta = 0.0;
             robot->trajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 
-                           step_width, dt, theta, ankle_height, step_height, slope, 0);
+                           step_width, dt, theta, ankle_height, step_height, slope, offset, is_config);
             isKeyboardTrajectoryEnabled = false;
             break;
 
@@ -863,7 +867,7 @@ void RobotManager::keyboardHandler(const std_msgs::Int32 &msg)
             step_length = -0.15;
             theta = 0.17;
             robot->trajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 
-                           step_width, dt, theta, ankle_height, step_height, slope, 0);
+                           step_width, dt, theta, ankle_height, step_height, slope, offset, is_config);
             isKeyboardTrajectoryEnabled = false;
             break;
 
@@ -872,7 +876,7 @@ void RobotManager::keyboardHandler(const std_msgs::Int32 &msg)
             step_length = 0.15;
             theta = 0.17;
             robot->trajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 
-                           step_width, dt, theta, ankle_height, step_height, slope, 0);
+                           step_width, dt, theta, ankle_height, step_height, slope, offset, is_config);
             isKeyboardTrajectoryEnabled = false;
             break;
 

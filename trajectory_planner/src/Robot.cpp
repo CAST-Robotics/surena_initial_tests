@@ -680,6 +680,8 @@ bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double
     string walk_config_path = ros::package::getPath("trajectory_planner") + "/config/walk_config.json";
     std::ifstream f(walk_config_path);
     json walk_config = json::parse(f);
+    dt_ = dt;
+    int sign = 1;
 
     if (!is_config)
         step_count += 2;
@@ -712,26 +714,29 @@ bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double
     }
     else
     {
+        sign = abs(step_length) / step_length;
+        
         if (theta == 0.0)
         { // Straight or Diagonal Walk
-            generateStraightFootStep(ankle_rf, dcm_rf, step_width, step_length, step_height, step_count, com_offset);
+            generateStraightFootStep(ankle_rf, dcm_rf, step_width, step_length, step_height, step_count-2, com_offset);
         }
         else
         { // Turning Walk
-            generateTurnFootStep(ankle_rf, dcm_rf, step_length, step_height, step_count, theta, com_offset);
+            generateTurnFootStep(ankle_rf, dcm_rf, step_length, step_height, step_count-2, theta, com_offset);
         }
     }
 
+    COM_height_ = COM_height;
+
     int trajectory_size = int(((step_count) * t_step) / dt);
     DCMPlanner *trajectoryPlanner = new DCMPlanner(COM_height, t_step, t_double_support, dt, step_count, alpha, theta);
-    Ankle *anklePlanner = new Ankle(t_step, t_double_support, ankle_height, alpha, step_count, dt, theta, slope);
+    Ankle *anklePlanner = new Ankle(t_step, t_double_support, ankle_height, alpha, step_count - 2, dt, theta, slope);
 
     for (int i = 0; i < step_count; i++)
     {
         cout << dcm_rf[i][0] << " , " << dcm_rf[i][1] << " , " << dcm_rf[i][2] << endl;
     }
     
-    int sign = abs(step_length) / step_length;
     trajectoryPlanner->setFoot(dcm_rf, -sign);
     xiDesired_ = trajectoryPlanner->getXiTrajectory();
     zmpd_ = trajectoryPlanner->getZMP();

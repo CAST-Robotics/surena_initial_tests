@@ -84,17 +84,17 @@ class test_forgotten_srv{
             q_ra.resize(7);
             q_init_r.resize(7); 
             if (scenario=="shakeHands"){
-                r_middle_r<<0.35,-0.1,-0.2  ; //shakehands
+                r_middle_r<<0.35,-0.1,-0.2  ; //shakeHands
                 r_target_r<<0.3,-0.03,-0.3;
                 R_target_r=hand_func_R.rot(2,-65*M_PI/180,3);
             }
             else if (scenario=="Respect"){
-                r_middle_r<<0.3,-0.1,-0.3  ; //respect
+                r_middle_r<<0.3,-0.1,-0.3  ; //Respect
                 r_target_r<<0.3,0.1,-0.3;
                 R_target_r=hand_func_R.rot(2,-80*M_PI/180,3)*hand_func_R.rot(1,60*M_PI/180,3);
             }
             else if (scenario=="byebye"){
-                r_middle_r<<0.35,-0.2,-0.15  ; //ByeBye
+                r_middle_r<<0.35,-0.2,-0.15  ; //byebye
                 r_target_r<<0.3,-0.1,0.22;
                 R_target_r=hand_func_R.rot(3,90*M_PI/180,3)*hand_func_R.rot(1,-180*M_PI/180,3);
             }
@@ -490,15 +490,15 @@ class test_forgotten_srv{
                         q_gazebo[24]=qref_l(2,id);  
                         q_gazebo[25]=qref_l(3,id);   
                         hand_func_L.SendGazebo(q_gazebo);
-                        // cout<<q_gazebo[22]<<','<<q_gazebo[23]<<','<<q_gazebo[24]<<','<<q_gazebo[25]<<','<<q_gazebo[26]<<','<<q_gazebo[27]<<','<<q_gazebo[28]<<endl;
+                        cout<<q_gazebo[22]<<','<<q_gazebo[23]<<','<<q_gazebo[24]<<','<<q_gazebo[25]<<','<<q_gazebo[26]<<','<<q_gazebo[27]<<','<<q_gazebo[28]<<endl;
                     }                    
 
                     }
                 else{
                     if(req.mode=="righthand"){
-                        q_motor[12]=0;//int(qref_r(0,id)*encoderResolution[0]*harmonicRatio[0]/M_PI/2); // be samte jelo
-                        q_motor[13]=0;//-int(qref_r(1,id)*encoderResolution[0]*harmonicRatio[1]/M_PI/2); // be samte birun
-                        q_motor[14]=0;//int(qref_r(2,id)*encoderResolution[1]*harmonicRatio[2]/M_PI/2); // be samte birun
+                        q_motor[12]=int(qref_r(0,id)*encoderResolution[0]*harmonicRatio[0]/M_PI/2); // be samte jelo
+                        q_motor[13]=-int(qref_r(1,id)*encoderResolution[0]*harmonicRatio[1]/M_PI/2); // be samte birun
+                        q_motor[14]=int(qref_r(2,id)*encoderResolution[1]*harmonicRatio[2]/M_PI/2); // be samte birun
                         q_motor[15]=-int(qref_r(3,id)*encoderResolution[1]*harmonicRatio[3]/M_PI/2);// be samte bala
                         cout<<q_motor[12]<<','<<q_motor[13]<<','<<q_motor[14]<<','<<q_motor[15]<<endl;
                     }
@@ -507,7 +507,7 @@ class test_forgotten_srv{
                         q_motor[17]=-int(qref_l(1,id)*encoderResolution[0]*harmonicRatio[1]/M_PI/2);
                         q_motor[18]=int(qref_l(2,id)*encoderResolution[1]*harmonicRatio[2]/M_PI/2);
                         q_motor[19]=int(qref_l(3,id)*encoderResolution[1]*harmonicRatio[3]/M_PI/2);
-                        // cout<<q_motor[16]<<','<<q_motor[17]<<','<<q_motor[18]<<','<<q_motor[19]<<endl;
+                        cout<<q_motor[16]<<','<<q_motor[17]<<','<<q_motor[18]<<','<<q_motor[19]<<endl;
                     }
                     
                     trajectory_data.data.clear();
@@ -920,5 +920,3 @@ class test_forgotten_srv{
         ros::spin();
         return 0 ;
     }
-
-//g++ 

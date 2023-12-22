@@ -26,8 +26,8 @@ double h_roll = 0;
 double h_yaw = 0;
 VectorXd camera(3);
 VectorXd temp(3);
-double Kp = 0.01;
-double Ky = -0.01;
+double Kp = 0.05;
+double Ky = -0.05;
 double theta_pitch; 
 double sai_roll;
 double phi_yaw;
@@ -42,28 +42,34 @@ double Y, Z, Y0, Z0, L0;
 int L = 640; int W = 480;
 
 void object_detect(const hand_planner_test::DetectionInfoArray & msg){
-    if (msg.detections[0].class_id == 41 && msg.detections[0].distance != 0){
-        dist = (msg.detections[0].distance)/1000;
-        y = (msg.detections[0].x + (msg.detections[0].width)/2);
-        z = (msg.detections[0].y + (msg.detections[0].height)/2);
+    for(int i=0; i < msg.detections.size(); i ++)
+    {
+        if (msg.detections[i].class_id == 41){ // && msg.detections[0].distance != 0
+        dist = (msg.detections[i].distance)/1000;
+        y = (msg.detections[i].x + (msg.detections[i].width)/2);
+        z = (msg.detections[i].y + (msg.detections[i].height)/2);
 
-        Y0 = -(y-L/2)/L*a;
-        Z0 = -(z-W/2)/W*b;
-        L0 = sqrt(pow(X0,2)+pow(Y0,2)+pow(Z0,2));
+        // Y0 = -(y-L/2)/L*a;
+        // Z0 = -(z-W/2)/W*b;
+        // L0 = sqrt(pow(X0,2)+pow(Y0,2)+pow(Z0,2));
 
-        X = X0*dist/L0;
-        Y = Y0*dist/L0;
-        Z = Z0*dist/L0;
-        temp<<X,Y,Z;
+        // X = X0*dist/L0;
+        // Y = Y0*dist/L0;
+        // Z = Z0*dist/L0;
+        // temp<<dist,y,z;
         //cout<<"X: "<<X<<", Y: "<<Y<<", Z: "<<Z<<endl;
+        cout<<"X: "<<dist<<", Y: "<<y<<", Z: "<<z<<endl;
         }
     else{
-        X = temp(0);
-        Y = temp(1);
-        Z = temp(2);
+        // dist = temp(0);
+        // y = temp(1);
+        // z = temp(2);
+        cout<<"1"<<endl;
     }
-    cout<<"X: "<<X<<", Y: "<<Y<<", Z: "<<Z<<endl;
-            }
+    }
+    
+    
+}
 
 MatrixXd ObjToNeck(VectorXd camera, double h_pitch, double h_roll, double h_yaw, double PtoR, double YtoP) {
     MatrixXd T0(4, 4);
@@ -157,16 +163,11 @@ int main(int argc, char **argv)
     ofstream testPitch;
     testPitch.open("/home/surenav/DynCont/Code/WalkTest/src/hand_planner_test/src/testPitch.txt", std::ofstream::out);
     
-    while (time < 10) {
+    while (time < 120) {
 
         // if (abs(Y) > 0.02) {
 
-        //     if (abs(h_yaw) < abs(atan2(Y,X))) {
-        //         h_yaw += Ky*atan2(Y,X);
-        //     }
-        //     else {
-        //         h_yaw = -atan2(Y,X);
-        //     }
+        //     h_yaw += Ky*atan2(Y,X);
         //     if (abs(h_yaw)*180/M_PI>90){
         //         if (h_yaw > 0) {
         //             h_yaw = 90*M_PI/180;
@@ -175,18 +176,12 @@ int main(int argc, char **argv)
         //             h_yaw = -90*M_PI/180;
         //             }
         //     }
-        //     cout<<"h_yaw: "<<h_yaw<<endl;
         // }
         
 
         // if (abs(Z) > 0.03) {
             
-        //     if (abs(h_pitch) < abs(atan2(Z,sqrt(pow(Y,2)+pow(X,2))))) {
-        //         h_pitch += Kp*atan2(Z,sqrt(pow(Y,2)+pow(X,2)));
-        //     }
-        //     else {
-        //         h_pitch = atan2(Z,sqrt(pow(Y,2)+pow(X,2)));
-        //     }
+        //     h_pitch += Kp*atan2(Z,sqrt(pow(Y,2)+pow(X,2)));
         //     if (abs(h_pitch)*180/M_PI>25){
         //         if (h_pitch > 0) {
         //             h_pitch = 25*M_PI/180;
@@ -195,7 +190,6 @@ int main(int argc, char **argv)
         //             h_pitch = -25*M_PI/180;
         //             }
         //     }
-        //     cout<<"h_pitch: "<<h_pitch<<endl; 
         // }
 
         testYaw <<"time: "<<time<<"/ X: "<<X<<"/ Y: "<<Y<<"/ h_yaw: "<<h_yaw*180/M_PI<<"/ head_command: "<<head_command[22]<<endl;
@@ -204,7 +198,7 @@ int main(int argc, char **argv)
         // if (time < 5) {h_pitch -= 0.01*M_PI/180;}
         // else {h_pitch += 0.01*M_PI/180;}
         // h_pitch -= 0.01*M_PI/180; // for 10 sec
-        h_yaw -= 0.01*M_PI/180; // for 10 sec
+        //h_yaw -= 0.01*M_PI/180; // for 10 sec
 
         head_command[21] = int(pitch_command_range[0] + (pitch_command_range[1] - pitch_command_range[0]) * ((-(h_pitch*180/M_PI) - pitch_range[0]) / (pitch_range[1] - pitch_range[0])));
         head_command[20] = int(roll_command_range[0] + (roll_command_range[1] - roll_command_range[0]) * ((-(h_roll*180/M_PI) - (roll_range[0])) / (roll_range[1] - (roll_range[0]))));

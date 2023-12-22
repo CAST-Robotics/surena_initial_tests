@@ -152,7 +152,7 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
 
     // this->publishCoMPose(iter);
     this->publishZMPPose();
-    // cout << links_[6]->getPose()(0) << ", " << links_[6]->getPose()(1) << ", " << links_[6]->getPose()(2) << ", ";
+    // cout << CoMPos_[iter](0) << ", " << CoMPos_[iter](1) << ", " << CoMPos_[iter](2) << endl;
     // cout << links_[12]->getPose()(0) << ", " << links_[12]->getPose()(1) << ", " << links_[12]->getPose()(2) << ", ";
     // cout << rZMP_(0) << ", " << rZMP_(1) << ", " << lZMP_(0) << ", " << lZMP_(1) << ", " << robotPhase_[index_] << endl;
     

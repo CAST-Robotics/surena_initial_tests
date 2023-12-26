@@ -46,5 +46,12 @@ int main()
 
     DCMPlanner base_planner(0.68, 1, 0.1, 0.005, step_count + 2, 0.44, 0.01);
     base_planner.setFoot(base_foot_steps, 1);
+
+    int length = base_planner.getLength();
+    for (int i = 0; i < length; i++)
+    {
+        Vector3d xi = base_planner.ComputeDCM(i);
+        cout << xi(0) << ", " << xi(1) << ", " << xi(2) << endl;
+    }
     return 0;
 }

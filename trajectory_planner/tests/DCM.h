@@ -100,6 +100,8 @@ public:
 
     Vector3d ComputeDCM(int iter);
 
+    int getLength(){return length_;}
+
 private:
     // Design Parameters
     double deltaZ_;
@@ -125,6 +127,7 @@ private:
     vector<Vector3d> xiDSI_;
     vector<Vector3d> xiDSE_;
     vector<Matrix3d> yawRotation_;
+    vector<vector<Vector3d>> DSXiCoef_;
     int yawSign_;
     int length_;
     // Functions for generating trajectories

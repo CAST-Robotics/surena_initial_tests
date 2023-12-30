@@ -732,10 +732,10 @@ bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double
     DCMPlanner *trajectoryPlanner = new DCMPlanner(COM_height, t_step, t_double_support, dt, step_count, alpha, theta);
     Ankle *anklePlanner = new Ankle(t_step, t_double_support, ankle_height, alpha, step_count - 2, dt, theta, slope);
 
-    for (int i = 0; i < step_count; i++)
-    {
-        cout << dcm_rf[i][0] << " , " << dcm_rf[i][1] << " , " << dcm_rf[i][2] << endl;
-    }
+    // for (int i = 0; i < step_count; i++)
+    // {
+    //     cout << dcm_rf[i][0] << " , " << dcm_rf[i][1] << " , " << dcm_rf[i][2] << endl;
+    // }
     
     trajectoryPlanner->setFoot(dcm_rf, -sign);
     xiDesired_ = trajectoryPlanner->getXiTrajectory();

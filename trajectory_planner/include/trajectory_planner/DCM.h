@@ -125,6 +125,7 @@ private:
     vector<Matrix3d> yawRotation_;
     int yawSign_;
     int length_;
+    Vector3d CoMIntegral_;
     // Functions for generating trajectories
     /**
      * @brief Updates the position of the virtual repulsive point (VRP) 

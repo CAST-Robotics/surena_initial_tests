@@ -14,6 +14,7 @@ DCMPlanner::DCMPlanner(double deltaZ, double stepTime, double doubleSupportTime,
     this->stepCount_ = stepCount;
     this->yawSign_ = 1;
     this->length_ = 1 / dt_ * tStep_ * stepCount_;
+    this->CoMIntegral_ = Vector3d::Zero();
 }
 
 void DCMPlanner::setFoot(const vector<Vector3d>& rF, int sign)
@@ -153,13 +154,11 @@ const vector<Vector3d>& DCMPlanner::getCoM()
     CoMDot_.resize(length_);
     Vector3d COM_init(0.0, 0.0, deltaZ_); // initial COM when robot start to walk
     // COM trajectory based on DCM
-    Vector3d inte;
     for (int i = 0; i < length_; i++)
     {
-        inte << 0.0, 0.0, 0.0;
-        for (int j = 0; j < i; j++)
-            inte += sqrt(K_G / deltaZ_) * ((xi_[j] * exp(j * dt_ * sqrt(K_G / deltaZ_))) + (xi_[j + 1] * exp((j + 1) * dt_ * sqrt(K_G / deltaZ_)))) * 0.5 * dt_;
-        COM_[i] = (inte + COM_init) * exp(-i * dt_ * sqrt(K_G / deltaZ_));
+        if (i > 0)
+            this->CoMIntegral_ += sqrt(K_G / deltaZ_) * ((xi_[i - 1] * exp((i - 1) * dt_ * sqrt(K_G / deltaZ_))) + (xi_[i] * exp((i) * dt_ * sqrt(K_G / deltaZ_)))) * 0.5 * dt_;
+        COM_[i] = (this->CoMIntegral_ + COM_init) * exp(-i * dt_ * sqrt(K_G / deltaZ_));
         COM_[i](2) = xi_[i](2);
         CoMDot_[i] = -sqrt(K_G / deltaZ_) * (COM_[i] - xi_[i]);
     }

@@ -737,36 +737,36 @@ bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double
     //     cout << dcm_rf[i][0] << " , " << dcm_rf[i][1] << " , " << dcm_rf[i][2] << endl;
     // }
     
-    trajectoryPlanner->setFoot(dcm_rf, -sign);
-    xiDesired_ = trajectoryPlanner->getXiTrajectory();
-    zmpd_ = trajectoryPlanner->getZMP();
+    trajectoryPlanner->setOnlineFoot(dcm_rf, -sign);
+    // xiDesired_ = trajectoryPlanner->getXiTrajectory();
+    // zmpd_ = trajectoryPlanner->getZMP();
     anklePlanner->updateFoot(ankle_rf, -sign);
-    anklePlanner->generateTrajectory();
+    // anklePlanner->generateTrajectory();
     onlineWalk_->setDt(dt);
     onlineWalk_->setBaseHeight(COM_height);
     onlineWalk_->setBaseIdle(shank_ + thigh_);
     onlineWalk_->setBaseLowHeight(0.65);
     onlineWalk_->setInitCoM(Vector3d(0.0, 0.0, COM_height));
 
-    vector<Vector3d> com_pos = trajectoryPlanner->getCoM();
-    CoMPos_.insert(CoMPos_.end(), com_pos.begin(), com_pos.end());
-    vector<Vector3d> lank = anklePlanner->getTrajectoryL();
-    lAnklePos_.insert(lAnklePos_.end(), lank.begin(), lank.end());
-    vector<Vector3d> rank = anklePlanner->getTrajectoryR();
-    rAnklePos_.insert(rAnklePos_.end(), rank.begin(), rank.end());
+    // vector<Vector3d> com_pos = trajectoryPlanner->getCoM();
+    // CoMPos_.insert(CoMPos_.end(), com_pos.begin(), com_pos.end());
+    // vector<Vector3d> lank = anklePlanner->getTrajectoryL();
+    // lAnklePos_.insert(lAnklePos_.end(), lank.begin(), lank.end());
+    // vector<Vector3d> rank = anklePlanner->getTrajectoryR();
+    // rAnklePos_.insert(rAnklePos_.end(), rank.begin(), rank.end());
 
-    vector<Matrix3d> com_rot = trajectoryPlanner->yawRotGen();
-    CoMRot_.insert(CoMRot_.end(), com_rot.begin(), com_rot.end());
-    vector<Matrix3d> lank_rot = anklePlanner->getRotTrajectoryL();
-    lAnkleRot_.insert(lAnkleRot_.end(), lank_rot.begin(), lank_rot.end());
-    vector<Matrix3d> rank_rot = anklePlanner->getRotTrajectoryR();
-    rAnkleRot_.insert(rAnkleRot_.end(), rank_rot.begin(), rank_rot.end());
+    // vector<Matrix3d> com_rot = trajectoryPlanner->yawRotGen();
+    // CoMRot_.insert(CoMRot_.end(), com_rot.begin(), com_rot.end());
+    // vector<Matrix3d> lank_rot = anklePlanner->getRotTrajectoryL();
+    // lAnkleRot_.insert(lAnkleRot_.end(), lank_rot.begin(), lank_rot.end());
+    // vector<Matrix3d> rank_rot = anklePlanner->getRotTrajectoryR();
+    // rAnkleRot_.insert(rAnkleRot_.end(), rank_rot.begin(), rank_rot.end());
 
-    vector<int> robot_state = anklePlanner->getRobotState();
-    robotPhase_.insert(robotPhase_.end(), robot_state.begin(), robot_state.end()); 
+    // vector<int> robot_state = anklePlanner->getRobotState();
+    // robotPhase_.insert(robotPhase_.end(), robot_state.begin(), robot_state.end()); 
 
     dataSize_ += trajectory_size;
-    CoMDot_ = trajectoryPlanner->get_CoMDot();
+    // CoMDot_ = trajectoryPlanner->get_CoMDot();
     trajSizes_.push_back(dataSize_);
     robotControlState_.push_back(Robot::WALK);
     isTrajAvailable_ = true;

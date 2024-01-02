@@ -61,6 +61,7 @@ public:
      * @param sign The sign of the yaw angle.
      */
     void setFoot(const vector<Vector3d>& rF, int sign);
+    void setOnlineFoot(const vector<Vector3d>& rF, int sign);
     
     /**
      * @brief Returns the trajectory of the divergent component of motion (Xi) in 3D.
@@ -98,6 +99,10 @@ public:
      */
     const vector<Matrix3d>& yawRotGen();
 
+    Vector3d ComputeDCM(int iter);
+
+    int getLength(){return length_;}
+
 private:
     // Design Parameters
     double deltaZ_;
@@ -123,6 +128,7 @@ private:
     vector<Vector3d> xiDSI_;
     vector<Vector3d> xiDSE_;
     vector<Matrix3d> yawRotation_;
+    vector<vector<Vector3d>> DSXiCoef_;
     int yawSign_;
     int length_;
     Vector3d CoMIntegral_;
@@ -142,6 +148,7 @@ private:
      * @brief Generates trajectories for the double support phase.
      */
     void updateDS();
+    void updateOnlineDS(Vector3d xi_0);
 
     /**
      * @brief Updates DCM position at the end of single support (xiEOS).

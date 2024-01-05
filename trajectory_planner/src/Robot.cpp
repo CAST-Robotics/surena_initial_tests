@@ -128,7 +128,7 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
         if (robotControlState_[traj_index] == Robot::WALK)
         {
             bumpSensorCalibrated_ = true;
-            runFootLenController(iter, f_l, f_r, traj_index);
+            // runFootLenController(iter, f_l, f_r, traj_index);
 
             runBumpFootOrientController(iter, bump_r, bump_l);
 
@@ -729,7 +729,7 @@ bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double
     COM_height_ = COM_height;
 
     int trajectory_size = int(((step_count) * t_step) / dt);
-    DCMPlanner *trajectoryPlanner = new DCMPlanner(COM_height, t_step, t_double_support, dt, step_count, alpha, theta);
+    trajectoryPlanner_ = new DCMPlanner(COM_height, t_step, t_double_support, dt, step_count, alpha, theta);
     Ankle *anklePlanner = new Ankle(t_step, t_double_support, ankle_height, alpha, step_count - 2, dt, theta, slope);
 
     // for (int i = 0; i < step_count; i++)
@@ -737,33 +737,33 @@ bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double
     //     cout << dcm_rf[i][0] << " , " << dcm_rf[i][1] << " , " << dcm_rf[i][2] << endl;
     // }
     
-    trajectoryPlanner->setOnlineFoot(dcm_rf, -sign);
+    trajectoryPlanner_->setOnlineFoot(dcm_rf, -sign);
     // xiDesired_ = trajectoryPlanner->getXiTrajectory();
     // zmpd_ = trajectoryPlanner->getZMP();
     anklePlanner->updateFoot(ankle_rf, -sign);
-    // anklePlanner->generateTrajectory();
+    anklePlanner->generateTrajectory();
     onlineWalk_->setDt(dt);
     onlineWalk_->setBaseHeight(COM_height);
     onlineWalk_->setBaseIdle(shank_ + thigh_);
     onlineWalk_->setBaseLowHeight(0.65);
     onlineWalk_->setInitCoM(Vector3d(0.0, 0.0, COM_height));
 
-    // vector<Vector3d> com_pos = trajectoryPlanner->getCoM();
-    // CoMPos_.insert(CoMPos_.end(), com_pos.begin(), com_pos.end());
-    // vector<Vector3d> lank = anklePlanner->getTrajectoryL();
-    // lAnklePos_.insert(lAnklePos_.end(), lank.begin(), lank.end());
-    // vector<Vector3d> rank = anklePlanner->getTrajectoryR();
-    // rAnklePos_.insert(rAnklePos_.end(), rank.begin(), rank.end());
+    vector<Vector3d> com_pos(trajectory_size, Vector3d(0, 0, 0));
+    CoMPos_.insert(CoMPos_.end(), com_pos.begin(), com_pos.end());
+    vector<Vector3d> lank = anklePlanner->getTrajectoryL();
+    lAnklePos_.insert(lAnklePos_.end(), lank.begin(), lank.end());
+    vector<Vector3d> rank = anklePlanner->getTrajectoryR();
+    rAnklePos_.insert(rAnklePos_.end(), rank.begin(), rank.end());
 
-    // vector<Matrix3d> com_rot = trajectoryPlanner->yawRotGen();
-    // CoMRot_.insert(CoMRot_.end(), com_rot.begin(), com_rot.end());
-    // vector<Matrix3d> lank_rot = anklePlanner->getRotTrajectoryL();
-    // lAnkleRot_.insert(lAnkleRot_.end(), lank_rot.begin(), lank_rot.end());
-    // vector<Matrix3d> rank_rot = anklePlanner->getRotTrajectoryR();
-    // rAnkleRot_.insert(rAnkleRot_.end(), rank_rot.begin(), rank_rot.end());
+    vector<Matrix3d> com_rot = trajectoryPlanner_->yawRotGen();
+    CoMRot_.insert(CoMRot_.end(), com_rot.begin(), com_rot.end());
+    vector<Matrix3d> lank_rot = anklePlanner->getRotTrajectoryL();
+    lAnkleRot_.insert(lAnkleRot_.end(), lank_rot.begin(), lank_rot.end());
+    vector<Matrix3d> rank_rot = anklePlanner->getRotTrajectoryR();
+    rAnkleRot_.insert(rAnkleRot_.end(), rank_rot.begin(), rank_rot.end());
 
-    // vector<int> robot_state = anklePlanner->getRobotState();
-    // robotPhase_.insert(robotPhase_.end(), robot_state.begin(), robot_state.end()); 
+    vector<int> robot_state = anklePlanner->getRobotState();
+    robotPhase_.insert(robotPhase_.end(), robot_state.begin(), robot_state.end()); 
 
     dataSize_ += trajectory_size;
     // CoMDot_ = trajectoryPlanner->get_CoMDot();
@@ -917,6 +917,10 @@ bool Robot::getJointAngs(int iter, double config[12], double jnt_vel[12], double
             robot_jnt_vel[i] = jnt_vel[i - 1];
         }
         status = 0; // 0: Okay, 1: Ankle Collision
+
+        if (iter >= trajSizes_[0] && iter < trajSizes_[1])
+            CoMPos_[iter] = trajectoryPlanner_->ComputeDCM(iter - trajSizes_[0]);
+            
         this->spinOnline(iter, robot_config, robot_jnt_vel, right_torque, left_torque, right_ft[0], left_ft[0],
                          Vector3d(gyro[0], gyro[1], gyro[2]), Vector3d(accelerometer[0], accelerometer[1], accelerometer[2]),
                          right_bump, left_bump, jnt_command, status);
@@ -947,6 +951,7 @@ bool Robot::resetTraj()
     isTrajAvailable_ = false;
     Vector3d position(0.0, 0.0, 0.0);
     links_[0]->initPose(position, Matrix3d::Identity(3, 3));
+    delete trajectoryPlanner_;
     return true;
 }
 

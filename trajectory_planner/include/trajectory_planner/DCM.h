@@ -132,6 +132,8 @@ private:
     int yawSign_;
     int length_;
     Vector3d CoMIntegral_;
+    Vector3d CoMInit_;
+    Vector3d prevXi_;
     // Functions for generating trajectories
     /**
      * @brief Updates the position of the virtual repulsive point (VRP) 

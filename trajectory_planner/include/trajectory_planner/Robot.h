@@ -91,7 +91,7 @@ private:
         IDLE,
         WALK
     };
-
+    DCMPlanner *trajectoryPlanner_;
     vector<ControlState> robotControlState_;
 
     ros::NodeHandle *nh_;

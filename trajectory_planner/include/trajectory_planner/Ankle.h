@@ -14,12 +14,12 @@ public:
     const vector<Matrix3d>& getRotTrajectoryR();
     const vector<Matrix3d>& getRotTrajectoryL();
     const vector<int>& getRobotState();
+    void getOnlineTrajectory(int index);
 
 private:
     double tStep_;
     double tDS_;
     double dt_;
-    short int num_step; // ؟؟؟
     double alpha_;
     int stepCount_;
     bool leftFirst_;
@@ -28,8 +28,14 @@ private:
     double slope_;
     int yawSign_;
     int length_;
+    int stepSize_;
+    int dsSize_;
+    int ssSize_;
+    int initDSSize_;
+    int finalDSSize_;
 
-    vector<Vector3d> footPose_;
+    vector<Vector3d> footStepPos_;
+    vector<Vector3d> footStepEuler_;
     vector<Vector3d> lFoot_;
     vector<Vector3d> rFoot_;
     vector<Matrix3d> lFootRot_;
@@ -39,4 +45,5 @@ private:
     vector<int> stateIndicator_;
 
     void updateTrajectory(bool left_first);
+    
 };

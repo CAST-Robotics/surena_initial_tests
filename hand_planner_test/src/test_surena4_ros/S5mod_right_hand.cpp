@@ -265,7 +265,7 @@ double right_hand::velocity(double d,double d0){ // coef calculation for velocit
     a2=-3/2*a3*d0;
     return v_target+a2*d*d+a3*d*d*d;
 }
-MatrixXd right_hand::ObjToNeck(VectorXd camera, double h_pitch, double h_roll, double h_yaw, double PtoR, double YtoP) {
+MatrixXd right_hand::ObjToNeck(double h_pitch, double h_roll, double h_yaw) {
     T0.resize(4, 4);
     T0 << cos(M_PI / 9), 0, sin(M_PI / 9), 0,
         0, 1, 0, 0,
@@ -273,31 +273,37 @@ MatrixXd right_hand::ObjToNeck(VectorXd camera, double h_pitch, double h_roll, d
         0, 0, 0, 1;
 
     T1.resize(4, 4);
-    T1 << 1, 0, 0, camera(0),
-        0, 1, 0, camera(1),
-        0, 0, 1, camera(2),
-        0, 0, 0, 1;
+    T1 << 1, 0, 0, camera[0],
+          0, 1, 0, camera[1],
+          0, 0, 1, camera[2],
+          0, 0, 0, 1;
 
     T2.resize(4, 4);
     T2 << 1, 0, 0, 0,
-        0, cos(h_roll), -sin(h_roll), 0,
-        0, sin(h_roll), cos(h_roll), PtoR,
-        0, 0, 0, 1;
+          0, cos(h_roll), -sin(h_roll), 0,
+          0, sin(h_roll), cos(h_roll), head_PtoR,
+          0, 0, 0, 1;
 
     T3.resize(4, 4);
     T3 << cos(h_pitch), 0, sin(h_pitch), 0,
-        0, 1, 0, 0,
-        -sin(h_pitch), 0, cos(h_pitch), 0,
-        0, 0, 0, 1;
+          0, 1, 0, 0,
+         -sin(h_pitch), 0, cos(h_pitch), 0,
+          0, 0, 0, 1;
 
     T4.resize(4, 4);
     T4 << cos(h_yaw), -sin(h_yaw), 0, 0,
-        sin(h_yaw), cos(h_yaw), 0, 0,
-        0, 0, 1, YtoP,
-        0, 0, 0, 1;
+          sin(h_yaw),  cos(h_yaw), 0, 0,
+          0, 0, 1, head_YtoP,
+          0, 0, 0, 1;
+
+    T5.resize(4, 4);
+    T5 << 1, 0, 0, Shoulder2Head[0],
+          0, 1, 0, Shoulder2Head[1],
+          0, 0, 1, Shoulder2Head[2],
+          0, 0, 0, 1;
 
     T_EEtobase.resize(4, 4);
-    T_EEtobase = T4 * T3 * T2 * T1 * T0;
+    T_EEtobase = T5 * T4 * T3 * T2 * T1 * T0;
     return T_EEtobase;
 }
 

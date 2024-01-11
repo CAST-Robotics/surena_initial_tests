@@ -26,8 +26,8 @@ double h_roll = 0;
 double h_yaw = 0;
 VectorXd camera(3);
 VectorXd temp(3);
-double Kp = 0.05;
-double Ky = -0.05;
+double Kp = 0.01;
+double Ky = -0.02;
 double theta_pitch; 
 double sai_roll;
 double phi_yaw;
@@ -45,27 +45,27 @@ void object_detect(const hand_planner_test::DetectionInfoArray & msg){
     for(int i=0; i < msg.detections.size(); i ++)
     {
         if (msg.detections[i].class_id == 41){ // && msg.detections[0].distance != 0
-        dist = (msg.detections[i].distance)/1000;
-        y = (msg.detections[i].x + (msg.detections[i].width)/2);
-        z = (msg.detections[i].y + (msg.detections[i].height)/2);
+            dist = (msg.detections[i].distance)/1000;
+            y = (msg.detections[i].x + (msg.detections[i].width)/2);
+            z = (msg.detections[i].y + (msg.detections[i].height)/2);
 
-        // Y0 = -(y-L/2)/L*a;
-        // Z0 = -(z-W/2)/W*b;
-        // L0 = sqrt(pow(X0,2)+pow(Y0,2)+pow(Z0,2));
+            Y0 = -(y-L/2)/L*a;
+            Z0 = -(z-W/2)/W*b;
+            L0 = sqrt(pow(X0,2)+pow(Y0,2)+pow(Z0,2));
 
-        // X = X0*dist/L0;
-        // Y = Y0*dist/L0;
-        // Z = Z0*dist/L0;
-        // temp<<dist,y,z;
-        //cout<<"X: "<<X<<", Y: "<<Y<<", Z: "<<Z<<endl;
-        cout<<"X: "<<dist<<", Y: "<<y<<", Z: "<<z<<endl;
+            X = X0*dist/L0;
+            Y = Y0*dist/L0;
+            Z = Z0*dist/L0;
+            temp<<X,Y,Z;
+            cout<<"X: "<<X<<", Y: "<<Y<<", Z: "<<Z<<endl;
+            break;
         }
-    else{
-        // dist = temp(0);
-        // y = temp(1);
-        // z = temp(2);
-        cout<<"1"<<endl;
-    }
+        else if (msg.detections[i].class_id != 41 && i == msg.detections.size()-1) {
+            X = temp(0);
+            Y = temp(1);
+            Z = temp(2);
+            cout<<"1"<<endl;
+        }
     }
     
     
@@ -165,32 +165,30 @@ int main(int argc, char **argv)
     
     while (time < 120) {
 
-        // if (abs(Y) > 0.02) {
+        if (abs(Y) > 0.02) {
 
-        //     h_yaw += Ky*atan2(Y,X);
-        //     if (abs(h_yaw)*180/M_PI>90){
-        //         if (h_yaw > 0) {
-        //             h_yaw = 90*M_PI/180;
-        //         }
-        //         else{
-        //             h_yaw = -90*M_PI/180;
-        //             }
-        //     }
-        // }
-        
-
-        // if (abs(Z) > 0.03) {
+            h_yaw += Ky*atan2(Y,X);
+            if (abs(h_yaw)*180/M_PI>90){
+                if (h_yaw > 0) {
+                    h_yaw = 90*M_PI/180;
+                }
+                else{
+                    h_yaw = -90*M_PI/180;
+                    }
+            }
+        }
+        if (abs(Z) > 0.02) {
             
-        //     h_pitch += Kp*atan2(Z,sqrt(pow(Y,2)+pow(X,2)));
-        //     if (abs(h_pitch)*180/M_PI>25){
-        //         if (h_pitch > 0) {
-        //             h_pitch = 25*M_PI/180;
-        //         }
-        //         else{
-        //             h_pitch = -25*M_PI/180;
-        //             }
-        //     }
-        // }
+            h_pitch += Kp*atan2(Z,sqrt(pow(Y,2)+pow(X,2)));
+            if (abs(h_pitch)*180/M_PI>28){
+                if (h_pitch > 0) {
+                    h_pitch = 28*M_PI/180;
+                }
+                else{
+                    h_pitch = -28*M_PI/180;
+                    }
+            }
+        }
 
         testYaw <<"time: "<<time<<"/ X: "<<X<<"/ Y: "<<Y<<"/ h_yaw: "<<h_yaw*180/M_PI<<"/ head_command: "<<head_command[22]<<endl;
         testPitch <<"time: "<<time<<"/ X: "<<X<<"/ Z: "<<Z<<"/ h_pitch: "<<h_pitch*180/M_PI<<"/ head_command: "<<head_command[21]<<endl;

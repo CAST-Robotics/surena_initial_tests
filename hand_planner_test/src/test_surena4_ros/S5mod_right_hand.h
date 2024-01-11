@@ -93,6 +93,12 @@ public:
     double phi_dot;
     double theta_dot;
 
+    // camera to shoulder transformation
+    double head_PtoR = 0.0825;
+    double head_YtoP = 0.06025;
+    double Shoulder2Head[3] = {0,0.23,0.08}; 
+    double camera[3] = {0.1248, 0, 0.06746};
+
     // wrist IK
     VectorXd wrist_left_calc(double alpha, double beta);
     VectorXd wrist_right_calc(double alpha, double beta);
@@ -155,12 +161,13 @@ public:
     void  SendGazebo(vector<double> q);
 
     MatrixXd returnAngles(MatrixXd T_EEtobase);
-    MatrixXd ObjToNeck(VectorXd camera, double h_pitch, double h_roll, double h_yaw, double PtoR, double YtoP);
+    MatrixXd ObjToNeck(double h_pitch, double h_roll, double h_yaw);
     MatrixXd T0;
     MatrixXd T1;
     MatrixXd T2;
     MatrixXd T3;
     MatrixXd T4;
+    MatrixXd T5;
     MatrixXd T_EEtobase;
     double theta_pitch;
     double sai_roll;

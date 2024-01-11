@@ -38,30 +38,33 @@ class test_forgotten_srv{
             home_service = n->advertiseService("home_srv", &test_forgotten_srv::home,this);
         }
         void object_detect(const hand_planner_test::DetectionInfoArray & msg){
-            if (msg.detections[0].class_id == 41 && msg.detections[0].distance != 0){
-                dist = (msg.detections[0].distance)/1000;
-                y = (msg.detections[0].x + (msg.detections[0].width)/2);
-                z = (msg.detections[0].y + (msg.detections[0].height)/2);
+            for(int i=0; i < msg.detections.size(); i ++)
+            {
+                if (msg.detections[i].class_id == 41){ // && msg.detections[0].distance != 0
+                    dist = (msg.detections[i].distance)/1000;
+                    y = (msg.detections[i].x + (msg.detections[i].width)/2);
+                    z = (msg.detections[i].y + (msg.detections[i].height)/2);
 
-                Y0 = -(y-L/2)/L*a;
-                Z0 = -(z-W/2)/W*b;
-                L0 = sqrt(pow(X0,2)+pow(Y0,2)+pow(Z0,2));
+                    Y0 = -(y-L/2)/L*a;
+                    Z0 = -(z-W/2)/W*b;
+                    L0 = sqrt(pow(X0,2)+pow(Y0,2)+pow(Z0,2));
 
-                X = X0*dist/L0;
-                Y = Y0*dist/L0;
-                Z = Z0*dist/L0;
-                tempX = X;
-                tempY = Y;
-                tempZ = Z;
-        
+                    X = X0*dist/L0;
+                    Y = Y0*dist/L0;
+                    Z = Z0*dist/L0;
+                    tempX = X;
+                    tempY = Y;
+                    tempZ = Z;
+                    break;
+                }
+                else if (msg.detections[i].class_id != 41 && i == msg.detections.size()-1) {
+                    X = tempX;
+                    Y = tempY;
+                    Z = tempZ;
+                    cout<<"1"<<endl;
+                }
             }
-            else{
-                X = tempX;
-                Y = tempY;
-                Z = tempZ;
-            }
-            // cout<<"camera-> "<<"X: "<<X<<", Y: "<<Y<<", Z: "<<Z<<endl;
-            }
+        }
 
         void jointQC_sub(const std_msgs::Int32MultiArray::ConstPtr & qcArray){
             int i = 0;
@@ -499,14 +502,14 @@ class test_forgotten_srv{
                         q_motor[12]=int(qref_r(0,id)*encoderResolution[0]*harmonicRatio[0]/M_PI/2); // be samte jelo
                         q_motor[13]=-int(qref_r(1,id)*encoderResolution[0]*harmonicRatio[1]/M_PI/2); // be samte birun
                         q_motor[14]=int(qref_r(2,id)*encoderResolution[1]*harmonicRatio[2]/M_PI/2); // be samte birun
-                        q_motor[15]=-int(qref_r(3,id)*encoderResolution[1]*harmonicRatio[3]/M_PI/2);// be samte bala
+                        q_motor[15]=int(qref_r(3,id)*encoderResolution[1]*harmonicRatio[3]/M_PI/2);// be samte bala
                         cout<<q_motor[12]<<','<<q_motor[13]<<','<<q_motor[14]<<','<<q_motor[15]<<endl;
                     }
                     else if(req.mode=="lefthand"){
                         q_motor[16]=-int(qref_l(0,id)*encoderResolution[0]*harmonicRatio[0]/M_PI/2);
                         q_motor[17]=-int(qref_l(1,id)*encoderResolution[0]*harmonicRatio[1]/M_PI/2);
                         q_motor[18]=int(qref_l(2,id)*encoderResolution[1]*harmonicRatio[2]/M_PI/2);
-                        q_motor[19]=int(qref_l(3,id)*encoderResolution[1]*harmonicRatio[3]/M_PI/2);
+                        q_motor[19]=-int(qref_l(3,id)*encoderResolution[1]*harmonicRatio[3]/M_PI/2);
                         cout<<q_motor[16]<<','<<q_motor[17]<<','<<q_motor[18]<<','<<q_motor[19]<<endl;
                     }
                     
@@ -574,11 +577,11 @@ class test_forgotten_srv{
                     q_motor[12]=int(qref_r(0,id)*encoderResolution[0]*harmonicRatio[0]/M_PI/2); // be samte jelo
                     q_motor[13]=-int(qref_r(1,id)*encoderResolution[0]*harmonicRatio[1]/M_PI/2); // be samte birun
                     q_motor[14]=int(qref_r(2,id)*encoderResolution[1]*harmonicRatio[2]/M_PI/2); // be samte birun
-                    q_motor[15]=-int(qref_r(3,id)*encoderResolution[1]*harmonicRatio[3]/M_PI/2);// be samte bala
+                    q_motor[15]=int(qref_r(3,id)*encoderResolution[1]*harmonicRatio[3]/M_PI/2);// be samte bala
                     q_motor[16]=-int(qref_l(0,id)*encoderResolution[0]*harmonicRatio[0]/M_PI/2);
                     q_motor[17]=-int(qref_l(1,id)*encoderResolution[0]*harmonicRatio[1]/M_PI/2);
                     q_motor[18]=int(qref_l(2,id)*encoderResolution[1]*harmonicRatio[2]/M_PI/2);
-                    q_motor[19]=int(qref_l(3,id)*encoderResolution[1]*harmonicRatio[3]/M_PI/2);
+                    q_motor[19]=-int(qref_l(3,id)*encoderResolution[1]*harmonicRatio[3]/M_PI/2);
                 
                     trajectory_data.data.clear();
                     for(int  i = 0; i < 20; i++)
@@ -677,129 +680,157 @@ class test_forgotten_srv{
             q_gazebo.resize(29,0);
             q_ra.resize(7);
             q_init_r.resize(7);             
-            camera_target.resize(3);
+            target2shoulder.resize(3);
+            target2camera.resize(3);
             r_right_palm.resize(3);
             R_target_r.resize(3,3);
             V_r.resize(3);
-            T_EEtobase.resize(4, 4);
-            camera.resize(3);
-            camera << 0.1248, 0, 0.06746;
+            T_CAM2SH.resize(4, 4);
+
             q_ra<<-12.3*M_PI/180,-5*M_PI/180,38*M_PI/180,-4*M_PI/180,0,0,0; // initial condition
             q_init_r = q_ra;
 
             // define right_hand objs
-            right_hand hand_r;
-            right_hand hand0_r(q_ra,camera_target,R_target_r,0,0);
+            right_hand hand_r;  
+            T_CAM2SH << hand_r.ObjToNeck(-h_pitch, h_roll, -h_yaw);
+            target2camera << X, Y, Z;
+            target2shoulder << T_CAM2SH.block(0,3,3,1) + T_CAM2SH.block(0,0,3,3)*target2camera;
+
+
+            right_hand hand0_r(q_ra,target2shoulder,R_target_r,0,0);
             r_right_palm=hand0_r.r_right_palm;
 
-            while ((abs(r_right_palm(0) - camera_target(0))>0.025 || abs(r_right_palm(1) - camera_target(1))>0.025 || abs(r_right_palm(2) - camera_target(2))>0.025) || t_grip<=60) { //t_grip<=40 || 
-            camera_target<< X, Y, Z;
+            while ((abs(r_right_palm(0) - target2shoulder(0))>0.04 || abs(r_right_palm(1) - target2shoulder(1))>0.04 || abs(r_right_palm(2) - target2shoulder(2))>0.04) || t_grip<=120) { //t_grip<=40 || 
+                target2camera << X, Y, Z;
+                target2shoulder << T_CAM2SH.block(0,3,3,1) + T_CAM2SH.block(0,0,3,3)*target2camera;
+            if(t_grip<=15){
+                cout<<"initializing"<<endl;
+                cout<<"ee2SHX: "<<target2shoulder(0)<<", ee2SHY: "<<target2shoulder(1)<<", ee2SHZ: "<<target2shoulder(2)<<endl; 
+                // if (abs(target2camera(1)) > 0.02) {
 
-            R_target_r = hand_func_R.rot(2,-65*M_PI/180,3);
-            // R_target_r = hand_func_R.rot(3,90*M_PI/180,3)*hand_func_R.rot(1,-180*M_PI/180,3);
-            V_r << 0.8*(camera_target - r_right_palm);
-            if ((abs(r_right_palm(0) - camera_target(0))>0.025 || abs(r_right_palm(1) - camera_target(1))>0.025 || abs(r_right_palm(2) - camera_target(2))>0.025)) {
-                cout<<"palmX: "<<r_right_palm(0)<<"/ X: "<<X<<"  palmY: "<<r_right_palm(1)<<"/ Y: "<<Y<<"  palmZ: "<<r_right_palm(2)<<"/ Z: "<<Z<<"/ baseX: "<<T_EEtobase(0)<<"/ baseY: "<<T_EEtobase(1)<<"/ baseZ: "<<T_EEtobase(2)<<endl;
-                cout<<"--"<<endl;
+                //     h_yaw += Ky*atan2(target2camera(1),target2camera(0));
+                //     if (abs(h_yaw)*180/M_PI>90){
+                //         if (h_yaw > 0) {
+                //             h_yaw = 90*M_PI/180;
+                //         }
+                //         else{
+                //             h_yaw = -90*M_PI/180;
+                //             }
+                //     }
+                // }
+
+                if (abs(target2camera(2)) > 0.02) {
+                    
+                    h_pitch += Kp*atan2(target2camera(2),sqrt(pow(target2camera(1),2)+pow(target2camera(0),2)));
+                    if (abs(h_pitch)*180/M_PI>28){
+                        if (h_pitch > 0) {
+                            h_pitch = 28*M_PI/180;
+                        }
+                        else{
+                            h_pitch = -28*M_PI/180;
+                            }
+                    }
+                }
             }
             else {
-                cout<< "TARGET RICHED"<<endl;
-            }
-            
-            
-            hand_r.update_right_hand(q_ra,V_r,camera_target,R_target_r);
-            r_right_palm=hand_r.r_right_palm;
-            hand_r.doQP(q_ra);
-            q_ra=hand_r.q_next;
-            d_r=hand_r.dist;
-            theta_r=hand_r.theta;
-            sai_r=hand_r.sai;
-            phi_r=hand_r.phi;
-
-            if (abs(Y) > 0.02) {
-
-                if (abs(h_yaw) < abs(atan2(Y,X))) {
-                    h_yaw += Ky*atan2(Y,X);
+                R_target_r = hand_func_R.rot(2,-65*M_PI/180,3);
+                // R_target_r = hand_func_R.rot(3,90*M_PI/180,3)*hand_func_R.rot(1,-180*M_PI/180,3);
+                V_r << 0.7*(target2shoulder - r_right_palm);
+                if ((abs(r_right_palm(0) - target2shoulder(0))>0.025 || abs(r_right_palm(1) - target2shoulder(1))>0.025 || abs(r_right_palm(2) - target2shoulder(2))>0.025)) {
+                    cout<<"palmX: "<<r_right_palm(0)<<",  palmY: "<<r_right_palm(1)<<",  palmZ: "<<r_right_palm(2)<<endl;
+                    cout<<"ee2CAMX: "<<target2camera(0)<<", ee2CAMY: "<<target2camera(1)<<", ee2CAMZ: "<<target2camera(2)<<" h_yaw: "<<h_yaw<<" h_pitch: "<<h_pitch<<endl; 
+                    cout<<"ee2SHX: "<<target2shoulder(0)<<", ee2SHY: "<<target2shoulder(1)<<", ee2SHZ: "<<target2shoulder(2)<<endl; 
+                    cout<<"--"<<endl;
                 }
                 else {
-                    h_yaw = -atan2(Y,X);
+                    cout<< "TARGET RICHED"<<endl;
                 }
-                if (abs(h_yaw)*180/M_PI>90){
-                    if (h_yaw > 0) {
-                        h_yaw = 90*M_PI/180;
-                    }
-                    else{
-                        h_yaw = -90*M_PI/180;
-                        }
-                }
-                // cout<<"h_yaw: "<<h_yaw<<endl;
-            }        
-            if (abs(Z) > 0.03) {
                 
-                if (abs(h_pitch) < abs(atan2(Z,sqrt(pow(Y,2)+pow(X,2))))) {
-                    h_pitch += Kp*atan2(Z,sqrt(pow(Y,2)+pow(X,2)));
-                }
-                else {
-                    h_pitch = atan2(Z,sqrt(pow(Y,2)+pow(X,2)));
-                }
-                if (abs(h_pitch)*180/M_PI>25){
-                    if (h_pitch > 0) {
-                        h_pitch = 25*M_PI/180;
-                    }
-                    else{
-                        h_pitch = -25*M_PI/180;
-                        }
-                }
-                // cout<<"h_pitch: "<<h_pitch<<endl; 
-            }
-            
-            T_EEtobase << hand_r.ObjToNeck(camera, h_pitch, h_roll, h_yaw, PtoR, YtoP);
-
-            if (simulation) {
-                q_gazebo[15]=q_ra(0)-q_init_r(0);  
-                q_gazebo[16]=q_ra(1)-q_init_r(1); 
-                q_gazebo[17]=q_ra(2)-q_init_r(2);  
-                q_gazebo[18]=q_ra(3)-q_init_r(3);
-                hand_func_R.SendGazebo(q_gazebo);
-                cout<<q_gazebo[15]<<','<<q_gazebo[16]<<','<<q_gazebo[17]<<','<<q_gazebo[18]<<endl;
-                }
-            else{
-
-                q_motor[12]=int((q_ra(0)-q_init_r(0))*encoderResolution[0]*harmonicRatio[0]/M_PI/2); // be samte jelo
-                q_motor[13]=-int((q_ra(1)-q_init_r(1))*encoderResolution[0]*harmonicRatio[1]/M_PI/2); // be samte birun
-                q_motor[14]=int((q_ra(2)-q_init_r(2))*encoderResolution[1]*harmonicRatio[2]/M_PI/2); // be samte birun
-                q_motor[15]=-int((q_ra(3)-q_init_r(3))*encoderResolution[1]*harmonicRatio[3]/M_PI/2);// be samte bala
-                q_motor[21] = int(pitch_command_range[0] + (pitch_command_range[1] - pitch_command_range[0]) * ((-(h_pitch*180/M_PI) - pitch_range[0]) / (pitch_range[1] - pitch_range[0])));
-                q_motor[20] = int(roll_command_range[0] + (roll_command_range[1] - roll_command_range[0]) * ((-(h_roll*180/M_PI) - (roll_range[0])) / (roll_range[1] - (roll_range[0]))));
-                q_motor[22] = int(yaw_command_range[0] + (yaw_command_range[1] - yaw_command_range[0]) * ((-(h_yaw*180/M_PI) - yaw_range[0]) / (yaw_range[1] - yaw_range[0])));
-
-                // cout<<q_motor[12]<<','<<q_motor[13]<<','<<q_motor[14]<<','<<q_motor[15]<<endl;
                 
-                trajectory_data.data.clear();
-                for(int  i = 0; i < 23; i++)
-                {
-                    trajectory_data.data.push_back(q_motor[i]);
-                }
-                trajectory_data_pub.publish(trajectory_data);    
-                }
+                hand_r.update_right_hand(q_ra,V_r,target2shoulder,R_target_r);
+                r_right_palm=hand_r.r_right_palm;
+                hand_r.doQP(q_ra);
+                q_ra=hand_r.q_next;
+                d_r=hand_r.dist;
+                theta_r=hand_r.theta;
+                sai_r=hand_r.sai;
+                phi_r=hand_r.phi;
 
-                ros::spinOnce();
-                rate_.sleep();
-
-            for (int i = 0; i < q_ra.size(); i++) {
-                fw << q_ra(i)-q_init_r(i) << "\n";
-                }
             
-            t_grip += 0.005;
+                // if (abs(target2camera(1)) > 0.02) {
+
+                //     h_yaw += Ky*atan2(target2camera(1),target2camera(0));
+                //     if (abs(h_yaw)*180/M_PI>90){
+                //         if (h_yaw > 0) {
+                //             h_yaw = 90*M_PI/180;
+                //         }
+                //         else{
+                //             h_yaw = -90*M_PI/180;
+                //             }
+                //     }
+                // }
+
+                if (abs(target2camera(2)) > 0.02) {
+                    
+                    h_pitch += Kp*atan2(target2camera(2),sqrt(pow(target2camera(1),2)+pow(target2camera(0),2)));
+                    if (abs(h_pitch)*180/M_PI>28){
+                        if (h_pitch > 0) {
+                            h_pitch = 28*M_PI/180;
+                        }
+                        else{
+                            h_pitch = -28*M_PI/180;
+                            }
+                    }
+                }
+                    
             }
+            T_CAM2SH << hand_r.ObjToNeck(-h_pitch, h_roll, -h_yaw);
+                if (simulation) {
+                    q_gazebo[15]=q_ra(0)-q_init_r(0);  
+                    q_gazebo[16]=q_ra(1)-q_init_r(1); 
+                    q_gazebo[17]=q_ra(2)-q_init_r(2);  
+                    q_gazebo[18]=q_ra(3)-q_init_r(3);
+                    hand_func_R.SendGazebo(q_gazebo);
+                    cout<<q_gazebo[15]<<','<<q_gazebo[16]<<','<<q_gazebo[17]<<','<<q_gazebo[18]<<endl;
+                    }
+                else{
 
-            fw.close();
-            cout<<r_right_palm<<endl;
-            cout<<t_grip<<endl;
-            t_grip = 0;
-            res.finish = "end";
+                    q_motor[12]=int((q_ra(0)-q_init_r(0))*encoderResolution[0]*harmonicRatio[0]/M_PI/2); // be samte jelo
+                    q_motor[13]=-int((q_ra(1)-q_init_r(1))*encoderResolution[0]*harmonicRatio[1]/M_PI/2); // be samte birun
+                    q_motor[14]=int((q_ra(2)-q_init_r(2))*encoderResolution[1]*harmonicRatio[2]/M_PI/2); // be samte birun
+                    q_motor[15]=int((q_ra(3)-q_init_r(3))*encoderResolution[1]*harmonicRatio[3]/M_PI/2);// be samte bala
+                    q_motor[21] = int(pitch_command_range[0] + (pitch_command_range[1] - pitch_command_range[0]) * ((-(h_pitch*180/M_PI) - pitch_range[0]) / (pitch_range[1] - pitch_range[0])));
+                    q_motor[20] = int(roll_command_range[0] + (roll_command_range[1] - roll_command_range[0]) * ((-(h_roll*180/M_PI) - (roll_range[0])) / (roll_range[1] - (roll_range[0]))));
+                    q_motor[22] = int(yaw_command_range[0] + (yaw_command_range[1] - yaw_command_range[0]) * ((-(h_yaw*180/M_PI) - yaw_range[0]) / (yaw_range[1] - yaw_range[0])));
 
-            return true;
+                    // cout<<q_motor[12]<<','<<q_motor[13]<<','<<q_motor[14]<<','<<q_motor[15]<<endl;
+                    
+                    trajectory_data.data.clear();
+                    for(int  i = 0; i < 23; i++)
+                    {
+                        trajectory_data.data.push_back(q_motor[i]);
+                    }
+                    trajectory_data_pub.publish(trajectory_data);    
+                    }
+
+                    ros::spinOnce();
+                    rate_.sleep();
+
+                for (int i = 0; i < q_ra.size(); i++) {
+                    fw << q_ra(i)-q_init_r(i) << "\n";
+                    }
+            
+                
+                t_grip += 0.005;
+                }
+
+                fw.close();
+                cout<<r_right_palm<<endl;
+                cout<<t_grip<<endl;
+                t_grip = 0;
+                res.finish = "end";
+
+                return true;
         }
 
 
@@ -839,7 +870,8 @@ class test_forgotten_srv{
         VectorXd r_target_r;      VectorXd r_target_l; 
         MatrixXd R_target_r;      MatrixXd R_target_l;
         VectorXd r_midpoint_r;    VectorXd r_midpoint_l; 
-        MatrixXd r_midpoint_b;    VectorXd camera_target;
+        MatrixXd r_midpoint_b;    VectorXd target2shoulder;
+        VectorXd target2camera;
         VectorXd r_right_palm;    VectorXd r_left_palm;
 
         MatrixXd P_x_r;    MatrixXd P_x_l;          
@@ -876,7 +908,7 @@ class test_forgotten_srv{
         double sum_l = 0;
         double T = 0.005; 
         double Kp = 0.01;
-        double Ky = -0.01;
+        double Ky = -0.02;
 
         VectorXd q_end;
         MatrixXd qref_r;
@@ -902,10 +934,7 @@ class test_forgotten_srv{
         double h_pitch = 0;
         double h_roll = 0;
         double h_yaw = 0;
-        double PtoR = 0.0825;
-        double YtoP = 0.06025;
-        MatrixXd T_EEtobase;
-        VectorXd camera;
+        MatrixXd T_CAM2SH;
         int QcArr[20];
 };
 

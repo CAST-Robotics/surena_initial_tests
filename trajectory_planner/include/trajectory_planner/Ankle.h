@@ -16,6 +16,12 @@ public:
     const vector<Matrix3d>& getRotTrajectoryL();
     const vector<int>& getRobotState();
     void getOnlineTrajectory(int index);
+    void handleFirstStep(Vector3d& left_foot_pos, Matrix3d& left_foot_rot, Vector3d& right_foot_pos, Matrix3d& right_foot_rot);
+    void handleLastStep(int step, Vector3d& left_foot_pos, Matrix3d& left_foot_rot, Vector3d& right_foot_pos, Matrix3d& right_foot_rot);
+    void handleOtherSteps(int step, int step_index, Vector3d& left_foot_pos, Matrix3d& left_foot_rot, Vector3d& right_foot_pos, Matrix3d& right_foot_rot, int& state_indicator);
+    void assignFootPosAndRot(int leftIndex, int rightIndex, Vector3d& left_foot_pos, Matrix3d& left_foot_rot, Vector3d& right_foot_pos, Matrix3d& right_foot_rot);
+    void handleSupportSwing(int step, int step_index, Vector3d& left_foot_pos, Matrix3d& left_foot_rot, Vector3d& right_foot_pos, Matrix3d& right_foot_rot, int& state_indicator, bool leftSupport);
+    void handleSSPhase(int step, int step_index, Vector3d& left_foot_pos, Matrix3d& left_foot_rot, Vector3d& right_foot_pos, Matrix3d& right_foot_rot, bool leftSupport);
 
 private:
     double tStep_;

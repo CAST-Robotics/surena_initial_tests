@@ -345,173 +345,130 @@ void Ankle::getOnlineTrajectory(int index)
     Matrix3d right_foot_rot = Matrix3d::Zero();
 
     int step = index / stepSize_;
-    // std::cout << "Index: " << index << "Step: " << step << endl;
     int step_index = index % stepSize_;
     int state_indicator = 0;
+
     if (step == 0)
     {
-        if (leftFirst_)
-        {
-            left_foot_pos = footStepPos_[0];
-            left_foot_rot = Euler2Rot(footStepEuler_[0]);
-            right_foot_pos = footStepPos_[1];
-            right_foot_rot = Euler2Rot(footStepEuler_[1]);
-        }
-        else
-        {
-            left_foot_pos = footStepPos_[1];
-            left_foot_rot = Euler2Rot(footStepEuler_[1]);
-            right_foot_pos = footStepPos_[0];
-            right_foot_rot = Euler2Rot(footStepEuler_[0]);
-        }
+        handleFirstStep(left_foot_pos, left_foot_rot, right_foot_pos, right_foot_rot);
         state_indicator = 1;
     }
     else if (step == stepCount_ + 1)
     {
-        if (leftLast_)
-        {
-            left_foot_pos = footStepPos_[step];
-            left_foot_rot = Euler2Rot(footStepEuler_[step]);
-            right_foot_pos = footStepPos_[step - 1];
-            right_foot_rot = Euler2Rot(footStepEuler_[step - 1]);
-        }
-        else
-        {
-            left_foot_pos = footStepPos_[step - 1];
-            left_foot_rot = Euler2Rot(footStepEuler_[step - 1]);
-            right_foot_pos = footStepPos_[step];
-            right_foot_rot = Euler2Rot(footStepEuler_[step]);
-        }
+        handleLastStep(step, left_foot_pos, left_foot_rot, right_foot_pos, right_foot_rot);
         state_indicator = 1;
     }
     else
     {
-        if (leftFirst_)
-        {
-            if (step % 2 == 0) // Left is support, Right swings
-            {
-                if(step_index < initDSSize_) // Initial DS Phase
-                {
-                    left_foot_pos = footStepPos_[step];
-                    left_foot_rot = Euler2Rot(footStepEuler_[step]);
-                    right_foot_pos = footStepPos_[step - 1];
-                    right_foot_rot = Euler2Rot(footStepEuler_[step - 1]);
-                    state_indicator = 1;
-                }
-                else if(step_index >= initDSSize_ && step_index < initDSSize_ + ssSize_) // SS Phase
-                {
-                    double time = dt_ * (step_index - (initDSSize_));
-                    left_foot_pos = footStepPos_[step];
-                    left_foot_rot = Euler2Rot(footStepEuler_[step]);
-                    right_foot_pos = coefs_[step - 1][0] + coefs_[step - 1][1] * time + coefs_[step - 1][2] * pow(time, 2) + coefs_[step - 1][3] * pow(time, 3) + coefs_[step - 1][4] * pow(time, 4) + coefs_[step - 1][5] * pow(time, 5);
-                    Vector3d euler_angle = euler_coefs_[step - 1][0] + euler_coefs_[step - 1][1] * time + euler_coefs_[step - 1][2] * pow(time, 2) + euler_coefs_[step - 1][3] * pow(time, 3);
-                    right_foot_rot = Euler2Rot(euler_angle);
-                    state_indicator = 3;
-                }
-                else // Final DS Phase
-                {
-                    left_foot_pos = footStepPos_[step];
-                    left_foot_rot = Euler2Rot(footStepEuler_[step]);
-                    right_foot_pos = footStepPos_[step + 1];
-                    right_foot_rot = Euler2Rot(footStepEuler_[step + 1]);
-                    state_indicator = 1;
-                }
+        handleOtherSteps(step, step_index, left_foot_pos, left_foot_rot, right_foot_pos, right_foot_rot, state_indicator);
+    }
 
-            }
-            else // Right is support, Left swings
-            {
-                if(step_index < initDSSize_) // Initial DS Phase
-                {
-                    left_foot_pos = footStepPos_[step - 1];
-                    left_foot_rot = Euler2Rot(footStepEuler_[step - 1]);
-                    right_foot_pos = footStepPos_[step];
-                    right_foot_rot = Euler2Rot(footStepEuler_[step]);
-                    state_indicator = 1;
-                }
-                else if(step_index >= initDSSize_ && step_index < initDSSize_ + ssSize_) // SS Phase
-                {
-                    double time = dt_ * (step_index - (initDSSize_));
-                    left_foot_pos = coefs_[step - 1][0] + coefs_[step - 1][1] * time + coefs_[step - 1][2] * pow(time, 2) + coefs_[step - 1][3] * pow(time, 3) + coefs_[step - 1][4] * pow(time, 4) + coefs_[step - 1][5] * pow(time, 5);
-                    Vector3d euler_angle = euler_coefs_[step - 1][0] + euler_coefs_[step - 1][1] * time + euler_coefs_[step - 1][2] * pow(time, 2) + euler_coefs_[step - 1][3] * pow(time, 3);
-                    left_foot_rot = Euler2Rot(euler_angle);
-                    right_foot_pos = footStepPos_[step];
-                    right_foot_rot = Euler2Rot(footStepEuler_[step]);
-                    state_indicator = 2;
-                }
-                else // Final DS Phase
-                {
-                    left_foot_pos = footStepPos_[step + 1];
-                    left_foot_rot = Euler2Rot(footStepEuler_[step + 1]);
-                    right_foot_pos = footStepPos_[step];
-                    right_foot_rot = Euler2Rot(footStepEuler_[step]);
-                    state_indicator = 1;
-                }
-            }
-        }
-        else
+    // std::cout << left_foot_pos(0) << ", " << left_foot_pos(1) << ", " << left_foot_pos(2) << ", ";
+    // std::cout << right_foot_pos(0) << ", " << right_foot_pos(1) << ", " << right_foot_pos(2) << endl;
+}
+
+void Ankle::handleFirstStep(Vector3d& left_foot_pos, Matrix3d& left_foot_rot, Vector3d& right_foot_pos, Matrix3d& right_foot_rot)
+{
+    if (leftFirst_)
+    {
+        assignFootPosAndRot(0, 1, left_foot_pos, left_foot_rot, right_foot_pos, right_foot_rot);
+    }
+    else
+    {
+        assignFootPosAndRot(1, 0, left_foot_pos, left_foot_rot, right_foot_pos, right_foot_rot);
+    }
+}
+
+void Ankle::handleLastStep(int step, Vector3d& left_foot_pos, Matrix3d& left_foot_rot, Vector3d& right_foot_pos, Matrix3d& right_foot_rot)
+{
+    if (leftLast_)
+    {
+        assignFootPosAndRot(step, step - 1, left_foot_pos, left_foot_rot, right_foot_pos, right_foot_rot);
+    }
+    else
+    {
+        assignFootPosAndRot(step - 1, step, left_foot_pos, left_foot_rot, right_foot_pos, right_foot_rot);
+    }
+}
+
+void Ankle::handleOtherSteps(int step, int step_index, Vector3d& left_foot_pos, Matrix3d& left_foot_rot, Vector3d& right_foot_pos, Matrix3d& right_foot_rot, int& state_indicator)
+{
+    if (leftFirst_)
+    {
+        if (step % 2 == 0) // Left is support, Right swings
         {
-            if (step % 2 == 0) // Right is support, Left swings
-            {
-                if(step_index < initDSSize_) // Initial DS Phase
-                {
-                    right_foot_pos = footStepPos_[step];
-                    right_foot_rot = Euler2Rot(footStepEuler_[step]);
-                    left_foot_pos = footStepPos_[step - 1];
-                    left_foot_rot = Euler2Rot(footStepEuler_[step - 1]);
-                    state_indicator = 1;
-                }
-                else if(step_index >= initDSSize_ && step_index < initDSSize_ + ssSize_) // SS Phase
-                {
-                    double time = dt_ * (step_index - (initDSSize_));
-                    right_foot_pos = footStepPos_[step];
-                    right_foot_rot = Euler2Rot(footStepEuler_[step]);
-                    left_foot_pos = coefs_[step - 1][0] + coefs_[step - 1][1] * time + coefs_[step - 1][2] * pow(time, 2) + coefs_[step - 1][3] * pow(time, 3) + coefs_[step - 1][4] * pow(time, 4) + coefs_[step - 1][5] * pow(time, 5);
-                    Vector3d euler_angle = euler_coefs_[step - 1][0] + euler_coefs_[step - 1][1] * time + euler_coefs_[step - 1][2] * pow(time, 2) + euler_coefs_[step - 1][3] * pow(time, 3);
-                    left_foot_rot = Euler2Rot(euler_angle);
-                    state_indicator = 2;
-                }
-                else // Final DS Phase
-                {
-                    right_foot_pos = footStepPos_[step];
-                    right_foot_rot = Euler2Rot(footStepEuler_[step]);
-                    left_foot_pos = footStepPos_[step + 1];
-                    left_foot_rot = Euler2Rot(footStepEuler_[step + 1]);
-                    state_indicator = 1;
-                }
-            }
-            else // Left is support, Right swings
-            {
-                if(step_index < initDSSize_) // Initial DS Phase
-                {
-                    right_foot_pos = footStepPos_[step - 1];
-                    right_foot_rot = Euler2Rot(footStepEuler_[step - 1]);
-                    left_foot_pos = footStepPos_[step];
-                    left_foot_rot = Euler2Rot(footStepEuler_[step]);
-                    state_indicator = 1;
-                }
-                else if(step_index >= initDSSize_ && step_index < initDSSize_ + ssSize_) // SS Phase
-                {
-                    double time = dt_ * (step_index - (initDSSize_));
-                    right_foot_pos = coefs_[step - 1][0] + coefs_[step - 1][1] * time + coefs_[step - 1][2] * pow(time, 2) + coefs_[step - 1][3] * pow(time, 3) + coefs_[step - 1][4] * pow(time, 4) + coefs_[step - 1][5] * pow(time, 5);
-                    Vector3d euler_angle = euler_coefs_[step - 1][0] + euler_coefs_[step - 1][1] * time + euler_coefs_[step - 1][2] * pow(time, 2) + euler_coefs_[step - 1][3] * pow(time, 3);
-                    right_foot_rot = Euler2Rot(euler_angle);
-                    left_foot_pos = footStepPos_[step];
-                    left_foot_rot = Euler2Rot(footStepEuler_[step]);
-                    state_indicator = 3;
-                }
-                else // Final DS Phase
-                {
-                    right_foot_pos = footStepPos_[step + 1];
-                    right_foot_rot = Euler2Rot(footStepEuler_[step + 1]);
-                    left_foot_pos = footStepPos_[step];
-                    left_foot_rot = Euler2Rot(footStepEuler_[step]);
-                    state_indicator = 1;
-                }
-            }
+            handleSupportSwing(step, step_index, left_foot_pos, left_foot_rot, right_foot_pos, right_foot_rot, state_indicator, true);
+        }
+        else // Right is support, Left swings
+        {
+            handleSupportSwing(step, step_index, left_foot_pos, left_foot_rot, right_foot_pos, right_foot_rot, state_indicator, false);
         }
     }
-    std::cout << left_foot_pos(0) << ", " << left_foot_pos(1) << ", " << left_foot_pos(2) << ", ";
-    std::cout << right_foot_pos(0) << ", " << right_foot_pos(1) << ", " << right_foot_pos(2) << endl;
+    else
+    {
+        if (step % 2 == 0) // Right is support, Left swings
+        {
+            handleSupportSwing(step, step_index, left_foot_pos, left_foot_rot, right_foot_pos, right_foot_rot, state_indicator, false);
+        }
+        else // Left is support, Right swings
+        {
+            handleSupportSwing(step, step_index, left_foot_pos, left_foot_rot, right_foot_pos, right_foot_rot, state_indicator, true);
+        }
+    }
+}
+
+void Ankle::handleSupportSwing(int step, int step_index, Vector3d& left_foot_pos, Matrix3d& left_foot_rot, Vector3d& right_foot_pos, Matrix3d& right_foot_rot, int& state_indicator, bool leftSupport)
+{
+    if(step_index < initDSSize_) // Initial DS Phase
+    {
+        if(leftSupport)
+            assignFootPosAndRot(step, step - 1, left_foot_pos, left_foot_rot, right_foot_pos, right_foot_rot);
+        else
+            assignFootPosAndRot(step - 1, step, left_foot_pos, left_foot_rot, right_foot_pos, right_foot_rot);
+        state_indicator = 1;
+    }
+    else if(step_index >= initDSSize_ && step_index < initDSSize_ + ssSize_) // SS Phase
+    {
+            handleSSPhase(step, step_index, left_foot_pos, left_foot_rot, right_foot_pos, right_foot_rot, leftSupport);
+            state_indicator = leftSupport ? 3 : 2;
+    }
+    else // Final DS Phase
+    {
+        if(leftSupport)
+            assignFootPosAndRot(step, step + 1, left_foot_pos, left_foot_rot, right_foot_pos, right_foot_rot);
+        else
+            assignFootPosAndRot(step + 1, step, left_foot_pos, left_foot_rot, right_foot_pos, right_foot_rot);
+        state_indicator = 1;
+    }
+}
+
+void Ankle::handleSSPhase(int step, int step_index, Vector3d& left_foot_pos, Matrix3d& left_foot_rot, Vector3d& right_foot_pos, Matrix3d& right_foot_rot, bool leftSupport)
+{
+    double time = dt_ * (step_index - (initDSSize_));
+    if(leftSupport)
+    {
+        left_foot_pos = footStepPos_[step];
+        left_foot_rot = Euler2Rot(footStepEuler_[step]);
+        right_foot_pos = coefs_[step - 1][0] + coefs_[step - 1][1] * time + coefs_[step - 1][2] * pow(time, 2) + coefs_[step - 1][3] * pow(time, 3) + coefs_[step - 1][4] * pow(time, 4) + coefs_[step - 1][5] * pow(time, 5);
+        Vector3d euler_angle = euler_coefs_[step - 1][0] + euler_coefs_[step - 1][1] * time + euler_coefs_[step - 1][2] * pow(time, 2) + euler_coefs_[step - 1][3] * pow(time, 3);
+        right_foot_rot = Euler2Rot(euler_angle);
+    }
+    else
+    {
+        right_foot_pos = footStepPos_[step];
+        right_foot_rot = Euler2Rot(footStepEuler_[step]);
+        left_foot_pos = coefs_[step - 1][0] + coefs_[step - 1][1] * time + coefs_[step - 1][2] * pow(time, 2) + coefs_[step - 1][3] * pow(time, 3) + coefs_[step - 1][4] * pow(time, 4) + coefs_[step - 1][5] * pow(time, 5);
+        Vector3d euler_angle = euler_coefs_[step - 1][0] + euler_coefs_[step - 1][1] * time + euler_coefs_[step - 1][2] * pow(time, 2) + euler_coefs_[step - 1][3] * pow(time, 3);
+        left_foot_rot = Euler2Rot(euler_angle);
+    }
+}
+
+void Ankle::assignFootPosAndRot(int leftIndex, int rightIndex, Vector3d& left_foot_pos, Matrix3d& left_foot_rot, Vector3d& right_foot_pos, Matrix3d& right_foot_rot)
+{
+    left_foot_pos = footStepPos_[leftIndex];
+    left_foot_rot = Euler2Rot(footStepEuler_[leftIndex]);
+    right_foot_pos = footStepPos_[rightIndex];
+    right_foot_rot = Euler2Rot(footStepEuler_[rightIndex]);
 }
 
 Ankle::~Ankle()

@@ -730,7 +730,7 @@ bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double
 
     int trajectory_size = int(((step_count) * t_step) / dt);
     trajectoryPlanner_ = new DCMPlanner(COM_height, t_step, t_double_support, dt, step_count, alpha, theta);
-    Ankle *anklePlanner = new Ankle(t_step, t_double_support, ankle_height, alpha, step_count - 2, dt, theta, slope);
+    anklePlanner_ = new Ankle(t_step, t_double_support, ankle_height, alpha, step_count - 2, dt, theta, slope);
 
     // for (int i = 0; i < step_count; i++)
     // {
@@ -740,8 +740,9 @@ bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double
     trajectoryPlanner_->setOnlineFoot(dcm_rf, -sign);
     // xiDesired_ = trajectoryPlanner->getXiTrajectory();
     // zmpd_ = trajectoryPlanner->getZMP();
-    anklePlanner->updateFoot(ankle_rf, -sign);
-    anklePlanner->generateTrajectory();
+    anklePlanner_->updateFoot(ankle_rf, -sign);
+    anklePlanner_->updateOnlineFoot(ankle_rf, -sign);
+    anklePlanner_->generateTrajectory();
     onlineWalk_->setDt(dt);
     onlineWalk_->setBaseHeight(COM_height);
     onlineWalk_->setBaseIdle(shank_ + thigh_);
@@ -750,19 +751,19 @@ bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double
 
     vector<Vector3d> com_pos(trajectory_size, Vector3d(0, 0, 0));
     CoMPos_.insert(CoMPos_.end(), com_pos.begin(), com_pos.end());
-    vector<Vector3d> lank = anklePlanner->getTrajectoryL();
+    vector<Vector3d> lank = anklePlanner_->getTrajectoryL();
     lAnklePos_.insert(lAnklePos_.end(), lank.begin(), lank.end());
-    vector<Vector3d> rank = anklePlanner->getTrajectoryR();
+    vector<Vector3d> rank = anklePlanner_->getTrajectoryR();
     rAnklePos_.insert(rAnklePos_.end(), rank.begin(), rank.end());
 
     vector<Matrix3d> com_rot = trajectoryPlanner_->yawRotGen();
     CoMRot_.insert(CoMRot_.end(), com_rot.begin(), com_rot.end());
-    vector<Matrix3d> lank_rot = anklePlanner->getRotTrajectoryL();
+    vector<Matrix3d> lank_rot = anklePlanner_->getRotTrajectoryL();
     lAnkleRot_.insert(lAnkleRot_.end(), lank_rot.begin(), lank_rot.end());
-    vector<Matrix3d> rank_rot = anklePlanner->getRotTrajectoryR();
+    vector<Matrix3d> rank_rot = anklePlanner_->getRotTrajectoryR();
     rAnkleRot_.insert(rAnkleRot_.end(), rank_rot.begin(), rank_rot.end());
 
-    vector<int> robot_state = anklePlanner->getRobotState();
+    vector<int> robot_state = anklePlanner_->getRobotState();
     robotPhase_.insert(robotPhase_.end(), robot_state.begin(), robot_state.end()); 
 
     dataSize_ += trajectory_size;
@@ -919,7 +920,10 @@ bool Robot::getJointAngs(int iter, double config[12], double jnt_vel[12], double
         status = 0; // 0: Okay, 1: Ankle Collision
 
         if (iter >= trajSizes_[0] && iter < trajSizes_[1])
+        {
             CoMPos_[iter] = trajectoryPlanner_->ComputeDCM(iter - trajSizes_[0]);
+            anklePlanner_->getOnlineTrajectory(iter - trajSizes_[0]);
+        }
             
         this->spinOnline(iter, robot_config, robot_jnt_vel, right_torque, left_torque, right_ft[0], left_ft[0],
                          Vector3d(gyro[0], gyro[1], gyro[2]), Vector3d(accelerometer[0], accelerometer[1], accelerometer[2]),
@@ -952,6 +956,7 @@ bool Robot::resetTraj()
     Vector3d position(0.0, 0.0, 0.0);
     links_[0]->initPose(position, Matrix3d::Identity(3, 3));
     delete trajectoryPlanner_;
+    // delete anklePlanner_;
     return true;
 }
 

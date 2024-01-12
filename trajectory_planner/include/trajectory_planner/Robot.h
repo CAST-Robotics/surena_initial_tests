@@ -92,6 +92,7 @@ private:
         WALK
     };
     DCMPlanner *trajectoryPlanner_;
+    Ankle *anklePlanner_;
     vector<ControlState> robotControlState_;
 
     ros::NodeHandle *nh_;

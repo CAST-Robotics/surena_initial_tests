@@ -8,6 +8,7 @@ public:
     Ankle(double step_time, double ds_time, double height, double alpha, short int num_step, double dt, double theta, double slope);
     ~Ankle();
     void updateFoot(const vector<Vector3d>& ankle_rf, int sign);
+    void updateOnlineFoot(const vector<Vector3d>& foot_pose, int sign, const vector<Vector3d>& foot_euler = vector<Vector3d>());
     void generateTrajectory();
     const vector<Vector3d>& getTrajectoryL();
     const vector<Vector3d>& getTrajectoryR();
@@ -23,6 +24,7 @@ private:
     double alpha_;
     int stepCount_;
     bool leftFirst_;
+    bool leftLast_;
     double height_;
     double theta_;
     double slope_;
@@ -40,6 +42,8 @@ private:
     vector<Vector3d> rFoot_;
     vector<Matrix3d> lFootRot_;
     vector<Matrix3d> rFootRot_;
+    vector<vector<Vector3d>> coefs_;
+    vector<vector<Vector3d>> euler_coefs_;
 
     // Robot Movment State Indicator (0:Stance, 1:Double Support, 2:Right Single Support, 3: Left Single Support, 4:None)
     vector<int> stateIndicator_;

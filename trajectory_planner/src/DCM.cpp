@@ -51,6 +51,7 @@ const vector<Vector3d>& DCMPlanner::getXiTrajectory()
     */
     this->updateVRP();
     this->updateXiEoS();
+    this->updateSS();
     this->updateXiDSPositions();
     return xi_;
 }

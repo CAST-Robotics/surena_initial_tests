@@ -30,6 +30,7 @@
 #include <chrono>
 
 using namespace std;
+using json = nlohmann::json;
 
 class Robot
 {
@@ -80,6 +81,10 @@ public:
     void publishCoMPose(int iter);
     void publishFootStep(const vector<Vector3d>& ankle_rf, const int &step_count);
     void publishZMPPose();
+
+    void loadConfig(json& walk_config, int& step_count, vector<Vector3d>& ankle_rf, vector<Vector3d>& dcm_rf, vector<double>& theta_rf,
+                    double& COM_height, double& t_double_support, double& t_step, double& alpha, double& ankle_height, double& com_offset);
+    void generateFootSteps(vector<Vector3d>& ankle_rf, vector<Vector3d>& dcm_rf, double step_length, double step_width, double step_height, int step_count, double theta, double com_offset);
 
     inline int getTrajSize(){
         return dataSize_;

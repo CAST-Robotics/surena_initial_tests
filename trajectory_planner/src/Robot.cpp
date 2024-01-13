@@ -1,7 +1,5 @@
 #include "Robot.h"
 
-using json = nlohmann::json;
-
 Robot::Robot(ros::NodeHandle *nh, std::string config_path, bool simulation)
  : nh_(nh), robotConfigPath_(config_path), simulation_(simulation)
 {
@@ -694,36 +692,12 @@ bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double
 
     if (is_config == true)
     { 
-        COM_height = walk_config["COM_height"];
-        t_double_support = walk_config["t_double_support"]; 
-        t_step = walk_config["t_step"];
-        alpha = walk_config["alpha"];
-        ankle_height = walk_config["ankle_height"];
-        com_offset = walk_config["com_offset"];
-
-        for (int i = 0; i < step_count; i++)
-        {
-            ankle_rf[i] << walk_config["footsteps"][i][0], walk_config["footsteps"][i][1], walk_config["footsteps"][i][2];
-            theta_rf[i] = walk_config["footsteps"][i][3];
-
-            dcm_rf[i] = ankle_rf[i];
-            dcm_rf[i](1) -= pow(-1, i) * com_offset;
-        }
-        dcm_rf[0] = Vector3d::Zero(3);
-        dcm_rf[step_count-1] = 0.5 * (ankle_rf[step_count-1] + ankle_rf[step_count-2]); 
+        loadConfig(walk_config, step_count, ankle_rf, dcm_rf, theta_rf, COM_height, t_double_support, t_step, alpha, ankle_height, com_offset);
     }
     else
     {
         sign = abs(step_length) / step_length;
-        
-        if (theta == 0.0)
-        { // Straight or Diagonal Walk
-            generateStraightFootStep(ankle_rf, dcm_rf, step_width, step_length, step_height, step_count-2, com_offset);
-        }
-        else
-        { // Turning Walk
-            generateTurnFootStep(ankle_rf, dcm_rf, step_length, step_height, step_count-2, theta, com_offset);
-        }
+        generateFootSteps(ankle_rf, dcm_rf, step_length, step_width, step_height, step_count, theta, com_offset);
     }
 
     COM_height_ = COM_height;
@@ -768,6 +742,40 @@ bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double
     isTrajAvailable_ = true;
 
     return true;
+}
+
+void Robot::loadConfig(json& walk_config, int& step_count, vector<Vector3d>& ankle_rf, vector<Vector3d>& dcm_rf, vector<double>& theta_rf,
+                       double& COM_height, double& t_double_support, double& t_step, double& alpha, double& ankle_height, double& com_offset)
+{ 
+    COM_height = walk_config["COM_height"]; 
+    t_double_support = walk_config["t_double_support"]; 
+    t_step = walk_config["t_step"]; 
+    alpha = walk_config["alpha"]; 
+    ankle_height = walk_config["ankle_height"]; 
+    com_offset = walk_config["com_offset"];
+
+    for (int i = 0; i < step_count; i++)
+    {
+        ankle_rf[i] << walk_config["footsteps"][i][0], walk_config["footsteps"][i][1], walk_config["footsteps"][i][2];
+        theta_rf[i] = walk_config["footsteps"][i][3];
+
+        dcm_rf[i] = ankle_rf[i];
+        dcm_rf[i](1) -= pow(-1, i) * com_offset;
+    }
+    dcm_rf[0] = Vector3d::Zero(3);
+    dcm_rf[step_count-1] = 0.5 * (ankle_rf[step_count-1] + ankle_rf[step_count-2]);
+}
+
+void Robot::generateFootSteps(vector<Vector3d>& ankle_rf, vector<Vector3d>& dcm_rf, double step_length, double step_width, double step_height, int step_count, double theta, double com_offset)
+{ 
+    if (theta == 0.0)
+    { // Straight or Diagonal Walk
+        generateStraightFootStep(ankle_rf, dcm_rf, step_width, step_length, step_height, step_count-2, com_offset);
+    }
+    else
+    { // Turning Walk
+        generateTurnFootStep(ankle_rf, dcm_rf, step_length, step_height, step_count-2, theta, com_offset);
+    }
 }
 
 void Robot::generateStraightFootStep(vector<Vector3d>& ankle_rf, vector<Vector3d>& dcm_rf, const double &step_width,

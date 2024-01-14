@@ -69,3 +69,36 @@ void GeneralMotion::changeInPlace(Vector3d init_com_pos, Vector3d final_com_pos,
             robotState_[index] = 4;
     }
 }
+
+void GeneralMotion::generateCoefs(Vector3d init_com_pos, Vector3d final_com_pos,
+                                  Vector3d init_com_orient, Vector3d final_com_orient,
+                                  Vector3d init_lankle_pos, Vector3d final_lankle_pos,
+                                  Vector3d init_lankle_orient, Vector3d final_lankle_orient,
+                                  Vector3d init_rankle_pos, Vector3d final_rankle_pos,
+                                  Vector3d init_rankle_orient, Vector3d final_rankle_orient,
+                                  double time)
+{
+    length_ = time / dt_;
+
+    com_pos_coefs_ = cubicInterpolate<Vector3d>(init_com_pos, final_com_pos, Vector3d::Zero(3), Vector3d::Zero(3), time);
+    lankle_pos_coefs_ = cubicInterpolate<Vector3d>(init_lankle_pos, final_lankle_pos, Vector3d::Zero(3), Vector3d::Zero(3), time);
+    rankle_pos_coefs_ = cubicInterpolate<Vector3d>(init_rankle_pos, final_rankle_pos, Vector3d::Zero(3), Vector3d::Zero(3), time);
+
+    com_orient_coefs_ = cubicInterpolate<Vector3d>(init_com_orient, final_com_orient, Vector3d::Zero(3), Vector3d::Zero(3), time);
+    lankle_orient_coefs_ = cubicInterpolate<Vector3d>(init_lankle_orient, final_lankle_orient, Vector3d::Zero(3), Vector3d::Zero(3), time);
+    rankle_orient_coefs_ = cubicInterpolate<Vector3d>(init_rankle_orient, final_rankle_orient, Vector3d::Zero(3), Vector3d::Zero(3), time);
+}
+
+void GeneralMotion::getDataPoint(int index, Vector3d& com_pos, Vector3d& com_orient, Vector3d& lankle_pos, Vector3d& lankle_orient, Vector3d& rankle_pos, Vector3d& rankle_orient)
+{
+    double t = index * dt_;
+
+    com_pos = com_pos_coefs_[0] + com_pos_coefs_[1] * t + com_pos_coefs_[2] * pow(t, 2) + com_pos_coefs_[3] * pow(t, 3);
+    com_orient = com_orient_coefs_[0] + com_orient_coefs_[1] * t + com_orient_coefs_[2] * pow(t, 2) + com_orient_coefs_[3] * pow(t, 3);
+
+    lankle_pos = lankle_pos_coefs_[0] + lankle_pos_coefs_[1] * t + lankle_pos_coefs_[2] * pow(t, 2) + lankle_pos_coefs_[3] * pow(t, 3);
+    lankle_orient = lankle_orient_coefs_[0] + lankle_orient_coefs_[1] * t + lankle_orient_coefs_[2] * pow(t, 2) + lankle_orient_coefs_[3] * pow(t, 3);
+
+    rankle_pos = rankle_pos_coefs_[0] + rankle_pos_coefs_[1] * t + rankle_pos_coefs_[2] * pow(t, 2) + rankle_pos_coefs_[3] * pow(t, 3);
+    rankle_orient = rankle_orient_coefs_[0] + rankle_orient_coefs_[1] * t + rankle_orient_coefs_[2] * pow(t, 2) + rankle_orient_coefs_[3] * pow(t, 3);
+}

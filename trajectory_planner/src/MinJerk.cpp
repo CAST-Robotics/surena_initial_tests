@@ -51,3 +51,16 @@ void MinJerk::write2File(Vector3d *input, int size, string file_name = "data")
     }
     output_file.close();
 }
+
+Matrix3d MinJerk::Euler2Rot(Vector3d euler)
+{
+    Matrix3d R;
+    Matrix3d rot_x, rot_y, rot_z;
+    rot_x = AngleAxisd(euler(0), Vector3d::UnitX());
+    rot_y = AngleAxisd(euler(1), Vector3d::UnitY());
+    rot_z = AngleAxisd(euler(2), Vector3d::UnitZ());
+
+    R = rot_z * rot_y * rot_x;
+
+    return R;
+}

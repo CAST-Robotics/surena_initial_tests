@@ -15,6 +15,7 @@ DCMPlanner::DCMPlanner(double deltaZ, double stepTime, double doubleSupportTime,
     this->yawSign_ = 1;
     this->length_ = 1 / dt_ * tStep_ * stepCount_;
     this->CoMIntegral_ = Vector3d::Zero();
+    this->CoMInit_ = Vector3d(0.0, 0.0, deltaZ_); // initial COM when robot start to walk
 }
 
 void DCMPlanner::setFoot(const vector<Vector3d>& rF, int sign)
@@ -50,6 +51,7 @@ const vector<Vector3d>& DCMPlanner::getXiTrajectory()
     */
     this->updateVRP();
     this->updateXiEoS();
+    this->updateSS();
     this->updateXiDSPositions();
     return xi_;
 }
@@ -117,8 +119,15 @@ Vector3d DCMPlanner::ComputeDCM(int iter)
             xi = DSXiCoef_[stepNum][0] + DSXiCoef_[stepNum][1] * time + DSXiCoef_[stepNum][2] * pow(time, 2) + DSXiCoef_[stepNum][3] * pow(time, 3);
         }
     }
-    return xi;
-    // xiDot_[i] = sqrt(K_G / deltaZ_) * (xi_[i] - rVRP_[stepNum]);
+    
+    if (iter > 0)
+        this->CoMIntegral_ += sqrt(K_G / deltaZ_) * ((prevXi_ * exp((iter - 1) * dt_ * sqrt(K_G / deltaZ_))) + (xi * exp((iter) * dt_ * sqrt(K_G / deltaZ_)))) * 0.5 * dt_;
+    
+    Vector3d com = (this->CoMIntegral_ + CoMInit_) * exp(-iter * dt_ * sqrt(K_G / deltaZ_));
+    com(2) = deltaZ_;
+
+    prevXi_ = xi;
+    return com;
 }
 
 void DCMPlanner::updateXiDSPositions()
@@ -217,13 +226,12 @@ const vector<Vector3d>& DCMPlanner::getCoM()
 {
     COM_.resize(length_);
     CoMDot_.resize(length_);
-    Vector3d COM_init(0.0, 0.0, deltaZ_); // initial COM when robot start to walk
     // COM trajectory based on DCM
     for (int i = 0; i < length_; i++)
     {
         if (i > 0)
             this->CoMIntegral_ += sqrt(K_G / deltaZ_) * ((xi_[i - 1] * exp((i - 1) * dt_ * sqrt(K_G / deltaZ_))) + (xi_[i] * exp((i) * dt_ * sqrt(K_G / deltaZ_)))) * 0.5 * dt_;
-        COM_[i] = (this->CoMIntegral_ + COM_init) * exp(-i * dt_ * sqrt(K_G / deltaZ_));
+        COM_[i] = (this->CoMIntegral_ + CoMInit_) * exp(-i * dt_ * sqrt(K_G / deltaZ_));
         COM_[i](2) = xi_[i](2);
         CoMDot_[i] = -sqrt(K_G / deltaZ_) * (COM_[i] - xi_[i]);
     }

@@ -65,6 +65,10 @@ public:
     bool generalTrajGen(double dt, double time, double init_com_pos[3], double final_com_pos[3], double init_com_orient[3], double final_com_orient[3],
                         double init_lankle_pos[3], double final_lankle_pos[3], double init_lankle_orient[3], double final_lankle_orient[3],
                         double init_rankle_pos[3], double final_rankle_pos[3], double init_rankle_orient[3], double final_rankle_orient[3]);
+    
+    void OnlineGeneralTrajGen(double dt, double time, double final_com_pos[3], double final_com_orient[3],
+                                                      double final_lankle_pos[3], double final_lankle_orient[3],
+                                                      double final_rankle_pos[3], double final_rankle_orient[3]);
     bool resetTraj();
 
     void generateStraightFootStep(vector<Vector3d>& ankle_rf, vector<Vector3d>& dcm_rf, const double &step_width,
@@ -96,6 +100,8 @@ private:
         IDLE,
         WALK
     };
+
+    GeneralMotion *generalPlanner_;
 
     vector<ControlState> robotControlState_;
 

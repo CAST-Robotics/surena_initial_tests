@@ -100,8 +100,9 @@ public:
     double camera[3] = {0.1248, 0, 0.06746};
 
     // wrist IK
-    VectorXd wrist_left_calc(double alpha, double beta);
-    VectorXd wrist_right_calc(double alpha, double beta);
+    double wrist_left_calc(double alpha, double beta);
+    double wrist_right_calc(double alpha, double beta);
+    VectorXd solveQuadratic(double a, double b, double c);
 
     // Jacobian
     MatrixXd Jha;

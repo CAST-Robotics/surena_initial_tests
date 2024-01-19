@@ -66,9 +66,14 @@ public:
                         double init_lankle_pos[3], double final_lankle_pos[3], double init_lankle_orient[3], double final_lankle_orient[3],
                         double init_rankle_pos[3], double final_rankle_pos[3], double init_rankle_orient[3], double final_rankle_orient[3]);
     
-    void OnlineGeneralTrajGen(double dt, double time, double final_com_pos[3], double final_com_orient[3],
-                                                      double final_lankle_pos[3], double final_lankle_orient[3],
-                                                      double final_rankle_pos[3], double final_rankle_orient[3]);
+    int OnlineGeneralTrajGen(double dt, double time, double final_com_pos[3], double final_com_orient[3],
+                                                     double final_lankle_pos[3], double final_lankle_orient[3],
+                                                     double final_rankle_pos[3], double final_rankle_orient[3]);
+
+    void getGeneralTrajJointAngs(int index, double config[12], double jnt_vel[12], double right_ft[3],
+                                 double left_ft[3], int right_bump[4], int left_bump[4], double gyro[3],
+                                 double accelerometer[3], double jnt_command[12], int &status);
+
     bool resetTraj();
 
     void generateStraightFootStep(vector<Vector3d>& ankle_rf, vector<Vector3d>& dcm_rf, const double &step_width,
@@ -129,6 +134,20 @@ private:
     vector<double> geometricIK(MatrixXd p1, MatrixXd r1, MatrixXd p7, MatrixXd r7, bool isLeft);
     Matrix3d Rroll(double phi);
     Matrix3d RPitch(double theta);
+
+    Vector3d currentCommandedCoMPos_;
+    Matrix3d currentCommandedCoMRot_;
+    Vector3d currentCommandedLeftAnklePos_;
+    Matrix3d currentCommandedLeftAnkleRot_;
+    Vector3d currentCommandedRightAnklePos_;
+    Matrix3d currentCommandedRightAnkleRot_;
+
+    Vector3d prevCommandedCoMPos_;
+    Matrix3d prevCommandedCoMRot_;
+    Vector3d prevCommandedLeftAnklePos_;
+    Matrix3d prevCommandedLeftAnkleRot_;
+    Vector3d prevCommandedRightAnklePos_;
+    Matrix3d prevCommandedRightAnkleRot_;
 
     vector<Vector3d> CoMPos_;
     vector<Matrix3d> CoMRot_;

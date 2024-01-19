@@ -140,6 +140,13 @@ void Robot::spinOnline(int iter, double config[], double jnt_vel[], Vector3d tor
     
     for (int i = 0; i < 12; i++)
         joint_angles[i] = joints_[i]; // right leg(0-5) & left leg(6-11)
+
+    prevCommandedCoMPos_ = currentCommandedCoMPos_;
+    prevCommandedCoMRot_ = currentCommandedCoMRot_;
+    prevCommandedLeftAnklePos_ = currentCommandedLeftAnklePos_;
+    prevCommandedLeftAnkleRot_ = currentCommandedLeftAnkleRot_;
+    prevCommandedRightAnklePos_ = currentCommandedRightAnklePos_;
+    prevCommandedRightAnkleRot_ = currentCommandedRightAnkleRot_;
 }
 
 void Robot::runFootLenController(int iter, double f_l, double f_r, int traj_index)
@@ -899,11 +906,10 @@ int Robot::OnlineGeneralTrajGen(double dt, double time, double final_com_pos[3],
 void Robot::getGeneralTrajJointAngs(int index, double config[12], double jnt_vel[12], double right_ft[3],
                                     double left_ft[3], int right_bump[4], int left_bump[4], double gyro[3],
                                     double accelerometer[3], double jnt_command[12], int &status)
-{
-    Vector3d com_pos, com_orient, lankle_pos, lankle_orient, rankle_pos, rankle_orient;
-    
+{    
     if (generalPlanner_ != nullptr) {
-        generalPlanner_->getDataPoint(index, com_pos, com_orient, lankle_pos, lankle_orient, rankle_pos, rankle_orient);
+        generalPlanner_->getDataPoint(index, currentCommandedCoMPos_, currentCommandedCoMRot_, currentCommandedLeftAnklePos_, 
+                                      currentCommandedLeftAnkleRot_, currentCommandedRightAnklePos_, currentCommandedRightAnkleRot_);
     } else {
         throw std::runtime_error("GeneralMotion object is not initialized.");
     }
@@ -960,13 +966,6 @@ bool Robot::getJointAngs(int iter, double config[12], double jnt_vel[12], double
         this->spinOnline(iter, robot_config, robot_jnt_vel, right_torque, left_torque, right_ft[0], left_ft[0],
                          Vector3d(gyro[0], gyro[1], gyro[2]), Vector3d(accelerometer[0], accelerometer[1], accelerometer[2]),
                          right_bump, left_bump, jnt_command, status);
-
-        prevCommandedCoMPos_ = currentCommandedCoMPos_;
-        prevCommandedCoMRot_ = currentCommandedCoMRot_;
-        prevCommandedLeftAnklePos_ = currentCommandedLeftAnklePos_;
-        prevCommandedLeftAnkleRot_ = currentCommandedLeftAnkleRot_;
-        prevCommandedRightAnklePos_ = currentCommandedRightAnklePos_;
-        prevCommandedRightAnkleRot_ = currentCommandedRightAnkleRot_;
     }
     else
     {

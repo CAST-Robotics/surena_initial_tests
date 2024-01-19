@@ -89,16 +89,21 @@ void GeneralMotion::generateCoefs(Vector3d init_com_pos, Vector3d final_com_pos,
     rankle_orient_coefs_ = cubicInterpolate<Vector3d>(init_rankle_orient, final_rankle_orient, Vector3d::Zero(3), Vector3d::Zero(3), time);
 }
 
-void GeneralMotion::getDataPoint(int index, Vector3d& com_pos, Vector3d& com_orient, Vector3d& lankle_pos, Vector3d& lankle_orient, Vector3d& rankle_pos, Vector3d& rankle_orient)
+void GeneralMotion::getDataPoint(int index, Vector3d& com_pos, Matrix3d& com_orient, Vector3d& lankle_pos, Matrix3d& lankle_orient, Vector3d& rankle_pos, Matrix3d& rankle_orient)
 {
     double t = index * dt_;
 
+    Vector3d temp_com_orient, temp_lankle_orient, temp_rankle_orient;
+
     com_pos = com_pos_coefs_[0] + com_pos_coefs_[1] * t + com_pos_coefs_[2] * pow(t, 2) + com_pos_coefs_[3] * pow(t, 3);
-    com_orient = com_orient_coefs_[0] + com_orient_coefs_[1] * t + com_orient_coefs_[2] * pow(t, 2) + com_orient_coefs_[3] * pow(t, 3);
+    temp_com_orient = com_orient_coefs_[0] + com_orient_coefs_[1] * t + com_orient_coefs_[2] * pow(t, 2) + com_orient_coefs_[3] * pow(t, 3);
+    com_orient = AngleAxisd(temp_com_orient(2), Vector3d::UnitZ()) * AngleAxisd(temp_com_orient(1), Vector3d::UnitY()) * AngleAxisd(temp_com_orient(0), Vector3d::UnitX());
 
     lankle_pos = lankle_pos_coefs_[0] + lankle_pos_coefs_[1] * t + lankle_pos_coefs_[2] * pow(t, 2) + lankle_pos_coefs_[3] * pow(t, 3);
-    lankle_orient = lankle_orient_coefs_[0] + lankle_orient_coefs_[1] * t + lankle_orient_coefs_[2] * pow(t, 2) + lankle_orient_coefs_[3] * pow(t, 3);
+    temp_lankle_orient = lankle_orient_coefs_[0] + lankle_orient_coefs_[1] * t + lankle_orient_coefs_[2] * pow(t, 2) + lankle_orient_coefs_[3] * pow(t, 3);
+    lankle_orient = AngleAxisd(temp_lankle_orient(2), Vector3d::UnitZ()) * AngleAxisd(temp_lankle_orient(1), Vector3d::UnitY()) * AngleAxisd(temp_lankle_orient(0), Vector3d::UnitX());
 
     rankle_pos = rankle_pos_coefs_[0] + rankle_pos_coefs_[1] * t + rankle_pos_coefs_[2] * pow(t, 2) + rankle_pos_coefs_[3] * pow(t, 3);
-    rankle_orient = rankle_orient_coefs_[0] + rankle_orient_coefs_[1] * t + rankle_orient_coefs_[2] * pow(t, 2) + rankle_orient_coefs_[3] * pow(t, 3);
+    temp_rankle_orient = rankle_orient_coefs_[0] + rankle_orient_coefs_[1] * t + rankle_orient_coefs_[2] * pow(t, 2) + rankle_orient_coefs_[3] * pow(t, 3);
+    rankle_orient = AngleAxisd(temp_rankle_orient(2), Vector3d::UnitZ()) * AngleAxisd(temp_rankle_orient(1), Vector3d::UnitY()) * AngleAxisd(temp_rankle_orient(0), Vector3d::UnitX());
 }

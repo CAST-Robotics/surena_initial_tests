@@ -22,8 +22,8 @@ public:
                        Vector3d init_rankle_orient, Vector3d final_rankle_orient,
                        double time);
     
-    void getDataPoint(int index, Vector3d& com_pos, Vector3d& com_orient, Vector3d& lankle_pos, 
-                      Vector3d& lankle_orient, Vector3d& rankle_pos, Vector3d& rankle_orient);
+    void getDataPoint(int index, Vector3d& com_pos, Matrix3d& com_orient, Vector3d& lankle_pos, 
+                      Matrix3d& lankle_orient, Vector3d& rankle_pos, Matrix3d& rankle_orient);
 
     const vector<Vector3d>& getCOMPos()
     {

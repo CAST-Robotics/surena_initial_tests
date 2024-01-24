@@ -78,7 +78,6 @@ jacob(q_ra);
 }
 
 
-
 // declaring 4 different update_left_hand function, we call second one
 void left_hand::update_left_hand(VectorXd q_ra,VectorXd r_target,MatrixXd R_target)
 {  
@@ -155,7 +154,6 @@ jacob(q_ra);
 }
 
 
-
 // void left_hand::matrix_view(MatrixXd M){
 //     for (int i = 0; i <M.rows() ; ++i) {
 //         QString str;
@@ -167,15 +165,12 @@ jacob(q_ra);
 //     for (int i = 0; i <M.rows() ; ++i) {str+=QString::number(M(i));str+="   ";}
 //     qDebug()<<str;qDebug()<<"";}
 
-
-
 double left_hand::toRad(double d){
     double r;
     r=d*M_PI/180;
     return r;
 }
-
-    
+ 
 double  left_hand::phi_calc(MatrixXd R){
     if(R(1,0)==1 || R(1,0)==-1){return atan2(R(0,2),R(2,2));}
     else{return atan2(-R(2,0),R(0,0));}
@@ -188,7 +183,6 @@ double  left_hand::sai_calc(MatrixXd R){
     if(R(1,0)==1 || R(1,0)==-1){return 0;}
     else{return atan2(-R(1,2),R(1,1));}
 }
-
 
 MatrixXd left_hand::rot(int axis , double q ,int dim){
     if (dim==3){
@@ -314,8 +308,6 @@ void left_hand::HO_FK_left_palm(VectorXd q_ra){
     //cout<<theta<<','<<sai<<','<<phi<<endl;
 }
 
-
-
 void left_hand::euler2w(){
 //w_left_palm<<sin(sai)*sin(theta)*phi_dot+cos(sai)*theta_dot,
 //        cos(sai)*sin(theta)*phi_dot-sin(sai)*theta_dot,
@@ -334,151 +326,144 @@ void left_hand::euler2w(){
 
 }
 // wrist IK
+VectorXd left_hand :: solveQuadratic(double a, double b, double c) {
+    // Calculate the discriminant
+    double discriminant = b * b - 4 * a * c;
+    VectorXd Roots(2);
+    if (discriminant > 0) {
+        // Two real and distinct solutions
+        Roots(0) = (-b + sqrt(discriminant)) / (2 * a);
+        Roots(1) = (-b - sqrt(discriminant)) / (2 * a);
+        // cout<<"distinct solutions"<<endl;
+    } else if (discriminant == 0) {
+        // One real solution (double root)
+        Roots(0) = -b / (2 * a);
+        Roots(1) = -b / (2 * a);
+        // cout<<"double roots"<<endl;
+    } else {
+        // Complex solutions
+        double realPart = -b / (2 * a);
+        double imaginaryPart = sqrt(-discriminant) / (2 * a);
+        Roots(0) = realPart;
+        Roots(1) = imaginaryPart;
+        // cout<<"imaginary roots"<<endl;
+    }
+    return Roots;
+}
 
-VectorXd left_hand::wrist_right_calc(double alpha, double beta){
-
-double phi;              
-double gama ;           
-double r1;           double pz;
-double a1;           double b1;
-double theta_32;     double theta_22;
-double theta_12;      double theta_12_;
-double k;
-double a;             double b;
-VectorXd result(2);
-
-
-phi=248.5591*M_PI/180;
-gama=111.4409*M_PI/180;
-pz=-63.6749;
-r1=28.0405;
-
-a1=9.4067;   b1=60.9414;
-
-
+double left_hand::wrist_right_calc(double alpha, double beta){
+double a1, b1, c1, r1, pz, phi, gama, K1, M1, N1;
+a1=10;
+b1=79;
+c1=5;
+r1=24.9723;
+pz=-75.885;
+phi=255.3027*M_PI/180;
+gama=104.6973*M_PI/180;
+ 
 VectorXd r1_(3);
-r1_<<r1*cos(phi), r1*sin(phi),0;
-
-VectorXd h1_P(3);
-h1_P<<18.8173,18.6175,0.07835;
-
 VectorXd P(3);
-P<<0,0,pz;
-
+VectorXd h1_P(3);
 MatrixXd R_PtoO;
 R_PtoO.resize(3,3);
-R_PtoO=rot(3,gama,3)*rot(1,alpha,3)*rot(2,beta,3);
-//cout<<R_PtoO<<endl;
-
 MatrixXd h1_O;
 h1_O.resize(3,3);
-h1_O=P+R_PtoO*h1_P;
-
 MatrixXd R_OtoA1;
 R_OtoA1.resize(3,3);
-R_OtoA1=rot(3,phi,3);
-
 MatrixXd h1_A1;
 h1_A1.resize(3,1);
+VectorXd result(2);
+
+r1_<<r1*cos(phi), r1*sin(phi),0;
+P<<0,0,pz;
+h1_P<<20,17,0;
+
+R_PtoO=rot(3,gama,3)*rot(2,beta,3)*rot(1,alpha,3);
+h1_O=P+R_PtoO*h1_P;
+R_OtoA1=rot(3,phi,3);
 h1_A1=r1_+R_OtoA1*h1_O;
-/*
-VectorXd C(3);
-C=h1_A1;
-*/
-theta_32=acos(h1_A1(1)/b1);
-//cout<<theta_32<<endl;
 
-k=(pow(h1_A1(0),2)+pow(h1_A1(1),2)+pow(h1_A1(2),2)-pow(a1,2)-pow(b1,2))/(2*a1*b1*sin(theta_32));
+K1 = -2*a1*h1_A1(0);
+M1 = 2*a1*h1_A1(2);
+N1 = pow(a1,2)+pow((h1_A1.norm()),2)+pow(c1,2)-pow(b1,2)-2*c1*h1_A1(1);
 
+VectorXd Roots = solveQuadratic(N1-K1, 2*M1, K1+N1);
+result<< atan(Roots(0))*2*180/M_PI, atan(Roots(1))*2*180/M_PI;
+if(result(0)<0 && result(1)<0 ){
+    result(0) = -result(0);
+    result(1) = -result(1);
+}
+else{
+    result(0) = result(0) - 180;
+    result(1) = result(1) - 180;
+}
+double tempRes;
+if (abs(result(0)) < abs(result(1))) {
+    tempRes = result(0);
+}
+else {
+    tempRes = result(1);
+}
+if (abs(tempRes) >=64){
+    if (tempRes > 0) tempRes = 64;
+    else tempRes = -64;
+}
+cout<<"result of Right: "<<tempRes<<endl;
+return tempRes;
 
-theta_22=acos(k);
-//cout<<theta_22<<endl;
-
-
-a=a1+b1*cos(theta_22)*sin(theta_32);
-b=b1*sin(theta_22)*sin(theta_32);
-
-//cout<<a<<endl<<b;
-
-theta_12= -asin((a*h1_A1(2)+b*sqrt(pow(a,2)+pow(b,2)-pow(h1_A1(2),2)))/(pow(a,2)+pow(b,2)));
-theta_12_= -asin((a*h1_A1(2)-b*sqrt(pow(a,2)+pow(b,2)-pow(h1_A1(2),2)))/(pow(a,2)+pow(b,2)));
-//cout<<theta_12*180/M_PI<<endl<<theta_12_*180/M_PI;
-
-result<< theta_12*180/M_PI,theta_12_*180/M_PI;
-return result;
 };
 
-VectorXd left_hand::wrist_left_calc(double alpha, double beta){
-
-double phi;              
-double gama ;           
-double r1;           double pz;
-double a1;           double b1;
-double theta_31;     double theta_21;
-double theta_11;      double theta_11_;
-double k;
-double a;             double b;
-VectorXd result(2);
-
-
-phi=292.197718*M_PI/180;
-gama=67.80228*M_PI/180;
-pz=-86.07491;
-r1=28.18923;
-
-a1=9.36598;   b1=87.80285;
-
-
+double left_hand::wrist_left_calc(double alpha, double beta){
+double a1, b1, c1, r1, pz, phi, gama, K1, M1, N1;
+a1=10;
+b1=56;
+c1=5;
+r1=28.2062;
+pz=-53.4850;
+phi=301.0876*M_PI/180;
+gama=58.9124*M_PI/180;
+ 
 VectorXd r1_(3);
-r1_<<r1*cos(phi), r1*sin(phi),0;
-
-VectorXd h1_P(3);
-h1_P<<-17.1750,19.356,0.0783;
-
 VectorXd P(3);
-P<<0,0,pz;
-
+VectorXd h1_P(3);
 MatrixXd R_PtoO;
 R_PtoO.resize(3,3);
-R_PtoO=rot(3,gama,3)*rot(1,alpha,3)*rot(2,beta,3);
-//cout<<R_PtoO<<endl;
-
 MatrixXd h1_O;
 h1_O.resize(3,3);
-h1_O=P+R_PtoO*h1_P;
-
 MatrixXd R_OtoA1;
 R_OtoA1.resize(3,3);
-R_OtoA1=rot(3,phi,3);
-
 MatrixXd h1_A1;
 h1_A1.resize(3,1);
+VectorXd result(2);
+
+r1_<<r1*cos(phi), r1*sin(phi),0;
+P<<0,0,pz;
+h1_P<<-20,17,0;
+
+R_PtoO=rot(3,gama,3)*rot(2,beta,3)*rot(1,alpha,3);
+h1_O=P+R_PtoO*h1_P;
+R_OtoA1=rot(3,phi,3);
 h1_A1=r1_+R_OtoA1*h1_O;
-/*
-VectorXd C(3);
-C=h1_A1;
-*/
-theta_31=acos(h1_A1(1)/b1);
-//cout<<theta_32<<endl;
 
-k=(pow(h1_A1(0),2)+pow(h1_A1(1),2)+pow(h1_A1(2),2)-pow(a1,2)-pow(b1,2))/(2*a1*b1*sin(theta_31));
+K1 = -2*a1*h1_A1(0);
+M1 = 2*a1*h1_A1(2);
+N1 = pow(a1,2)+pow((h1_A1.norm()),2)+pow(c1,2)-pow(b1,2)-2*c1*h1_A1(1);
 
-
-theta_21=acos(k);
-//cout<<theta_22<<endl;
-
-
-a=a1+b1*cos(theta_21)*sin(theta_31);
-b=b1*sin(theta_21)*sin(theta_31);
-
-//cout<<a<<endl<<b;
-
-theta_11= -asin((a*h1_A1(2)+b*sqrt(pow(a,2)+pow(b,2)-pow(h1_A1(2),2)))/(pow(a,2)+pow(b,2)));
-theta_11_= -asin((a*h1_A1(2)-b*sqrt(pow(a,2)+pow(b,2)-pow(h1_A1(2),2)))/(pow(a,2)+pow(b,2)));
-//cout<<theta_12*180/M_PI<<endl<<theta_12_*180/M_PI;
-
-result<< theta_11*180/M_PI,theta_11_*180/M_PI;
-return result;
+VectorXd Roots = solveQuadratic(N1-K1, 2*M1, K1+N1);
+result<< atan(Roots(0))*2*180/M_PI, atan(Roots(1))*2*180/M_PI;
+double tempRes;
+if (abs(result(0)) < abs(result(1))) {
+    tempRes = result(0);
+}
+else {
+    tempRes = result(1);
+}
+if (abs(tempRes) >=64){
+    if (tempRes > 0) tempRes = 64;
+    else tempRes = -64;
+}
+cout<<"result of Left: "<<tempRes<<endl;
+return tempRes;
 };
 
 // move from theta = 0 to theta = max with smooth minimum jerk function
@@ -617,8 +602,6 @@ void left_hand::jacob(VectorXd q_ra){
 
 
 };
-
-
 
 void left_hand::doQP(VectorXd q_ra){
 jacob(q_ra);

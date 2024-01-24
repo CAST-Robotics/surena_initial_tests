@@ -504,14 +504,11 @@ class test_forgotten_srv{
                         q_motor[14]=int(qref_r(2,id)*encoderResolution[1]*harmonicRatio[2]/M_PI/2); // be samte birun
                         q_motor[15]=int(qref_r(3,id)*encoderResolution[1]*harmonicRatio[3]/M_PI/2);// be samte bala
 
-                        // hand_func_R.wrist_left_calc(-5.13*M_PI/180,30.893*M_PI/180);
-                         // hand_func_R.wrist_right_calc(-5.13*M_PI/180,30.893*M_PI/180);
+                        hand_func_R.wrist_left_calc(qref_r(5,id),qref_r(6,id));
+                        hand_func_R.wrist_right_calc(qref_r(5,id),qref_r(6,id));
 
-                        q_motor[20]=int(qref_r(4,id));
-                        q_motor[21]=int(qref_r(5,id));
-                        q_motor[22]=int(qref_r(6,id));
-
-                        cout<<q_motor[12]<<','<<q_motor[13]<<','<<q_motor[14]<<','<<q_motor[15]<<endl;
+                        // cout<<q_motor[12]<<','<<q_motor[13]<<','<<q_motor[14]<<','<<q_motor[15]<<endl;
+                        // cout<<qref_r(4,id)*180/M_PI<<','<<qref_r(5,id)*180/M_PI<<','<<qref_r(6,id)*180/M_PI<<endl;
                     }
                     else if(req.mode=="lefthand"){
                         q_motor[16]=-int(qref_l(0,id)*encoderResolution[0]*harmonicRatio[0]/M_PI/2);
@@ -519,11 +516,11 @@ class test_forgotten_srv{
                         q_motor[18]=int(qref_l(2,id)*encoderResolution[1]*harmonicRatio[2]/M_PI/2);
                         q_motor[19]=-int(qref_l(3,id)*encoderResolution[1]*harmonicRatio[3]/M_PI/2);
 
-                        q_motor[20]=int(qref_l(4,id));
-                        q_motor[21]=int(qref_l(5,id));
-                        q_motor[22]=int(qref_l(6,id));
+                        hand_func_L.wrist_left_calc(qref_l(5,id),qref_l(6,id));
+                        hand_func_L.wrist_right_calc(qref_l(5,id),qref_l(6,id));
 
-                        cout<<q_motor[16]<<','<<q_motor[17]<<','<<q_motor[18]<<','<<q_motor[19]<<endl;
+                        // cout<<q_motor[16]<<','<<q_motor[17]<<','<<q_motor[18]<<','<<q_motor[19]<<endl;
+                        // cout<<qref_l(4,id)*180/M_PI<<','<<qref_l(5,id)*180/M_PI<<','<<qref_l(6,id)*180/M_PI<<endl;
                     }
                     
                     trajectory_data.data.clear();

@@ -77,8 +77,6 @@ euler2w();
 jacob(q_ra);
 }
 
-
-
 // declaring 4 different update_right_hand function, we call second one
 void right_hand::update_right_hand(VectorXd q_ra,VectorXd r_target,MatrixXd R_target)
 {  
@@ -155,7 +153,6 @@ jacob(q_ra);
 }
 
 
-
 // void right_hand::matrix_view(MatrixXd M){
 //     for (int i = 0; i <M.rows() ; ++i) {
 //         QString str;
@@ -166,8 +163,6 @@ jacob(q_ra);
 //     QString str;
 //     for (int i = 0; i <M.rows() ; ++i) {str+=QString::number(M(i));str+="   ";}
 //     qDebug()<<str;qDebug()<<"";}
-
-
 
 double right_hand::toRad(double d){
     double r;
@@ -188,7 +183,6 @@ double  right_hand::sai_calc(MatrixXd R){
     if(R(1,0)==1 || R(1,0)==-1){return 0;}
     else{return atan2(-R(1,2),R(1,1));}
 }
-
 
 MatrixXd right_hand::rot(int axis , double q ,int dim){
     if (dim==3){
@@ -265,6 +259,7 @@ double right_hand::velocity(double d,double d0){ // coef calculation for velocit
     a2=-3/2*a3*d0;
     return v_target+a2*d*d+a3*d*d*d;
 }
+
 MatrixXd right_hand::ObjToNeck(double h_pitch, double h_roll, double h_yaw) {
     T0.resize(4, 4);
     T0 << cos(M_PI / 9), 0, sin(M_PI / 9), 0,
@@ -332,6 +327,7 @@ MatrixXd right_hand::returnAngles(MatrixXd T_EEtobase) {
     output<< phi_yaw,sai_roll,theta_pitch;
     return output;
 }
+
 void right_hand::HO_FK_right_palm(VectorXd q_ra){
     R1_fix_shd.resize(4,4);
     R2_fix_shd.resize(4,4);
@@ -388,19 +384,19 @@ VectorXd right_hand :: solveQuadratic(double a, double b, double c) {
         // Two real and distinct solutions
         Roots(0) = (-b + sqrt(discriminant)) / (2 * a);
         Roots(1) = (-b - sqrt(discriminant)) / (2 * a);
-        cout<<"distinct solutions"<<endl;
+        // cout<<"distinct solutions"<<endl;
     } else if (discriminant == 0) {
         // One real solution (double root)
         Roots(0) = -b / (2 * a);
         Roots(1) = -b / (2 * a);
-        cout<<"double roots"<<endl;
+        // cout<<"double roots"<<endl;
     } else {
         // Complex solutions
         double realPart = -b / (2 * a);
         double imaginaryPart = sqrt(-discriminant) / (2 * a);
         Roots(0) = realPart;
         Roots(1) = imaginaryPart;
-        cout<<"imaginary roots"<<endl;
+        // cout<<"imaginary roots"<<endl;
     }
     return Roots;
 }
@@ -462,19 +458,27 @@ N1 = pow(a1,2)+pow((h1_A1.norm()),2)+pow(c1,2)-pow(b1,2)-2*c1*h1_A1(1);
 
 VectorXd Roots = solveQuadratic(N1-K1, 2*M1, K1+N1);
 result<< atan(Roots(0))*2*180/M_PI, atan(Roots(1))*2*180/M_PI;
-if(result(0)<0){
+if(result(0)<0 && result(1)<0 ){
     result(0) = -result(0);
+    result(1) = -result(1);
 }
 else{
     result(0) = result(0) - 180;
+    result(1) = result(1) - 180;
 }
-
-if (abs(result(0)) >=64){
-    if (result(0) > 0) result(0) = 64;
-    else result(0) = -64;
+double tempRes;
+if (abs(result(0)) < abs(result(1))) {
+    tempRes = result(0);
 }
-cout<<"result of Right: "<<result(0)<<endl;
-return result(0);
+else {
+    tempRes = result(1);
+}
+if (abs(tempRes) >=64){
+    if (tempRes > 0) tempRes = 64;
+    else tempRes = -64;
+}
+cout<<"result of Right: "<<tempRes<<endl;
+return tempRes;
 
 };
 
@@ -516,12 +520,19 @@ N1 = pow(a1,2)+pow((h1_A1.norm()),2)+pow(c1,2)-pow(b1,2)-2*c1*h1_A1(1);
 
 VectorXd Roots = solveQuadratic(N1-K1, 2*M1, K1+N1);
 result<< atan(Roots(0))*2*180/M_PI, atan(Roots(1))*2*180/M_PI;
-if (abs(result(0)) >=64){
-    if (result(0) > 0) result(0) = 64;
-    else result(0) = -64;
+double tempRes;
+if (abs(result(0)) < abs(result(1))) {
+    tempRes = result(0);
 }
-cout<<"result of Left: "<<result(0)<<endl;
-return result(0);
+else {
+    tempRes = result(1);
+}
+if (abs(tempRes) >=64){
+    if (tempRes > 0) tempRes = 64;
+    else tempRes = -64;
+}
+cout<<"result of Left: "<<tempRes<<endl;
+return tempRes;
 };
 
 // move from theta = 0 to theta = max with smooth minimum jerk function
@@ -659,8 +670,6 @@ void right_hand::jacob(VectorXd q_ra){
 
 
 };
-
-
 
 void right_hand::doQP(VectorXd q_ra){
 jacob(q_ra);

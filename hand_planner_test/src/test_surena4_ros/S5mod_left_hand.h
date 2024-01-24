@@ -94,8 +94,9 @@ public:
     double theta_dot;
 
     // wrist IK
-    VectorXd wrist_right_calc(double alpha, double beta);
-    VectorXd wrist_left_calc(double alpha, double beta);
+    double wrist_left_calc(double alpha, double beta);
+    double wrist_right_calc(double alpha, double beta);
+    VectorXd solveQuadratic(double a, double b, double c);
 
     // Jacobian
     MatrixXd Jha;

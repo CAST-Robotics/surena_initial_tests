@@ -14,11 +14,11 @@ Robot::Robot(ros::NodeHandle *nh, std::string config_path, bool simulation)
     currentCommandedRightAnkleRot_ = Matrix3d::Identity();
     currentZMPPos_ = Vector3d::Zero();
 
-    prevCommandedCoMPos_ = Vector3d::Zero();
+    prevCommandedCoMPos_ = Vector3d(0, 0, 0.71);
     prevCommandedCoMRot_ = Matrix3d::Identity();
-    prevCommandedLeftAnklePos_ = Vector3d::Zero();
+    prevCommandedLeftAnklePos_ = Vector3d(0, 0.0975, 0);
     prevCommandedLeftAnkleRot_ = Matrix3d::Identity();
-    prevCommandedRightAnklePos_ = Vector3d::Zero();
+    prevCommandedRightAnklePos_ = Vector3d(0, -0.0975, 0);
     prevCommandedRightAnkleRot_ = Matrix3d::Identity();
 
     bumpSensorCalibrated_ = false; // doc
@@ -32,6 +32,8 @@ Robot::Robot(ros::NodeHandle *nh, std::string config_path, bool simulation)
     ki = MatrixXd::Zero(3, 3);
     kcom = MatrixXd::Zero(3, 3);
     kzmp = MatrixXd::Zero(3, 3);
+
+    generalPlanner_ = nullptr;
     onlineWalk_ = new Controller(kp, ki, kzmp, kcom);
 
     ankleColide_ = new Collision(soleXFront_, soleY_, soleXBack_, soleMinDist_);
@@ -920,6 +922,7 @@ void Robot::getGeneralTrajJointAngs(int index, double config[12], double jnt_vel
     status = 0; // 0: Okay, 1: Ankle Collision
 
     ControlState robot_cs = IDLE;
+    currentRobotPhase_ = generalPlanner_->getRobotPhase();
         
     this->spinOnline(robot_config, robot_jnt_vel, right_torque, left_torque, right_ft[0], left_ft[0],
                      Vector3d(gyro[0], gyro[1], gyro[2]), Vector3d(accelerometer[0], accelerometer[1], accelerometer[2]),

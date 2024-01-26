@@ -607,6 +607,10 @@ bool RobotManager::walk(trajectory_planner::Trajectory::Request &req,
     double final_rankle_pos[3] = {0, -0.0975, 0};
     double final_rankle_orient[3] = {0, 0, 0};
 
+    // int final_iter = robot->OnlineGeneralTrajGen(dt, 2, final_com_pos, final_com_orient,
+    //                                              final_lankle_pos, final_lankle_orient,
+    //                                              final_rankle_pos, final_rankle_orient);
+
     robot->generalTrajGen(dt, 2, init_com_pos, final_com_pos, init_com_orient, final_com_orient,
                           init_lankle_pos, final_lankle_pos, init_lankle_orient, final_lankle_orient,
                           init_rankle_pos, final_rankle_pos, init_rankle_orient, final_rankle_orient);
@@ -664,6 +668,9 @@ bool RobotManager::walk(trajectory_planner::Trajectory::Request &req,
         }
         robot->getJointAngs(iter, config, jnt_vel, right_ft, left_ft, right_bump,
                             left_bump, gyro, accelerometer, jnt_command, status);
+
+        // robot->getGeneralTrajJointAngs(iter, config, jnt_vel, right_ft, left_ft, right_bump,
+        //                                left_bump, gyro, accelerometer, jnt_command, status);
         if (status != 0)
         {
             cout << "Node was shut down due to Ankle Collision!" << endl;

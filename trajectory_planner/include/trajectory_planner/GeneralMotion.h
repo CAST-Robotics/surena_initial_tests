@@ -54,6 +54,11 @@ public:
         return length_;
     }
 
+    int getRobotPhase()
+    {
+        return currentRobotPhase_;
+    }
+
     const vector<int>& getRobotState()
     {
         return robotState_;
@@ -79,4 +84,5 @@ private:
 
     // Robot Movment State Indicator (0:Stance, 1:Double Support, 2:Right Single Support, 3: Left Single Support, 4:None)
     vector<int> robotState_;
+    int currentRobotPhase_ = 0;
 };

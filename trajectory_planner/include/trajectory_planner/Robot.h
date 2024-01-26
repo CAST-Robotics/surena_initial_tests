@@ -40,8 +40,6 @@ enum ControlState
 
 class Robot
 {
-    friend class Surena;
-
 public:
     Robot(ros::NodeHandle *nh, std::string config_path, bool simulation=false);
     ~Robot();

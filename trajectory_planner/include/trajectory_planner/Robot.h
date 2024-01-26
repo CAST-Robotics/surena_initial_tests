@@ -50,15 +50,15 @@ public:
     void initializeRobotParams();
     void initializeLinkObjects(Vector3d a[], Vector3d b[], Vector3d com_pos[], double links_mass[]);
 
-    void spinOnline(int iter, double config[], double jnt_vel[], Vector3d torque_r, Vector3d torque_l,
+    void spinOnline(double config[], double jnt_vel[], Vector3d torque_r, Vector3d torque_l,
                     double f_r, double f_l, Vector3d gyro, Vector3d accelerometer, int bump_r[], int bump_l[],
                     double *joint_angles, ControlState robot_cs, int &status);
 
-    void runFootLenController(int iter, double f_l, double f_r, ControlState robot_cs);
+    void runFootLenController(double f_l, double f_r, ControlState robot_cs);
 
-    void runBumpFootOrientController(int iter, int bump_r[], int bump_l[]);
+    void runBumpFootOrientController(int bump_r[], int bump_l[]);
 
-    void runEarlyContactController(int iter, int bump_r[], int bump_l[]);
+    void runEarlyContactController(int bump_r[], int bump_l[]);
 
     void runFootOrientController();
 
@@ -95,7 +95,7 @@ public:
     void distributeFT(Vector3d zmp_y, Vector3d r_foot_y, Vector3d l_foot_y, Vector3d &r_wrench, Vector3d &l_wrench);
     void distributeBump(double r_foot_z, double l_foot_z, double &r_bump, double &l_bump);
 
-    void publishCoMPose(int iter);
+    void publishCoMPose(Vector3d com);
     void publishFootStep(const vector<Vector3d>& ankle_rf, const int &step_count);
     void publishZMPPose();
 
@@ -144,6 +144,7 @@ private:
     Vector3d currentCommandedRightAnklePos_;
     Matrix3d currentCommandedRightAnkleRot_;
     Vector3d currentZMPPos_;
+    int currentRobotPhase_;
 
     Vector3d prevCommandedCoMPos_;
     Matrix3d prevCommandedCoMRot_;

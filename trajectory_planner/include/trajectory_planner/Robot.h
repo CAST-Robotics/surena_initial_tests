@@ -23,6 +23,7 @@
 #include "Estimator.h"
 #include "LieEKF.h"
 #include "QuatEKF.h"
+#include "StepPlanner.h"
 
 #include <deque>
 #include "fstream"
@@ -208,6 +209,7 @@ private:
     Estimator *estimator_;
     QuatEKF* quatEKF_;
     LieEKF* lieEKF_;
+    StepPlanner* stepPlanner_;
 
     Vector3d lZMP_;
     Vector3d rZMP_;

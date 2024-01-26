@@ -32,6 +32,12 @@
 using namespace std;
 using json = nlohmann::json;
 
+enum ControlState
+{
+    IDLE,
+    WALK
+};
+
 class Robot
 {
     friend class Surena;
@@ -44,9 +50,11 @@ public:
     void initializeRobotParams();
     void initializeLinkObjects(Vector3d a[], Vector3d b[], Vector3d com_pos[], double links_mass[]);
 
-    void spinOnline(int iter, double config[], double jnt_vel[], Vector3d torque_r, Vector3d torque_l, double f_r, double f_l, Vector3d gyro, Vector3d accelerometer, int bump_r[], int bump_l[], double *joint_angles, int &status);
+    void spinOnline(int iter, double config[], double jnt_vel[], Vector3d torque_r, Vector3d torque_l,
+                    double f_r, double f_l, Vector3d gyro, Vector3d accelerometer, int bump_r[], int bump_l[],
+                    double *joint_angles, ControlState robot_cs, int &status);
 
-    void runFootLenController(int iter, double f_l, double f_r, int traj_index);
+    void runFootLenController(int iter, double f_l, double f_r, ControlState robot_cs);
 
     void runBumpFootOrientController(int iter, int bump_r[], int bump_l[]);
 
@@ -100,12 +108,6 @@ public:
     }
 
 private:
-    enum ControlState
-    {
-        IDLE,
-        WALK
-    };
-
     GeneralMotion *generalPlanner_;
 
     vector<ControlState> robotControlState_;
@@ -141,6 +143,7 @@ private:
     Matrix3d currentCommandedLeftAnkleRot_;
     Vector3d currentCommandedRightAnklePos_;
     Matrix3d currentCommandedRightAnkleRot_;
+    Vector3d currentZMPPos_;
 
     Vector3d prevCommandedCoMPos_;
     Matrix3d prevCommandedCoMRot_;

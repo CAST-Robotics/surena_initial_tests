@@ -13,7 +13,7 @@ DCMPlanner::DCMPlanner(double deltaZ, double stepTime, double doubleSupportTime,
     this->dt_ = dt;
     this->stepCount_ = stepCount;
     this->yawSign_ = 1;
-    this->length_ = 1 / dt_ * tStep_ * stepCount_;
+    this->length_ = int(1 / dt_ * tStep_ * stepCount_);
     this->CoMIntegral_ = Vector3d::Zero();
     this->CoMInit_ = Vector3d(0.0, 0.0, deltaZ_); // initial COM when robot start to walk
 }
@@ -96,7 +96,7 @@ void DCMPlanner::updateSS()
     }
 }
 
-Vector3d DCMPlanner::ComputeDCM(int iter)
+Vector3d DCMPlanner::ComputeCoM(int iter)
 {
     // Generates DCM trajectory without Double Support Phase
     int stepNum;

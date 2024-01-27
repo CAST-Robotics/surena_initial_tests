@@ -34,6 +34,8 @@ Robot::Robot(ros::NodeHandle *nh, std::string config_path, bool simulation)
     kzmp = MatrixXd::Zero(3, 3);
 
     generalPlanner_ = nullptr;
+    DCMPlanner_ = nullptr;
+    anklePlanner_ = nullptr;
     onlineWalk_ = new Controller(kp, ki, kzmp, kcom);
 
     ankleColide_ = new Collision(soleXFront_, soleY_, soleXBack_, soleMinDist_);
@@ -633,7 +635,8 @@ void Robot::publishZMPPose()
 
 bool Robot::trajGen(int step_count, double t_step, double alpha, double t_double_support,
                     double COM_height, double step_length, double step_width, double dt,
-                    double theta, double ankle_height, double step_height, double slope, double com_offset, bool is_config)
+                    double theta, double ankle_height, double step_height, double slope,
+                    double com_offset, bool is_config)
 {
     /*
         ROS service for generating robot COM & ankles trajectories
@@ -793,7 +796,70 @@ bool Robot::generalTrajGen(double dt, double time, double init_com_pos[3], doubl
     return true;
 }
 
-// int Robot::OnlineDCMTrajGen()
+int Robot::OnlineDCMTrajGen(int step_count, double t_step, double alpha, double t_double_support,
+                            double COM_height, double step_length, double step_width, double dt,
+                            double theta, double ankle_height, double step_height, double slope,
+                            double com_offset, bool is_config)
+{
+    dt_ = dt;
+
+    string walk_config_path = ros::package::getPath("trajectory_planner") + "/config/walk_config.json";
+    std::ifstream f(walk_config_path);
+    json walk_config = json::parse(f);
+    int sign = 1;
+    int foot_step_size = 0;
+    
+    if (!is_config)
+    {
+        foot_step_size = step_count + 2;
+    }
+    else  
+    {
+        foot_step_size = walk_config["footsteps"].size();
+        step_count = foot_step_size - 2;
+    }
+
+    vector<Vector3d> ankle_rf(foot_step_size);
+    vector<Vector3d> dcm_rf(foot_step_size);
+    vector<double> theta_rf(foot_step_size);
+
+    if (is_config == true)
+    { 
+        loadConfig(walk_config, foot_step_size, ankle_rf, dcm_rf, theta_rf, COM_height, t_double_support, t_step, alpha, ankle_height, com_offset);
+    }
+    else
+    {
+        sign = abs(step_length) / step_length;
+        stepPlanner_->generateFootSteps(ankle_rf, dcm_rf, step_length, step_width, step_height, foot_step_size, theta, com_offset);
+    }
+
+    COM_height_ = COM_height;
+
+    if (DCMPlanner_ != nullptr) {
+        delete DCMPlanner_;
+    }
+    DCMPlanner_ = new DCMPlanner(COM_height, t_step, t_double_support, dt, foot_step_size, alpha, theta);
+
+    if (anklePlanner_ != nullptr) {
+        delete anklePlanner_;
+    }
+    anklePlanner_ = new Ankle(t_step, t_double_support, ankle_height, alpha, step_count, dt, theta, slope);
+
+    int trajectory_size = DCMPlanner_->getLength();
+    
+    DCMPlanner_->setOnlineFoot(dcm_rf, -sign);
+
+
+    anklePlanner->updateOnlineFoot(ankle_rf, -sign);
+    
+    onlineWalk_->setDt(dt);
+    onlineWalk_->setBaseHeight(COM_height);
+    onlineWalk_->setBaseIdle(shank_ + thigh_);
+    onlineWalk_->setBaseLowHeight(0.65);
+    onlineWalk_->setInitCoM(Vector3d(0.0, 0.0, COM_height));
+
+    return trajectory_size;
+}
 
 int Robot::OnlineGeneralTrajGen(double dt, double time, double final_com_pos[3], double final_com_orient[3],
                                                         double final_lankle_pos[3], double final_lankle_orient[3],
@@ -822,15 +888,11 @@ int Robot::OnlineGeneralTrajGen(double dt, double time, double final_com_pos[3],
     
     // These lines should be checked that we need them really or not in online walking.
     int trajectory_size = generalPlanner_->getLength();
+    
     onlineWalk_->setDt(dt);
     onlineWalk_->setBaseIdle(shank_ + thigh_);
     onlineWalk_->setBaseLowHeight(0.65);
     onlineWalk_->setInitCoM(Vector3d(0.0, 0.0, COM_height_));
-
-    dataSize_ += trajectory_size;
-
-    trajSizes_.push_back(dataSize_);
-    robotControlState_.push_back(IDLE);
     
     return trajectory_size;
 }
@@ -950,5 +1012,7 @@ bool Robot::resetTraj()
 Robot::~Robot()
 {
     delete generalPlanner_;
+    delete anklePlanner_;
+    delete DCMPlanner_;
     delete ankleColide_;
 }

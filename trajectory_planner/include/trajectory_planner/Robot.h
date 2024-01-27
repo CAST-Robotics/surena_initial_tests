@@ -81,6 +81,11 @@ public:
                                  double left_ft[3], int right_bump[4], int left_bump[4], double gyro[3],
                                  double accelerometer[3], double jnt_command[12], int &status);
 
+    int OnlineDCMTrajGen(int step_count, double t_step, double alpha, double t_double_support,
+                         double COM_height, double step_length, double step_width, double dt,
+                         double theta, double ankle_height, double step_height, double slope,
+                         double com_offset, bool is_config);
+
     bool resetTraj();
 
     void generateStraightFootStep(vector<Vector3d>& ankle_rf, vector<Vector3d>& dcm_rf, const double &step_width,
@@ -108,6 +113,8 @@ public:
 
 private:
     GeneralMotion *generalPlanner_;
+    DCMPlanner *DCMPlanner_;
+    Ankle *anklePlanner_;
 
     vector<ControlState> robotControlState_;
 
@@ -127,8 +134,6 @@ private:
 
     double joints_[12];
 
-    PID *DCMController_;
-    PID *CoMController_;
     Controller *onlineWalk_;
 
     void doIK(MatrixXd pelvisP, Matrix3d pelvisR, MatrixXd leftAnkleP, Matrix3d leftAnkleR, MatrixXd rightAnkleP, Matrix3d rightAnkleR);

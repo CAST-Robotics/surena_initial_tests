@@ -99,7 +99,7 @@ public:
      */
     const vector<Matrix3d>& yawRotGen();
 
-    Vector3d ComputeDCM(int iter);
+    Vector3d ComputeCoM(int iter);
 
     int getLength(){return length_;}
 

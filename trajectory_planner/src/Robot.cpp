@@ -850,7 +850,7 @@ int Robot::OnlineDCMTrajGen(int step_count, double t_step, double alpha, double 
     DCMPlanner_->setOnlineFoot(dcm_rf, -sign);
 
 
-    anklePlanner->updateOnlineFoot(ankle_rf, -sign);
+    anklePlanner_->updateOnlineFoot(ankle_rf, -sign);
     
     onlineWalk_->setDt(dt);
     onlineWalk_->setBaseHeight(COM_height);
@@ -859,6 +859,49 @@ int Robot::OnlineDCMTrajGen(int step_count, double t_step, double alpha, double 
     onlineWalk_->setInitCoM(Vector3d(0.0, 0.0, COM_height));
 
     return trajectory_size;
+}
+
+void Robot::getDCMTrajJointAngs(int index, double config[12], double jnt_vel[12], double right_ft[3],
+                                double left_ft[3], int right_bump[4], int left_bump[4], double gyro[3],
+                                double accelerometer[3], double jnt_command[12], int &status)
+{    
+    if (DCMPlanner_ != nullptr) {
+        currentCommandedCoMPos_ = DCMPlanner_->computeCoM(index);
+    } else {
+        throw std::runtime_error("DCMPlanner object is not initialized.");
+    }
+
+    if (anklePlanner_ != nullptr) {
+        anklePlanner_->getOnlineTrajectory(index, currentCommandedLeftAnklePos_, currentCommandedLeftAnkleRot_,
+                                           currentCommandedRightAnklePos_, currentCommandedRightAnkleRot_);
+    } else {
+        throw std::runtime_error("Ankle object is not initialized.");
+    }
+
+    index_ = index;
+    Vector3d right_torque(right_ft[1], right_ft[2], 0.0);
+    Vector3d left_torque(left_ft[1], left_ft[2], 0.0);
+    double robot_config[13];
+    double robot_jnt_vel[13];
+    robot_config[0] = 0;  // Pelvis joint angle
+    robot_jnt_vel[0] = 0; // Pelvis joint velocity
+    for (int i = 1; i < 13; i++)
+    {
+        robot_config[i] = config[i - 1];
+        robot_jnt_vel[i] = jnt_vel[i - 1];
+    }
+    status = 0; // 0: Okay, 1: Ankle Collision
+
+    ControlState robot_cs = WALK;
+    currentRobotPhase_ = anklePlanner_->getStateIndicator();
+
+    cout << currentCommandedCoMPos_(0) << ", " << currentCommandedCoMPos_(1) << ", " << currentCommandedCoMPos_(2) << ", ";
+    cout << currentCommandedLeftAnklePos_(0) << ", " << currentCommandedLeftAnklePos_(1) << ", " << currentCommandedLeftAnklePos_(2) << ", ";
+    cout << currentCommandedRightAnklePos_(0) << ", " << currentCommandedRightAnklePos_(1) << ", " << currentCommandedRightAnklePos_(2) << endl;
+        
+    this->spinOnline(robot_config, robot_jnt_vel, right_torque, left_torque, right_ft[0], left_ft[0],
+                     Vector3d(gyro[0], gyro[1], gyro[2]), Vector3d(accelerometer[0], accelerometer[1], accelerometer[2]),
+                     right_bump, left_bump, jnt_command, robot_cs, status);
 }
 
 int Robot::OnlineGeneralTrajGen(double dt, double time, double final_com_pos[3], double final_com_orient[3],

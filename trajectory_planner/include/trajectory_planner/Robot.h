@@ -86,6 +86,10 @@ public:
                          double theta, double ankle_height, double step_height, double slope,
                          double com_offset, bool is_config);
 
+    void getDCMTrajJointAngs(int index, double config[12], double jnt_vel[12], double right_ft[3],
+                             double left_ft[3], int right_bump[4], int left_bump[4], double gyro[3],
+                             double accelerometer[3], double jnt_command[12], int &status);
+
     bool resetTraj();
 
     void generateStraightFootStep(vector<Vector3d>& ankle_rf, vector<Vector3d>& dcm_rf, const double &step_width,

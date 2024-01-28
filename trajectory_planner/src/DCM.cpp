@@ -96,7 +96,7 @@ void DCMPlanner::updateSS()
     }
 }
 
-Vector3d DCMPlanner::ComputeCoM(int iter)
+Vector3d DCMPlanner::computeCoM(int iter)
 {
     // Generates DCM trajectory without Double Support Phase
     int stepNum;

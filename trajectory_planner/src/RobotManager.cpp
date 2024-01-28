@@ -637,6 +637,9 @@ bool RobotManager::walk(trajectory_planner::Trajectory::Request &req,
                           init_lankle_pos, final_lankle_pos, init_lankle_orient, final_lankle_orient,
                           init_rankle_pos, final_rankle_pos, init_rankle_orient, final_rankle_orient);
 
+    // int final_iter = robot->OnlineDCMTrajGen(req.step_count, req.t_step, req.alpha, req.t_double_support, req.COM_height, req.step_length,
+    //                                          req.step_width, dt, req.theta, req.ankle_height, req.step_height, 0, req.com_offset, req.is_config);
+
     int iter = 0;
     int final_iter = robot->getTrajSize();
     // int final_iter = req.t_step + 4;
@@ -668,6 +671,9 @@ bool RobotManager::walk(trajectory_planner::Trajectory::Request &req,
         }
         robot->getJointAngs(iter, config, jnt_vel, right_ft, left_ft, right_bump,
                             left_bump, gyro, accelerometer, jnt_command, status);
+
+        // robot->getDCMTrajJointAngs(iter, config, jnt_vel, right_ft, left_ft, right_bump,
+        //                            left_bump, gyro, accelerometer, jnt_command, status);
 
         // robot->getGeneralTrajJointAngs(iter, config, jnt_vel, right_ft, left_ft, right_bump,
         //                                left_bump, gyro, accelerometer, jnt_command, status);

@@ -15,7 +15,9 @@ public:
     const vector<Matrix3d>& getRotTrajectoryR();
     const vector<Matrix3d>& getRotTrajectoryL();
     const vector<int>& getRobotState();
-    void getOnlineTrajectory(int index);
+    inline int getStateIndicator(){return stateIndicator_;}
+    void getOnlineTrajectory(int index, Vector3d& left_foot_pos, Matrix3d& left_foot_rot,
+                             Vector3d& right_foot_pos, Matrix3d& right_foot_rot);
     void handleFirstStep(Vector3d& left_foot_pos, Matrix3d& left_foot_rot, Vector3d& right_foot_pos, Matrix3d& right_foot_rot);
     void handleLastStep(int step, Vector3d& left_foot_pos, Matrix3d& left_foot_rot, Vector3d& right_foot_pos, Matrix3d& right_foot_rot);
     void handleOtherSteps(int step, int step_index, Vector3d& left_foot_pos, Matrix3d& left_foot_rot, Vector3d& right_foot_pos, Matrix3d& right_foot_rot, int& state_indicator);
@@ -52,7 +54,8 @@ private:
     vector<vector<Vector3d>> euler_coefs_;
 
     // Robot Movment State Indicator (0:Stance, 1:Double Support, 2:Right Single Support, 3: Left Single Support, 4:None)
-    vector<int> stateIndicator_;
+    vector<int> stateIndicatorArray_;
+    int stateIndicator_;
 
     void updateTrajectory(bool left_first);
     

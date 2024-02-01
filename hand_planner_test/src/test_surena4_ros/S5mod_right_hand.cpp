@@ -473,11 +473,11 @@ if (abs(result(0)) < abs(result(1))) {
 else {
     tempRes = result(1);
 }
-if (abs(tempRes) >=64){
-    if (tempRes > 0) tempRes = 64;
-    else tempRes = -64;
+if (abs(tempRes) >=85){
+    if (tempRes > 0) tempRes = 85;
+    else tempRes = -85;
 }
-cout<<"result of Right: "<<tempRes<<endl;
+// cout<<"result of Right: "<<tempRes<<endl;
 return tempRes;
 
 };
@@ -527,11 +527,11 @@ if (abs(result(0)) < abs(result(1))) {
 else {
     tempRes = result(1);
 }
-if (abs(tempRes) >=64){
-    if (tempRes > 0) tempRes = 64;
-    else tempRes = -64;
+if (abs(tempRes) >=85){
+    if (tempRes > 0) tempRes = 85;
+    else tempRes = -85;
 }
-cout<<"result of Left: "<<tempRes<<endl;
+// cout<<"result of Left: "<<tempRes<<endl;
 return tempRes;
 };
 

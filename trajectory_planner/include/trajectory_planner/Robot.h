@@ -90,6 +90,8 @@ public:
                              double left_ft[3], int right_bump[4], int left_bump[4], double gyro[3],
                              double accelerometer[3], double jnt_command[12], int &status);
 
+    ControlState getCurrentWalkState() {return currentWalkState_;}
+
     bool resetTraj();
 
     void generateStraightFootStep(vector<Vector3d>& ankle_rf, vector<Vector3d>& dcm_rf, const double &step_width,
@@ -153,6 +155,7 @@ private:
     Matrix3d currentCommandedRightAnkleRot_;
     Vector3d currentZMPPos_;
     int currentRobotPhase_;
+    ControlState currentWalkState_;
 
     Vector3d prevCommandedCoMPos_;
     Matrix3d prevCommandedCoMRot_;

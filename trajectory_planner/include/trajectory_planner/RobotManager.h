@@ -161,6 +161,7 @@ private:
     double commandConfig_[3][12];
 
     int FTOffsetPeriod_;
+    int trajSize_;
 
     // Upper Body
     ros::ServiceServer move_hand_single_service;

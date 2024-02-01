@@ -863,6 +863,9 @@ void RobotManager::keyboardHandler(const std_msgs::Int32 &msg)
             theta = 0.0;
             robot->trajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 
                            step_width, dt, theta, ankle_height, step_height, slope, offset, is_config);
+            // trajSize_ = robot->OnlineDCMTrajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 
+            //                                     step_width, dt, theta, ankle_height, step_height, slope, offset, is_config);
+
             isKeyboardTrajectoryEnabled = false;
             break;
 
@@ -872,6 +875,8 @@ void RobotManager::keyboardHandler(const std_msgs::Int32 &msg)
             theta = 0.0;
             robot->trajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 
                            step_width, dt, theta, ankle_height, step_height, slope, offset, is_config);
+            // trajSize_ = robot->OnlineDCMTrajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 
+            //                                     step_width, dt, theta, ankle_height, step_height, slope, offset, is_config);
             isKeyboardTrajectoryEnabled = false;
             break;
 
@@ -881,6 +886,8 @@ void RobotManager::keyboardHandler(const std_msgs::Int32 &msg)
             theta = 0.17;
             robot->trajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 
                            step_width, dt, theta, ankle_height, step_height, slope, offset, is_config);
+            // trajSize_ = robot->OnlineDCMTrajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 
+            //                                     step_width, dt, theta, ankle_height, step_height, slope, offset, is_config);
             isKeyboardTrajectoryEnabled = false;
             break;
 
@@ -890,6 +897,8 @@ void RobotManager::keyboardHandler(const std_msgs::Int32 &msg)
             theta = 0.17;
             robot->trajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 
                            step_width, dt, theta, ankle_height, step_height, slope, offset, is_config);
+            // trajSize_ = robot->OnlineDCMTrajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 
+            //                                     step_width, dt, theta, ankle_height, step_height, slope, offset, is_config);
             isKeyboardTrajectoryEnabled = false;
             break;
 
@@ -937,11 +946,16 @@ bool RobotManager::keyboardWalk(std_srvs::Empty::Request &req, std_srvs::Empty::
 
     int iter = 0;
     int final_iter;
+    // trajSize_ = robot->OnlineGeneralTrajGen(dt, 2, final_com_pos, final_com_orient,
+    //                                         final_lankle_pos, final_lankle_orient,
+    //                                         final_rankle_pos, final_rankle_orient);
+    // ControlState robot_cs = IDLE;
 
     while (isWalkingWithKeyboard)
     {
         final_iter = robot->getTrajSize();
         
+        // if(iter < trajSize_)
         if(iter < final_iter)
         {
             double config[12];
@@ -959,6 +973,15 @@ bool RobotManager::keyboardWalk(std_srvs::Empty::Request &req, std_srvs::Empty::
                 jnt_vel[i] = (commandConfig_[0][i] - 4 * commandConfig_[1][i] + 3 * commandConfig_[2][i]) / (2 * dt);
             }
 
+            // robot_cs = robot->getCurrentWalkState();
+
+            // if(robot_cs == IDLE)
+            //     robot->getGeneralTrajJointAngs(iter, config, jnt_vel, right_ft, left_ft, right_bump,
+            //                                    left_bump, gyro, accelerometer, jnt_command, status);
+            // else
+            //     robot->getDCMTrajJointAngs(iter, config, jnt_vel, right_ft, left_ft, right_bump,
+            //                                left_bump, gyro, accelerometer, jnt_command, status);
+
             robot->getJointAngs(iter, config, jnt_vel, right_ft, left_ft, right_bump,
                                 left_bump, gyro, accelerometer, jnt_command, status);
             if (status != 0)
@@ -970,10 +993,12 @@ bool RobotManager::keyboardWalk(std_srvs::Empty::Request &req, std_srvs::Empty::
             sendCommand();
             iter++;
         }
+        // if (iter == trajSize_ - 1)
         if (iter == final_iter - 1)
         {
             robot->resetTraj();
             isKeyboardTrajectoryEnabled = true;
+            // trajSize_ = 0;
             iter = 0;
         }
 

@@ -74,7 +74,7 @@ class test_forgotten_srv{
                 QcArr[i] = *it;
                 i++;
             }
-            //cout<<QcArr[0]<<", "<<QcArr[1]<<", "<<QcArr[2]<<", "<<QcArr[3]<<", "<<QcArr[4]<<", "<<QcArr[5]<<", "<<QcArr[6]<<", "<<QcArr[7]<<", "<<QcArr[8]<<", "<<QcArr[9]<<", "<<QcArr[10]<<", "<<QcArr[11]<<", "<<QcArr[12]<<", "<<QcArr[13]<<", "<<QcArr[14]<<", "<<QcArr[15]<<", "<<QcArr[16]<<", "<<QcArr[17]<<", "<<QcArr[18]<<", "<<QcArr[19]<<endl;
+            // cout<<QcArr[0]<<", "<<QcArr[1]<<", "<<QcArr[2]<<", "<<QcArr[3]<<", "<<QcArr[4]<<", "<<QcArr[5]<<", "<<QcArr[6]<<", "<<QcArr[7]<<", "<<QcArr[8]<<", "<<QcArr[9]<<", "<<QcArr[10]<<", "<<QcArr[11]<<", "<<QcArr[12]<<", "<<QcArr[13]<<", "<<QcArr[14]<<", "<<QcArr[15]<<", "<<QcArr[16]<<", "<<QcArr[17]<<", "<<QcArr[18]<<", "<<QcArr[19]<<endl;
             return;
             }
 
@@ -504,10 +504,12 @@ class test_forgotten_srv{
                         q_motor[14]=int(qref_r(2,id)*encoderResolution[1]*harmonicRatio[2]/M_PI/2); // be samte birun
                         q_motor[15]=int(qref_r(3,id)*encoderResolution[1]*harmonicRatio[3]/M_PI/2);// be samte bala
 
-                        hand_func_R.wrist_left_calc(qref_r(5,id),qref_r(6,id));
-                        hand_func_R.wrist_right_calc(qref_r(5,id),qref_r(6,id));
+                        q_motor[21] = int(wrist_command_range[0] + (wrist_command_range[1] - wrist_command_range[0]) * (((hand_func_R.wrist_left_calc(qref_r(5,id),qref_r(6,id))) - wrist_left_range[0]) / (wrist_left_range[1] - wrist_left_range[0])));
+                        q_motor[20] = int(wrist_command_range[0] + (wrist_command_range[1] - wrist_command_range[0]) * (((hand_func_R.wrist_right_calc(qref_r(5,id),qref_r(6,id))) - (wrist_right_range[0])) / (wrist_right_range[1] - (wrist_right_range[0]))));
+                        q_motor[22] = int(wrist_command_range[0] + (wrist_command_range[1] - wrist_command_range[0]) * (((qref_r(4,id)*180/M_PI) - wrist_yaw_range[0]) / (wrist_yaw_range[1] - wrist_yaw_range[0])));
 
-                        // cout<<q_motor[12]<<','<<q_motor[13]<<','<<q_motor[14]<<','<<q_motor[15]<<endl;
+
+                        cout<<q_motor[12]<<','<<q_motor[13]<<','<<q_motor[14]<<','<<q_motor[15]<<','<<q_motor[22]<<','<<q_motor[20]<<','<<q_motor[21]<<endl;
                         // cout<<qref_r(4,id)*180/M_PI<<','<<qref_r(5,id)*180/M_PI<<','<<qref_r(6,id)*180/M_PI<<endl;
                     }
                     else if(req.mode=="lefthand"){
@@ -515,16 +517,19 @@ class test_forgotten_srv{
                         q_motor[17]=-int(qref_l(1,id)*encoderResolution[0]*harmonicRatio[1]/M_PI/2);
                         q_motor[18]=int(qref_l(2,id)*encoderResolution[1]*harmonicRatio[2]/M_PI/2);
                         q_motor[19]=-int(qref_l(3,id)*encoderResolution[1]*harmonicRatio[3]/M_PI/2);
+                        
+                        q_motor[21] = int(wrist_command_range[0] + (wrist_command_range[1] - wrist_command_range[0]) * (((hand_func_L.wrist_left_calc(qref_l(5,id),qref_l(6,id))) - wrist_left_range[0]) / (wrist_left_range[1] - wrist_left_range[0])));
+                        q_motor[20] = int(wrist_command_range[0] + (wrist_command_range[1] - wrist_command_range[0]) * (((hand_func_L.wrist_right_calc(qref_l(5,id),qref_l(6,id))) - (wrist_right_range[0])) / (wrist_right_range[1] - (wrist_right_range[0]))));
+                        q_motor[22] = int(wrist_command_range[0] + (wrist_command_range[1] - wrist_command_range[0]) * (((qref_l(4,id)*180/M_PI) - wrist_yaw_range[0]) / (wrist_yaw_range[1] - wrist_yaw_range[0])));
 
-                        hand_func_L.wrist_left_calc(qref_l(5,id),qref_l(6,id));
-                        hand_func_L.wrist_right_calc(qref_l(5,id),qref_l(6,id));
+                        
 
-                        // cout<<q_motor[16]<<','<<q_motor[17]<<','<<q_motor[18]<<','<<q_motor[19]<<endl;
+                        // cout<<q_motor[16]<<','<<q_motor[17]<<','<<q_motor[18]<<','<<q_motor[19]<<','<<q_motor[22]<<','<<q_motor[20]<<','<<q_motor[21]<<endl;
                         // cout<<qref_l(4,id)*180/M_PI<<','<<qref_l(5,id)*180/M_PI<<','<<qref_l(6,id)*180/M_PI<<endl;
                     }
                     
                     trajectory_data.data.clear();
-                    for(int  i = 0; i < 20; i++)
+                    for(int  i = 0; i < 23; i++)
                     {
                         trajectory_data.data.push_back(q_motor[i]);
                     }
@@ -648,23 +653,28 @@ class test_forgotten_srv{
                         if (req.mode == "righthand"){
                             for (int i=12; i<16; i++){
                                 q_motor[i] = int(QcArr[i] + hand_func_R.move2pose(-QcArr[i], t_local, 0, req.T_home));        
-                            } 
+                            }
                             }
                         else if (req.mode == "lefthand"){
                             for (int i=16; i<20; i++){
                                 q_motor[i] = int(QcArr[i] + hand_func_R.move2pose(-QcArr[i], t_local, 0, req.T_home));
                             }
+                            q_motor[22] = int(QcArr[22] + hand_func_R.move2pose(-QcArr[22], t_local, 0, req.T_home));
                             }
                         trajectory_data.data.clear();
 
-                        for(int  i = 0; i < 20; i++)
+                        q_motor[22] = 150;
+                        q_motor[20] = 150;
+                        q_motor[21] = 150;
+
+                        for(int  i = 0; i < 23; i++)
                         {
                             trajectory_data.data.push_back(q_motor[i]);
                         }
                         trajectory_data_pub.publish(trajectory_data); 
                         ros::spinOnce();
                         rate_.sleep();
-                        cout<<q_motor[0]<<", "<<q_motor[1]<<", "<<q_motor[2]<<", "<<q_motor[3]<<", "<<q_motor[4]<<", "<<q_motor[5]<<", "<<q_motor[6]<<", "<<q_motor[7]<<", "<<q_motor[8]<<", "<<q_motor[9]<<", "<<q_motor[10]<<", "<<q_motor[11]<<", "<<q_motor[12]<<", "<<q_motor[13]<<", "<<q_motor[14]<<", "<<q_motor[15]<<", "<<q_motor[16]<<", "<<q_motor[17]<<", "<<q_motor[18]<<", "<<q_motor[19]<<endl;
+                        cout<<q_motor[0]<<", "<<q_motor[1]<<", "<<q_motor[2]<<", "<<q_motor[3]<<", "<<q_motor[4]<<", "<<q_motor[5]<<", "<<q_motor[6]<<", "<<q_motor[7]<<", "<<q_motor[8]<<", "<<q_motor[9]<<", "<<q_motor[10]<<", "<<q_motor[11]<<", "<<q_motor[12]<<", "<<q_motor[13]<<", "<<q_motor[14]<<", "<<q_motor[15]<<", "<<q_motor[16]<<", "<<q_motor[17]<<", "<<q_motor[18]<<", "<<q_motor[19]<<", "<<q_motor[22]<<", "<<q_motor[20]<<", "<<q_motor[21]<<endl;
                     }
                     t_local+=T;
                     count = count + 1;   
@@ -942,11 +952,18 @@ class test_forgotten_srv{
         vector<int> pitch_command_range = {180, 110};
         vector<int> roll_command_range = {100, 190};
         vector<int> yaw_command_range = {90, 210};
+
+        vector<int> wrist_command_range = {50, 250};
+        vector<int> wrist_yaw_range = {85, -95};
+        vector<int> wrist_right_range = {90, -90};
+        vector<int> wrist_left_range = {90, -90};
+
+
         double h_pitch = 0;
         double h_roll = 0;
         double h_yaw = 0;
         MatrixXd T_CAM2SH;
-        int QcArr[20];
+        int QcArr[29];
 };
 
 

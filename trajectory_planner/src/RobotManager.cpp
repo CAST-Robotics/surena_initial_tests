@@ -457,7 +457,7 @@ bool RobotManager::sendCommand(trajectory_planner::command::Request &req,
     }
     else if (req.motor_id == 20 || req.motor_id == 21 || req.motor_id == 22)
     {
-        motorCommandArray_[req.motor_id] += req.angle;
+        motorCommandArray_[req.motor_id] = req.angle;
         sendCommand();
         ros::spinOnce();
         rate_.sleep();

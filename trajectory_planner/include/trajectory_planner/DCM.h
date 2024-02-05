@@ -103,6 +103,9 @@ public:
 
     int getLength(){return length_;}
 
+    void calculateRotCoeffs();
+    Matrix3d getOnlineRot(int iter);
+
 private:
     // Design Parameters
     double deltaZ_;
@@ -134,6 +137,8 @@ private:
     Vector3d CoMIntegral_;
     Vector3d CoMInit_;
     Vector3d prevXi_;
+
+    vector<vector<double>> rotCoeffs_;
     // Functions for generating trajectories
     /**
      * @brief Updates the position of the virtual repulsive point (VRP) 

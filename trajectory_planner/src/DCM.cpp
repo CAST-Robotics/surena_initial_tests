@@ -298,6 +298,42 @@ const vector<Matrix3d>& DCMPlanner::yawRotGen()
     return yawRotation_;
 }
 
+void DCMPlanner::calculateRotCoeffs() {
+    rotCoeffs_.resize(stepCount_);
+    double ini_theta, end_theta;
+
+    for (int i = 0; i < stepCount_; i++) {
+        ini_theta = this->yawSign_ * ((i - 1) * theta_ + (i - 2) * theta_) / 2;
+        end_theta = this->yawSign_ * ((i - 1) * theta_ + i * theta_) / 2;
+
+        if (i == 0) {
+            ini_theta = 0;
+            end_theta = 0;
+        }
+        if (i == 1) {
+            ini_theta = 0;
+        }
+        if (i == stepCount_ - 2) {
+            end_theta = this->yawSign_ * (i - 1) * theta_;
+        }
+        if (i == stepCount_ - 1) {
+            ini_theta = this->yawSign_ * (i - 2) * theta_;
+            end_theta = this->yawSign_ * (i - 2) * theta_;
+        }
+        
+        rotCoeffs_[i] = MinJerk::cubicInterpolate<double>(ini_theta, end_theta, 0, 0, tStep_);
+    }
+}
+
+Matrix3d DCMPlanner::getOnlineRot(int iter) {
+    int i = iter / (tStep_ / dt_);
+    Matrix3d rot;
+    int j = iter % int(tStep_ / dt_);
+    double theta_traj = rotCoeffs_[i][0] + rotCoeffs_[i][1] * j * dt_ + rotCoeffs_[i][2] * pow(j * dt_, 2) + rotCoeffs_[i][3] * pow(j * dt_, 3);
+    rot = AngleAxisd(theta_traj, Vector3d::UnitZ());
+    return rot;
+}
+
 DCMPlanner::~DCMPlanner()
 {
     

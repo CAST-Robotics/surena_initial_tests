@@ -850,6 +850,7 @@ int Robot::OnlineDCMTrajGen(int step_count, double t_step, double alpha, double 
     int trajectory_size = DCMPlanner_->getLength();
     
     DCMPlanner_->setOnlineFoot(dcm_rf, -sign);
+    DCMPlanner_->calculateRotCoeffs();
 
 
     anklePlanner_->updateOnlineFoot(ankle_rf, -sign);
@@ -871,6 +872,7 @@ void Robot::getDCMTrajJointAngs(int index, double config[12], double jnt_vel[12]
 {    
     if (DCMPlanner_ != nullptr) {
         currentCommandedCoMPos_ = DCMPlanner_->computeCoM(index);
+        currentCommandedCoMRot_ = DCMPlanner_->getOnlineRot(index);
     } else {
         throw std::runtime_error("DCMPlanner object is not initialized.");
     }

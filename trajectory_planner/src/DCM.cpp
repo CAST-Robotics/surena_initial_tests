@@ -16,6 +16,7 @@ DCMPlanner::DCMPlanner(double deltaZ, double stepTime, double doubleSupportTime,
     this->length_ = int(1 / dt_ * tStep_ * stepCount_);
     this->CoMIntegral_ = Vector3d::Zero();
     this->CoMInit_ = Vector3d(0.0, 0.0, deltaZ_); // initial COM when robot start to walk
+    this->currentStepNum_ = 0;
 }
 
 void DCMPlanner::setFoot(const vector<Vector3d>& rF, int sign)
@@ -31,6 +32,71 @@ void DCMPlanner::setOnlineFoot(const vector<Vector3d>& rF, int sign)
     this->updateVRP();
     this->updateXiEoS();
     this->updateOnlineDS(Vector3d(0, 0, 0));
+}
+
+void DCMPlanner::changeVRP(int foot_step_idx, Vector3d newVRP)
+{
+    if (foot_step_idx > currentStepNum_ && foot_step_idx < rVRP_.size())
+    {
+        rVRP_[foot_step_idx] = newVRP;
+    }
+    else if (foot_step_idx > currentStepNum_ && foot_step_idx == rVRP_.size())
+    {
+        rVRP_.push_back(newVRP);
+        this->stepCount_ += 1;
+    }
+    else
+    {
+        throw "Invalid Foot Step Index";
+    }
+}
+
+void DCMPlanner::updateXiPoints()
+{
+    this->updateXiEoS();
+    this->updateOnlineDS(Vector3d(0, 0, 0));
+}
+
+void DCMPlanner::updateXiEoS()
+{
+    xiEOS_.resize(stepCount_);
+    for (int i = stepCount_ - 1; i >= 0; i--)
+    {
+        if (i == stepCount_ - 1)
+            xiEOS_[i] = rVRP_[i];
+        else
+            xiEOS_[i] = rVRP_[i + 1] + exp(-sqrt(K_G / deltaZ_) * tStep_) * (xiEOS_[i + 1] - rVRP_[i + 1]);
+    }
+}
+
+void DCMPlanner::updateOnlineDS(Vector3d xi_0)
+{
+    /*
+        This function updates Double support start and end positions
+    */
+    xiDSI_.resize(stepCount_);
+    xiDSE_.resize(stepCount_);
+    Vector3d xi_dot_i, xi_dot_e;
+
+    for (int index = 0; index < stepCount_; index++)
+    {
+        if (index == 0)
+        {
+            xiDSI_[index] = xi_0;
+            xiDSE_[index] = rVRP_[index] + exp(sqrt(K_G / deltaZ_) * tDS_ * (1 - alpha_)) * (xi_0 - rVRP_[index]);
+            xi_dot_i = sqrt(K_G / deltaZ_) * (xiDSI_[index] - xi_0);
+            xi_dot_e = sqrt(K_G / deltaZ_) * (xiDSE_[index] - rVRP_[0]);
+        }
+        else
+        {
+            xiDSI_[index] = rVRP_[index - 1] + exp(-sqrt(K_G / deltaZ_) * tDS_ * alpha_) * (xiEOS_[index - 1] - rVRP_[index - 1]);
+            xiDSE_[index] = rVRP_[index] + exp(sqrt(K_G / deltaZ_) * tDS_ * (1 - alpha_)) * (xiEOS_[index - 1] - rVRP_[index]);
+            xi_dot_i = sqrt(K_G / deltaZ_) * (xiDSI_[index] - rVRP_[index - 1]);
+            xi_dot_e = sqrt(K_G / deltaZ_) * (xiDSE_[index] - rVRP_[index]);
+        }
+        vector<Vector3d> coefs = this->minJerkInterpolate(xiDSI_[index], xiDSE_[index], xi_dot_i, xi_dot_e, tDS_);
+        DSXiCoef_.push_back(coefs);
+    }
 }
 
 const vector<Vector3d>& DCMPlanner::getXiDot()
@@ -67,19 +133,6 @@ void DCMPlanner::updateVRP()
     }
 }
 
-void DCMPlanner::updateXiEoS()
-{
-
-    xiEOS_.resize(stepCount_);
-    for (int i = stepCount_ - 1; i >= 0; i--)
-    {
-        if (i == stepCount_ - 1)
-            xiEOS_[i] = rVRP_[i];
-        else
-            xiEOS_[i] = rVRP_[i + 1] + exp(-sqrt(K_G / deltaZ_) * tStep_) * (xiEOS_[i + 1] - rVRP_[i + 1]);
-    }
-}
-
 void DCMPlanner::updateSS()
 {
     // Generates DCM trajectory without Double Support Phase
@@ -99,24 +152,23 @@ void DCMPlanner::updateSS()
 Vector3d DCMPlanner::computeCoM(int iter)
 {
     // Generates DCM trajectory without Double Support Phase
-    int stepNum;
     double time;
     time = dt_ * iter;
-    stepNum = floor(time / tStep_);
-    Vector3d xi = rVRP_[stepNum] + exp(sqrt(K_G / deltaZ_) * (fmod(time, tStep_) - tStep_)) * (xiEOS_[stepNum] - rVRP_[stepNum]);
-    if (stepNum == 0)
+    currentStepNum_ = floor(time / tStep_);
+    Vector3d xi = rVRP_[currentStepNum_] + exp(sqrt(K_G / deltaZ_) * (fmod(time, tStep_) - tStep_)) * (xiEOS_[currentStepNum_] - rVRP_[currentStepNum_]);
+    if (currentStepNum_ == 0)
     {
         if(iter < (1 / dt_) * tDS_ * (1 - alpha_))
         {
-            xi = DSXiCoef_[stepNum][0] + DSXiCoef_[stepNum][1] * time + DSXiCoef_[stepNum][2] * pow(time, 2) + DSXiCoef_[stepNum][3] * pow(time, 3);
+            xi = DSXiCoef_[currentStepNum_][0] + DSXiCoef_[currentStepNum_][1] * time + DSXiCoef_[currentStepNum_][2] * pow(time, 2) + DSXiCoef_[currentStepNum_][3] * pow(time, 3);
         }
     }
     else
     {
-        if(iter > (tStep_ * stepNum) / dt_ - (tDS_ * alpha_ / dt_) + 1 && iter < ((tStep_ * stepNum) / dt_) + (tDS_ / dt_) * (1 - alpha_))
+        if(iter > (tStep_ * currentStepNum_) / dt_ - (tDS_ * alpha_ / dt_) + 1 && iter < ((tStep_ * currentStepNum_) / dt_) + (tDS_ / dt_) * (1 - alpha_))
         {
-            time = fmod(time, tStep_ * stepNum - tDS_ * alpha_);
-            xi = DSXiCoef_[stepNum][0] + DSXiCoef_[stepNum][1] * time + DSXiCoef_[stepNum][2] * pow(time, 2) + DSXiCoef_[stepNum][3] * pow(time, 3);
+            time = fmod(time, tStep_ * currentStepNum_ - tDS_ * alpha_);
+            xi = DSXiCoef_[currentStepNum_][0] + DSXiCoef_[currentStepNum_][1] * time + DSXiCoef_[currentStepNum_][2] * pow(time, 2) + DSXiCoef_[currentStepNum_][3] * pow(time, 3);
         }
     }
     
@@ -189,36 +241,6 @@ void DCMPlanner::updateDS()
             xiDSI_[index] = rVRP_[index - 1] + exp(-sqrt(K_G / deltaZ_) * tDS_ * alpha_) * (xiEOS_[index - 1] - rVRP_[index - 1]);
             xiDSE_[index] = rVRP_[index] + exp(sqrt(K_G / deltaZ_) * tDS_ * (1 - alpha_)) * (xiEOS_[index - 1] - rVRP_[index]);
         }
-    }
-}
-
-void DCMPlanner::updateOnlineDS(Vector3d xi_0)
-{
-    /*
-        This function updates Double support start and end positions
-    */
-    xiDSI_.resize(stepCount_);
-    xiDSE_.resize(stepCount_);
-    Vector3d xi_dot_i, xi_dot_e;
-
-    for (int index = 0; index < stepCount_; index++)
-    {
-        if (index == 0)
-        {
-            xiDSI_[index] = xi_0;
-            xiDSE_[index] = rVRP_[index] + exp(sqrt(K_G / deltaZ_) * tDS_ * (1 - alpha_)) * (xi_0 - rVRP_[index]);
-            xi_dot_i = sqrt(K_G / deltaZ_) * (xiDSI_[index] - xi_0);
-            xi_dot_e = sqrt(K_G / deltaZ_) * (xiDSE_[index] - rVRP_[0]);
-        }
-        else
-        {
-            xiDSI_[index] = rVRP_[index - 1] + exp(-sqrt(K_G / deltaZ_) * tDS_ * alpha_) * (xiEOS_[index - 1] - rVRP_[index - 1]);
-            xiDSE_[index] = rVRP_[index] + exp(sqrt(K_G / deltaZ_) * tDS_ * (1 - alpha_)) * (xiEOS_[index - 1] - rVRP_[index]);
-            xi_dot_i = sqrt(K_G / deltaZ_) * (xiDSI_[index] - rVRP_[index - 1]);
-            xi_dot_e = sqrt(K_G / deltaZ_) * (xiDSE_[index] - rVRP_[index]);
-        }
-        vector<Vector3d> coefs = this->minJerkInterpolate(xiDSI_[index], xiDSE_[index], xi_dot_i, xi_dot_e, tDS_);
-        DSXiCoef_.push_back(coefs);
     }
 }
 

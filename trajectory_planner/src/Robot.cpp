@@ -851,7 +851,6 @@ int Robot::OnlineDCMTrajGen(int step_count, double t_step, double alpha, double 
     
     DCMPlanner_->setOnlineFoot(dcm_rf, -sign);
 
-
     anklePlanner_->updateOnlineFoot(ankle_rf, -sign);
     
     onlineWalk_->setDt(dt);
@@ -899,9 +898,9 @@ void Robot::getDCMTrajJointAngs(int index, double config[12], double jnt_vel[12]
     ControlState robot_cs = WALK;
     currentRobotPhase_ = anklePlanner_->getStateIndicator();
 
-    // cout << currentCommandedCoMPos_(0) << ", " << currentCommandedCoMPos_(1) << ", " << currentCommandedCoMPos_(2) << ", ";
-    // cout << currentCommandedLeftAnklePos_(0) << ", " << currentCommandedLeftAnklePos_(1) << ", " << currentCommandedLeftAnklePos_(2) << ", ";
-    // cout << currentCommandedRightAnklePos_(0) << ", " << currentCommandedRightAnklePos_(1) << ", " << currentCommandedRightAnklePos_(2) << endl;
+    cout << currentCommandedCoMPos_(0) << ", " << currentCommandedCoMPos_(1) << ", " << currentCommandedCoMPos_(2) << ", ";
+    cout << currentCommandedLeftAnklePos_(0) << ", " << currentCommandedLeftAnklePos_(1) << ", " << currentCommandedLeftAnklePos_(2) << ", ";
+    cout << currentCommandedRightAnklePos_(0) << ", " << currentCommandedRightAnklePos_(1) << ", " << currentCommandedRightAnklePos_(2) << endl;
         
     this->spinOnline(robot_config, robot_jnt_vel, right_torque, left_torque, right_ft[0], left_ft[0],
                      Vector3d(gyro[0], gyro[1], gyro[2]), Vector3d(accelerometer[0], accelerometer[1], accelerometer[2]),

@@ -38,20 +38,28 @@ void generateStraightFootStep(vector<Vector3d>& ankle_rf, vector<Vector3d>& dcm_
 
 int main()
 {
-    int step_count = 6;
+    int step_count = 2;
     vector<Vector3d> ankle_foot_steps(step_count + 2);
     vector<Vector3d> base_foot_steps(step_count + 2);
 
     generateStraightFootStep(ankle_foot_steps, base_foot_steps, 0.0, 0.17, 0.0, step_count, 0.0);
 
     DCMPlanner base_planner(0.68, 1, 0.1, 0.005, step_count + 2, 0.44, 0.01);
-    base_planner.setFoot(base_foot_steps, 1);
+    base_planner.setOnlineFoot(base_foot_steps, 1);
 
     int length = base_planner.getLength();
     for (int i = 0; i < length; i++)
     {
-        Vector3d xi = base_planner.ComputeDCM(i);
-        cout << xi(0) << ", " << xi(1) << ", " << xi(2) << endl;
+        Vector3d com = base_planner.computeCoM(i);
+        cout << com(0) << ", " << com(1) << ", " << com(2) << endl;
+        if(i == 540)
+        {
+            base_planner.changeVRP(3, Vector3d(0.34, -0.0975, 0));
+            base_planner.changeVRP(4, Vector3d(0.51, 0.0975, 0));
+            base_planner.changeVRP(5, Vector3d(0.51, 0, 0));
+            base_planner.updateXiPoints();
+            length = base_planner.getLength();
+        }
     }
     return 0;
 }

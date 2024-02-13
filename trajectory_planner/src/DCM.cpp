@@ -44,6 +44,7 @@ void DCMPlanner::changeVRP(int foot_step_idx, Vector3d newVRP)
     {
         rVRP_.push_back(newVRP);
         this->stepCount_ += 1;
+        this->length_ = int(1 / dt_ * tStep_ * stepCount_);
     }
     else
     {
@@ -53,14 +54,14 @@ void DCMPlanner::changeVRP(int foot_step_idx, Vector3d newVRP)
 
 void DCMPlanner::updateXiPoints()
 {
-    this->updateXiEoS();
-    this->updateOnlineDS(Vector3d(0, 0, 0));
+    this->updateXiEoS(currentStepNum_);
+    this->updateOnlineDS(Vector3d(0, 0, 0), currentStepNum_);
 }
 
-void DCMPlanner::updateXiEoS()
+void DCMPlanner::updateXiEoS(int init_step)
 {
     xiEOS_.resize(stepCount_);
-    for (int i = stepCount_ - 1; i >= 0; i--)
+    for (int i = stepCount_ - 1; i >= init_step; i--)
     {
         if (i == stepCount_ - 1)
             xiEOS_[i] = rVRP_[i];
@@ -69,18 +70,19 @@ void DCMPlanner::updateXiEoS()
     }
 }
 
-void DCMPlanner::updateOnlineDS(Vector3d xi_0)
+void DCMPlanner::updateOnlineDS(Vector3d xi_0, int init_step)
 {
     /*
         This function updates Double support start and end positions
     */
     xiDSI_.resize(stepCount_);
     xiDSE_.resize(stepCount_);
+    DSXiCoef_.resize(stepCount_);
     Vector3d xi_dot_i, xi_dot_e;
 
-    for (int index = 0; index < stepCount_; index++)
+    for (int index = stepCount_ - 1; index >= init_step; index--)
     {
-        if (index == 0)
+        if (index == init_step)
         {
             xiDSI_[index] = xi_0;
             xiDSE_[index] = rVRP_[index] + exp(sqrt(K_G / deltaZ_) * tDS_ * (1 - alpha_)) * (xi_0 - rVRP_[index]);
@@ -95,7 +97,7 @@ void DCMPlanner::updateOnlineDS(Vector3d xi_0)
             xi_dot_e = sqrt(K_G / deltaZ_) * (xiDSE_[index] - rVRP_[index]);
         }
         vector<Vector3d> coefs = this->minJerkInterpolate(xiDSI_[index], xiDSE_[index], xi_dot_i, xi_dot_e, tDS_);
-        DSXiCoef_.push_back(coefs);
+        DSXiCoef_[index] = coefs;
     }
 }
 

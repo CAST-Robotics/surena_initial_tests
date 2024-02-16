@@ -57,8 +57,8 @@ void DCMPlanner::changeVRP(int foot_step_idx, const Vector3d& newVRP)
 
 void DCMPlanner::updateXiPoints()
 {
-    this->updateXiEoS(currentStepNum_-1);
-    this->updateOnlineDS(Vector3d(0, 0, 0), currentStepNum_-1);
+    this->updateXiEoS(currentStepNum_);
+    this->updateOnlineDS(Vector3d(0, 0, 0), currentStepNum_);
 }
 
 void DCMPlanner::updateXiEoS(int init_step)

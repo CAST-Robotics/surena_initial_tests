@@ -51,8 +51,8 @@ int main()
     for (int i = 0; i < length; i++)
     {
         Vector3d com = base_planner.computeCoM(i);
-        cout << com(0) << ", " << com(1) << ", " << com(2) << endl;
-        if(i == 540)
+        
+        if(i == 450)
         {
             base_planner.changeVRP(3, Vector3d(0.34, -0.0975, 0));
             base_planner.changeVRP(4, Vector3d(0.51, 0.0975, 0));

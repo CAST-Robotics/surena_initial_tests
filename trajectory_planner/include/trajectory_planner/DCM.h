@@ -105,7 +105,7 @@ public:
 
     void calculateRotCoeffs();
     Matrix3d getOnlineRot(int iter);
-    void changeVRP(int foot_step_idx, Vector3d newVRP);
+    void changeVRP(int foot_step_idx, const Vector3d& newVRP);
     void updateXiPoints();
 
 private:

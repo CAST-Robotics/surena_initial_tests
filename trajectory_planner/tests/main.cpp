@@ -1,4 +1,6 @@
 #include "DCM.h"
+#include "Ankle.h"
+#include <thread>
 
 void generateStraightFootStep(vector<Vector3d>& ankle_rf, vector<Vector3d>& dcm_rf, const double &step_width, const double &step_length, 
                               const double &step_height, const int &step_count, const double &com_offset)
@@ -47,19 +49,37 @@ int main()
     DCMPlanner base_planner(0.68, 1, 0.1, 0.005, step_count + 2, 0.44, 0.0);
     base_planner.setOnlineFoot(base_foot_steps, 1);
 
+    Ankle ankle_planner(1, 0.1, 0.025, 0.44, step_count, 0.005, 0.0, 0.0);
+    ankle_planner.updateOnlineFoot(ankle_foot_steps, 1);
+    Vector3d lanklepos, ranklepos;
+    Matrix3d lanklerot, ranklerot;
+
+    std::thread ifThread;
+
     int length = base_planner.getLength();
     for (int i = 0; i < length; i++)
     {
         Vector3d com = base_planner.computeCoM(i);
-        
-        if(i == 450)
+        ankle_planner.getOnlineTrajectory(i, lanklepos, lanklerot, ranklepos, ranklerot);
+        cout << com(0) << ", " << com(1) << ", " << com(2) << ", ";
+        cout << lanklepos(0) << ", " << lanklepos(1) << ", " << lanklepos(2) << ", ";
+        cout << ranklepos(0) << ", " << ranklepos(1) << ", " << ranklepos(2) << endl;
+        if(i == 390)
         {
-            base_planner.changeVRP(3, Vector3d(0.34, -0.0975, 0));
-            base_planner.changeVRP(4, Vector3d(0.51, 0.0975, 0));
-            base_planner.changeVRP(5, Vector3d(0.51, 0, 0));
-            base_planner.updateXiPoints();
-            length = base_planner.getLength();
+            ifThread = std::thread([&](){ // Start a new thread for the conditional logic
+                base_planner.changeVRP(3, Vector3d(0.34, -0.0975, 0));
+                base_planner.changeVRP(4, Vector3d(0.51, 0.0975, 0));
+                base_planner.changeVRP(5, Vector3d(0.51, 0, 0));
+                base_planner.updateXiPoints();
+                length = base_planner.getLength();
+
+                ankle_planner.changeFootStep(3, Vector3d(0.34, -0.0975, 0));
+                ankle_planner.changeFootStep(4, Vector3d(0.51, 0.0975, 0));
+                ankle_planner.changeFootStep(5, Vector3d(0.51, -0.0975, 0));
+                ankle_planner.updateCoeffs();
+            });
         }
     }
+    ifThread.join();
     return 0;
 }

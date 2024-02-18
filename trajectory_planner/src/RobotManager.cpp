@@ -142,8 +142,8 @@ bool RobotManager::setPos(int jointID, int dest)
 bool RobotManager::home(std_srvs::Empty::Request &req, std_srvs::Empty::Response &res)
 {
     // ankleHome(false);
-    //  setPos(6, homeAbs_[6]);
-    //  setPos(0, homeAbs_[0]);
+    setPos(6, homeAbs_[6]);
+    setPos(0, homeAbs_[0]);
     setPos(1, homeAbs_[1] - 20000);
     setPos(7, homeAbs_[7] + 20000);
     ankleHome(false, homeAbs_[5], homeAbs_[4]);
@@ -853,6 +853,13 @@ void RobotManager::keyboardHandler(const std_msgs::Int32 &msg)
 
     int command = msg.data;
 
+    if (command == 101)
+    {
+        // ifThread = std::thread([&](){ // Start a new thread for the conditional logic
+            trajSize_ = robot->changeStep();
+        // });
+    }
+
     if (this->isKeyboardTrajectoryEnabled)
     {
         switch (command)
@@ -996,6 +1003,7 @@ bool RobotManager::keyboardWalk(std_srvs::Empty::Request &req, std_srvs::Empty::
         if (iter == trajSize_ - 1)
         // if (iter == final_iter - 1)
         {
+            // ifThread.join();
             robot->resetTraj();
             isKeyboardTrajectoryEnabled = true;
             trajSize_ = 0;

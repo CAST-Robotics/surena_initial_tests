@@ -864,6 +864,22 @@ int Robot::OnlineDCMTrajGen(int step_count, double t_step, double alpha, double 
     return trajectory_size;
 }
 
+int Robot::changeStep()
+{
+    DCMPlanner_->changeVRP(3, Vector3d(0.3, -0.0975, 0));
+    DCMPlanner_->changeVRP(4, Vector3d(0.45, 0.0975, 0));
+    DCMPlanner_->changeVRP(5, Vector3d(0.45, 0, 0));
+    DCMPlanner_->updateXiPoints();
+    int length = DCMPlanner_->getLength();
+
+    anklePlanner_->changeFootStep(3, Vector3d(0.3, -0.0975, 0));
+    anklePlanner_->changeFootStep(4, Vector3d(0.45, 0.0975, 0));
+    anklePlanner_->changeFootStep(5, Vector3d(0.45, -0.0975, 0));
+    anklePlanner_->updateCoeffs();
+
+    return length;
+}
+
 void Robot::getDCMTrajJointAngs(int index, double config[12], double jnt_vel[12], double right_ft[3],
                                 double left_ft[3], int right_bump[4], int left_bump[4], double gyro[3],
                                 double accelerometer[3], double jnt_command[12], int &status)
@@ -1041,6 +1057,9 @@ bool Robot::getJointAngs(int iter, double config[12], double jnt_vel[12], double
 
 bool Robot::resetTraj()
 {
+    delete DCMPlanner_;
+    delete anklePlanner_;
+
     CoMPos_.clear();
     CoMRot_.clear();
     robotPhase_.clear();

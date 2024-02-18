@@ -90,6 +90,8 @@ public:
                              double left_ft[3], int right_bump[4], int left_bump[4], double gyro[3],
                              double accelerometer[3], double jnt_command[12], int &status);
 
+    int changeStep();                     
+
     ControlState getCurrentWalkState() {return currentWalkState_;}
 
     bool resetTraj();

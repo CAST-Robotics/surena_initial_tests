@@ -5,6 +5,7 @@
 #include <math.h>
 #include <vector>
 #include <string>
+#include <thread>
 
 #include <ros/ros.h>
 #include <ros/package.h>
@@ -162,6 +163,7 @@ private:
 
     int FTOffsetPeriod_;
     int trajSize_;
+    std::thread ifThread;
 
     // Upper Body
     ros::ServiceServer move_hand_single_service;

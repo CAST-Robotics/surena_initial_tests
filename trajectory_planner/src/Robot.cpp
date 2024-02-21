@@ -44,6 +44,7 @@ Robot::Robot(ros::NodeHandle *nh, std::string config_path, bool simulation)
     quatEKF_ = new QuatEKF();
     lieEKF_ = new LieEKF();
     stepPlanner_ = new StepPlanner(torso_);
+    butterworthfilter_ = new ButterworthFilter();
 }
 
 void Robot::initROSCommunication()
@@ -110,6 +111,8 @@ void Robot::spinOnline(double config[], double jnt_vel[], Vector3d torque_r, Vec
                        double *joint_angles, ControlState robot_cs, int &status)
 {
     updateRobotState(config, jnt_vel, torque_r, torque_l, f_r, f_l, gyro, accelerometer);
+
+    double f_r_filtered = butterworthfilter_-> FilterData(100, 200, f_r);
 
     if (!bumpSensorCalibrated_ && currentRobotPhase_ == 0)
     {

@@ -222,6 +222,7 @@ private:
     QuatEKF* quatEKF_;
     LieEKF* lieEKF_;
     StepPlanner* stepPlanner_;
+    ButterworthFilter* butterworthfilter_;
 
     Vector3d lZMP_;
     Vector3d rZMP_;

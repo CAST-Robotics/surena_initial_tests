@@ -24,6 +24,7 @@
 #include "LieEKF.h"
 #include "QuatEKF.h"
 #include "StepPlanner.h"
+#include "Butterworthfilter.h"
 
 #include <deque>
 #include "fstream"

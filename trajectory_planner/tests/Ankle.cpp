@@ -62,19 +62,7 @@ void Ankle::updateOnlineFoot(const vector<Vector3d>& foot_pose, int sign, const 
     footStepPos_ = foot_pose;
     
     if (foot_euler.empty())
-    {
-        int size = foot_pose.size();
-        footStepEuler_ = vector<Vector3d>(size, Vector3d::Zero());
-        for (int step = 0; step < size; ++step) {
-            if (step <= 1) {
-                footStepEuler_[step](2) = 0;
-            } else if (step == size - 1) {
-                footStepEuler_[step](2) = (step - 2) * theta_ * sign;
-            } else {
-                footStepEuler_[step](2) = (step - 1) * theta_ * sign;
-            }
-        }
-    }
+        footStepEuler_ = vector<Vector3d>(foot_pose.size(), Vector3d::Zero());
     else
         footStepEuler_ = foot_euler;
     

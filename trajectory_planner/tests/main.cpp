@@ -1,4 +1,6 @@
 #include "DCM.h"
+#include "Ankle.h"
+#include <thread>
 
 void generateStraightFootStep(vector<Vector3d>& ankle_rf, vector<Vector3d>& dcm_rf, const double &step_width, const double &step_length, 
                               const double &step_height, const int &step_count, const double &com_offset)
@@ -38,20 +40,46 @@ void generateStraightFootStep(vector<Vector3d>& ankle_rf, vector<Vector3d>& dcm_
 
 int main()
 {
-    int step_count = 6;
+    int step_count = 0;
     vector<Vector3d> ankle_foot_steps(step_count + 2);
     vector<Vector3d> base_foot_steps(step_count + 2);
 
     generateStraightFootStep(ankle_foot_steps, base_foot_steps, 0.0, 0.17, 0.0, step_count, 0.0);
 
-    DCMPlanner base_planner(0.68, 1, 0.1, 0.005, step_count + 2, 0.44, 0.01);
-    base_planner.setFoot(base_foot_steps, 1);
+    DCMPlanner base_planner(0.68, 1, 0.1, 0.005, step_count + 2, 0.44, 0.0);
+    base_planner.setOnlineFoot(base_foot_steps, 1);
+
+    Ankle ankle_planner(1, 0.1, 0.025, 0.44, step_count, 0.005, 0.0, 0.0);
+    ankle_planner.updateOnlineFoot(ankle_foot_steps, 1);
+    Vector3d lanklepos, ranklepos;
+    Matrix3d lanklerot, ranklerot;
+
+    std::thread ifThread;
 
     int length = base_planner.getLength();
     for (int i = 0; i < length; i++)
     {
-        Vector3d xi = base_planner.ComputeDCM(i);
-        cout << xi(0) << ", " << xi(1) << ", " << xi(2) << endl;
+        Vector3d com = base_planner.computeCoM(i);
+        ankle_planner.getOnlineTrajectory(i, lanklepos, lanklerot, ranklepos, ranklerot);
+        cout << com(0) << ", " << com(1) << ", " << com(2) << ", ";
+        cout << lanklepos(0) << ", " << lanklepos(1) << ", " << lanklepos(2) << ", ";
+        cout << ranklepos(0) << ", " << ranklepos(1) << ", " << ranklepos(2) << endl;
+        // if(i == 390)
+        // {
+        //     ifThread = std::thread([&](){ // Start a new thread for the conditional logic
+        //         base_planner.changeVRP(3, Vector3d(0.34, -0.0975, 0));
+        //         base_planner.changeVRP(4, Vector3d(0.51, 0.0975, 0));
+        //         base_planner.changeVRP(5, Vector3d(0.51, 0, 0));
+        //         base_planner.updateXiPoints();
+        //         length = base_planner.getLength();
+
+        //         ankle_planner.changeFootStep(3, Vector3d(0.34, -0.0975, 0));
+        //         ankle_planner.changeFootStep(4, Vector3d(0.51, 0.0975, 0));
+        //         ankle_planner.changeFootStep(5, Vector3d(0.51, -0.0975, 0));
+        //         ankle_planner.updateCoeffs();
+        //     });
+        // }
     }
+    // ifThread.join();
     return 0;
 }

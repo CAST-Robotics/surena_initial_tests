@@ -105,6 +105,8 @@ public:
 
     void calculateRotCoeffs();
     Matrix3d getOnlineRot(int iter);
+    void changeVRP(int foot_step_idx, const Vector3d& newVRP);
+    void updateXiPoints();
 
 private:
     // Design Parameters
@@ -137,6 +139,7 @@ private:
     Vector3d CoMIntegral_;
     Vector3d CoMInit_;
     Vector3d prevXi_;
+    int currentStepNum_;
 
     vector<vector<double>> rotCoeffs_;
     // Functions for generating trajectories
@@ -155,12 +158,12 @@ private:
      * @brief Generates trajectories for the double support phase.
      */
     void updateDS();
-    void updateOnlineDS(Vector3d xi_0);
+    void updateOnlineDS(Vector3d xi_0, int init_step=0);
 
     /**
      * @brief Updates DCM position at the end of single support (xiEOS).
      */
-    void updateXiEoS();
+    void updateXiEoS(int init_step=0);
 
     /**
      * @brief Updates DCM position at the start and end positions of the 

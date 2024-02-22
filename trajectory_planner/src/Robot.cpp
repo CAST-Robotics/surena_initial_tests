@@ -855,7 +855,6 @@ int Robot::OnlineDCMTrajGen(int step_count, double t_step, double alpha, double 
     DCMPlanner_->setOnlineFoot(dcm_rf, -sign);
     DCMPlanner_->calculateRotCoeffs();
 
-
     anklePlanner_->updateOnlineFoot(ankle_rf, -sign);
     
     onlineWalk_->setDt(dt);
@@ -867,6 +866,22 @@ int Robot::OnlineDCMTrajGen(int step_count, double t_step, double alpha, double 
     currentWalkState_ = WALK;
 
     return trajectory_size;
+}
+
+int Robot::changeStep()
+{
+    DCMPlanner_->changeVRP(3, Vector3d(0.3, -0.0975, 0));
+    DCMPlanner_->changeVRP(4, Vector3d(0.45, 0.0975, 0));
+    DCMPlanner_->changeVRP(5, Vector3d(0.45, 0, 0));
+    DCMPlanner_->updateXiPoints();
+    int length = DCMPlanner_->getLength();
+
+    anklePlanner_->changeFootStep(3, Vector3d(0.3, -0.0975, 0));
+    anklePlanner_->changeFootStep(4, Vector3d(0.45, 0.0975, 0));
+    anklePlanner_->changeFootStep(5, Vector3d(0.45, -0.0975, 0));
+    anklePlanner_->updateCoeffs();
+
+    return length;
 }
 
 void Robot::getDCMTrajJointAngs(int index, double config[12], double jnt_vel[12], double right_ft[3],
@@ -904,9 +919,9 @@ void Robot::getDCMTrajJointAngs(int index, double config[12], double jnt_vel[12]
     ControlState robot_cs = WALK;
     currentRobotPhase_ = anklePlanner_->getStateIndicator();
 
-    // cout << currentCommandedCoMPos_(0) << ", " << currentCommandedCoMPos_(1) << ", " << currentCommandedCoMPos_(2) << ", ";
-    // cout << currentCommandedLeftAnklePos_(0) << ", " << currentCommandedLeftAnklePos_(1) << ", " << currentCommandedLeftAnklePos_(2) << ", ";
-    // cout << currentCommandedRightAnklePos_(0) << ", " << currentCommandedRightAnklePos_(1) << ", " << currentCommandedRightAnklePos_(2) << endl;
+    cout << currentCommandedCoMPos_(0) << ", " << currentCommandedCoMPos_(1) << ", " << currentCommandedCoMPos_(2) << ", ";
+    cout << currentCommandedLeftAnklePos_(0) << ", " << currentCommandedLeftAnklePos_(1) << ", " << currentCommandedLeftAnklePos_(2) << ", ";
+    cout << currentCommandedRightAnklePos_(0) << ", " << currentCommandedRightAnklePos_(1) << ", " << currentCommandedRightAnklePos_(2) << endl;
         
     this->spinOnline(robot_config, robot_jnt_vel, right_torque, left_torque, right_ft[0], left_ft[0],
                      Vector3d(gyro[0], gyro[1], gyro[2]), Vector3d(accelerometer[0], accelerometer[1], accelerometer[2]),
@@ -1047,6 +1062,9 @@ bool Robot::getJointAngs(int iter, double config[12], double jnt_vel[12], double
 
 bool Robot::resetTraj()
 {
+    delete DCMPlanner_;
+    delete anklePlanner_;
+
     CoMPos_.clear();
     CoMRot_.clear();
     robotPhase_.clear();

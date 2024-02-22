@@ -61,6 +61,7 @@ public:
      * @param sign The sign of the yaw angle.
      */
     void setFoot(const vector<Vector3d>& rF, int sign);
+    void setOnlineFoot(const vector<Vector3d>& rF, int sign);
     
     /**
      * @brief Returns the trajectory of the divergent component of motion (Xi) in 3D.
@@ -98,9 +99,14 @@ public:
      */
     const vector<Matrix3d>& yawRotGen();
 
-    Vector3d ComputeDCM(int iter);
+    Vector3d computeCoM(int iter);
 
     int getLength(){return length_;}
+
+    void calculateRotCoeffs();
+    Matrix3d getOnlineRot(int iter);
+    void changeVRP(int foot_step_idx, const Vector3d& newVRP);
+    void updateXiPoints();
 
 private:
     // Design Parameters
@@ -130,6 +136,12 @@ private:
     vector<vector<Vector3d>> DSXiCoef_;
     int yawSign_;
     int length_;
+    Vector3d CoMIntegral_;
+    Vector3d CoMInit_;
+    Vector3d prevXi_;
+    int currentStepNum_;
+
+    vector<vector<double>> rotCoeffs_;
     // Functions for generating trajectories
     /**
      * @brief Updates the position of the virtual repulsive point (VRP) 
@@ -145,12 +157,13 @@ private:
     /**
      * @brief Generates trajectories for the double support phase.
      */
-    void updateDS(Vector3d xi_0);
+    void updateDS();
+    void updateOnlineDS(Vector3d xi_0, int init_step=0);
 
     /**
      * @brief Updates DCM position at the end of single support (xiEOS).
      */
-    void updateXiEoS();
+    void updateXiEoS(int init_step=0);
 
     /**
      * @brief Updates DCM position at the start and end positions of the 

@@ -107,6 +107,7 @@ public:
     Matrix3d getOnlineRot(int iter);
     void changeVRP(int foot_step_idx, const Vector3d& newVRP);
     void updateXiPoints();
+    void setInitCoM(Vector3d init_com){CoMInit_ = init_com;}
 
 private:
     // Design Parameters

@@ -794,6 +794,37 @@ inline void Epos::GetBumpDataFromPacket(BumpSensorPacket *packet)
   
 
 }
+
+void ExtractFloatFromBuffer(const uint8_t* buffer, float* a, float* b) {
+    // Assuming each floating-point number is 4 bytes long (single precision)
+    uint32_t a_uint, b_uint;
+
+    // Copy the binary representation of 'a' and 'b' from the buffer
+    memcpy(&a_uint, buffer, sizeof(float));
+    memcpy(&b_uint, buffer + sizeof(float), sizeof(float));
+
+    // Convert the binary representation back to floating-point numbers
+    *a = *((float*)&a_uint);
+    *b = *((float*)&b_uint);
+}
+
+void Epos::GetPressureDataFromPacket(EthernetReceivedPacketType*packet)
+{
+    float a,b;
+    int id = packet->MotorData[14].ID - 0x180;
+    if (id > 2)
+        return;
+
+    ExtractFloatFromBuffer((uint8_t*)&packet->MotorData[14].Valu1, &a, &b);
+    pressureData[2 * id] = a;
+    pressureData[2 * id + 1] = b;
+//     qDebug()<< id;
+//     for(int i=0; i < 6; i++)
+//         qDebug()<<pressureData[i] << ", " << i;
+//    qDebug()<<"<-------------------->";
+
+}
+
 //========================================================================
 void Epos::GetPositionDataFromPacket(EthernetReceivedPacketType*packet)
 {
@@ -815,10 +846,11 @@ void Epos::DataReceived(QByteArray data)
     QByteArray mid= data.mid(276,8);
     bumpPacket=(BumpSensorPacket*)mid.data();
     GetPositionDataFromPacket(incommingPacket);
+    GetPressureDataFromPacket(incommingPacket);
     GetBumpDataFromPacket(bumpPacket);
     GetFTSensorDataFromPacket(incommingPacket);
     GetIMUDataFromPacket(incommingPacket);
-    emit FeedBackReceived(ft,positions,positionsInc,bump_sensor_list, imu_data_list);
+    emit FeedBackReceived(ft,positions,positionsInc,bump_sensor_list, imu_data_list, pressureData);
 }
 //========================================================================
 void Epos::WaitMs(int ms)

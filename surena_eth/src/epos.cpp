@@ -587,44 +587,53 @@ inline QByteArray Epos::CreateServoHeadCommand(QList<int> motorPositions)
 //========================================================================
 inline QByteArray Epos::CreateWaistAndHeadCommand(QList<int> motorPositions)
 {
-    static int state=0;
-
     QByteArray command;
-
-    if(state==0)
-    {
-
-        command.append(CreatePDOPacket(0x401,motorPositions.at(28),0x3f));//waist max
-    }
-    else if(state==1){
-
-    command.append(CreatePDOPacket(0x401,motorPositions.at(28),0x3f));//waist max
-    }
-    else if(state==2){
-
-       command.append(CreatePDOPacket(0x401,motorPositions.at(28),0x3f));//waist max
-    }
-    else if(state==3){
-
-      command.append(CreatePDOPacket(0x401,motorPositions.at(28),0x3f));//waist max
-    }
-    else if(state==4){
-
-       command.append(CreatePDOPacket(0x401,motorPositions.at(28),0x3f));//waist max
-    }
-    else if(state==5){
-
-      command.append(CreatePDOPacket(0x401,motorPositions.at(28),0x3f));//waist max
-
-    }
-    else if(state==6){
-
-      command.append(CreatePDOPacket(0x401,motorPositions.at(28),0x3f));//waist max
-
-    }
-   // QLOG_TRACE()<<"state:"<<state<<" adad:"<<motorPositions.at(30);
-    if(state++>5)state=0;
+//   QLOG_TRACE()<<"motor:"<<motorPositions[20]<<" "<<motorPositions[21]<<" "<<motorPositions[22];
+    command.append(0x02);
+    command.append(0x81);
+    command.append(motorPositions[23]);
+    command.append(motorPositions[24]);
+    command.append(motorPositions[25]);
+    command.append( QByteArray(5, Qt::Initialization::Uninitialized));
     return command;
+//     static int state=0;
+
+//     QByteArray command;
+
+//     if(state==0)
+//     {
+
+//         command.append(CreatePDOPacket(0x401,motorPositions.at(28),0x3f));//waist max
+//     }
+//     else if(state==1){
+
+//     command.append(CreatePDOPacket(0x401,motorPositions.at(28),0x3f));//waist max
+//     }
+//     else if(state==2){
+
+//        command.append(CreatePDOPacket(0x401,motorPositions.at(28),0x3f));//waist max
+//     }
+//     else if(state==3){
+
+//       command.append(CreatePDOPacket(0x401,motorPositions.at(28),0x3f));//waist max
+//     }
+//     else if(state==4){
+
+//        command.append(CreatePDOPacket(0x401,motorPositions.at(28),0x3f));//waist max
+//     }
+//     else if(state==5){
+
+//       command.append(CreatePDOPacket(0x401,motorPositions.at(28),0x3f));//waist max
+
+//     }
+//     else if(state==6){
+
+//       command.append(CreatePDOPacket(0x401,motorPositions.at(28),0x3f));//waist max
+
+//     }
+//    // QLOG_TRACE()<<"state:"<<state<<" adad:"<<motorPositions.at(30);
+//     if(state++>5)state=0;
+//     return command;
 }
 //========================================================================
 void Epos::SetAllPositionCST(QList<int> motorPositions)

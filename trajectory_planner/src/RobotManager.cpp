@@ -49,7 +49,7 @@ RobotManager::RobotManager(ros::NodeHandle *n)
 
     collision_ = false;
 
-    for (int i = 0; i < 23; i++)
+    for (int i = 0; i < 26; i++)
     {
         if (i < 20)
             motorCommandArray_[i] = 0;
@@ -57,7 +57,7 @@ RobotManager::RobotManager(ros::NodeHandle *n)
             motorCommandArray_[i] = 145;
         else if (i == 21) // head pitch
             motorCommandArray_[i] = 165;
-        else if (i == 22) // head yaw
+        else if (i >= 22) // head yaw
             motorCommandArray_[i] = 145;
         
     }
@@ -107,7 +107,7 @@ RobotManager::RobotManager(ros::NodeHandle *n)
 bool RobotManager::sendCommand()
 {
     motorCommand_.data.clear();
-    for (int i = 0; i < 23; i++)
+    for (int i = 0; i < 26; i++)
         motorCommand_.data.push_back(motorCommandArray_[i]);
 
     motorDataPub_.publish(motorCommand_);
@@ -455,7 +455,7 @@ bool RobotManager::sendCommand(trajectory_planner::command::Request &req,
             rate_.sleep();
         }
     }
-    else if (req.motor_id == 20 || req.motor_id == 21 || req.motor_id == 22)
+    else if (req.motor_id >= 20 && req.motor_id < 26)
     {
         motorCommandArray_[req.motor_id] = req.angle;
         sendCommand();

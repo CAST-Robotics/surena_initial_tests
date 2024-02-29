@@ -864,7 +864,7 @@ int Robot::OnlineDCMTrajGen(int step_count, double t_step, double alpha, double 
     onlineWalk_->setBaseHeight(COM_height);
     onlineWalk_->setBaseIdle(shank_ + thigh_);
     onlineWalk_->setBaseLowHeight(0.65);
-    onlineWalk_->setInitCoM(Vector3d(0.0, 0.0, COM_height));
+    onlineWalk_->setInitCoM(currentCommandedCoMPos_);
 
     currentWalkState_ = WALK;
 

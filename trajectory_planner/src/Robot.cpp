@@ -124,7 +124,7 @@ void Robot::spinOnline(double config[], double jnt_vel[], Vector3d torque_r, Vec
         if (robot_cs == WALK)
         {
             bumpSensorCalibrated_ = true;
-            // runFootLenController(f_l, f_r, robot_cs);
+            runFootLenController(f_l, f_r, robot_cs);
 
             runBumpFootOrientController(bump_r, bump_l);
 
@@ -894,6 +894,7 @@ void Robot::getDCMTrajJointAngs(int index, double config[12], double jnt_vel[12]
     if (DCMPlanner_ != nullptr) {
         currentCommandedCoMPos_ = DCMPlanner_->computeCoM(index);
         currentCommandedCoMRot_ = DCMPlanner_->getOnlineRot(index);
+        currentZMPPos_ = DCMPlanner_->getCurrentZMP();
     } else {
         throw std::runtime_error("DCMPlanner object is not initialized.");
     }

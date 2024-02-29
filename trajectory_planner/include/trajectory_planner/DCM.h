@@ -100,6 +100,8 @@ public:
     const vector<Matrix3d>& yawRotGen();
 
     Vector3d computeCoM(int iter);
+    Vector3d getCurrentZMP(){return currentZMP_;}
+    Vector3d getCurrentDCM(){return currentXi_;}
 
     int getLength(){return length_;}
 
@@ -139,7 +141,12 @@ private:
     int length_;
     Vector3d CoMIntegral_;
     Vector3d CoMInit_;
+    Vector3d currentXi_;
+    Vector3d currentXiDot_;
+    Vector3d currentZMP_;
     Vector3d prevXi_;
+    Vector3d prevXiDot_;
+
     int currentStepNum_;
 
     vector<vector<double>> rotCoeffs_;

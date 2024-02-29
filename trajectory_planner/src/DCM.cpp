@@ -17,6 +17,8 @@ DCMPlanner::DCMPlanner(double deltaZ, double stepTime, double doubleSupportTime,
     this->CoMIntegral_ = Vector3d::Zero();
     this->CoMInit_ = Vector3d(0.0, 0.0, deltaZ_); // initial COM when robot start to walk
     this->currentStepNum_ = 0;
+    this->currentZMP_ = Vector3d(0, 0, 0);
+    this->prevXi_ = Vector3d(0, 0, 0);
 }
 
 void DCMPlanner::setFoot(const vector<Vector3d>& rF, int sign)
@@ -161,14 +163,16 @@ Vector3d DCMPlanner::computeCoM(int iter)
     double time;
     time = dt_ * iter;
     currentStepNum_ = floor(time / tStep_);
-    Vector3d xi = rVRP_[currentStepNum_] + exp(sqrt(K_G / deltaZ_) * (fmod(time, tStep_) - tStep_)) * (xiEOS_[currentStepNum_] - rVRP_[currentStepNum_]);
+    currentXi_ = rVRP_[currentStepNum_] + exp(sqrt(K_G / deltaZ_) * (fmod(time, tStep_) - tStep_)) * (xiEOS_[currentStepNum_] - rVRP_[currentStepNum_]);
+    currentXiDot_ = sqrt(K_G / deltaZ_) * (currentXi_ - rVRP_[currentStepNum_]);
     
     // Handle double support
     if (currentStepNum_ == 0)
     {
         if(iter < (1 / dt_) * tDS_ * (1 - alpha_))
         {
-            xi = DSXiCoef_[currentStepNum_][0] + DSXiCoef_[currentStepNum_][1] * time + DSXiCoef_[currentStepNum_][2] * pow(time, 2) + DSXiCoef_[currentStepNum_][3] * pow(time, 3);
+            currentXi_ = DSXiCoef_[currentStepNum_][0] + DSXiCoef_[currentStepNum_][1] * time + DSXiCoef_[currentStepNum_][2] * pow(time, 2) + DSXiCoef_[currentStepNum_][3] * pow(time, 3);
+            currentXiDot_ = DSXiCoef_[currentStepNum_][1] + 2 * DSXiCoef_[currentStepNum_][2] * time + 3 * DSXiCoef_[currentStepNum_][3] * pow(time, 2);
         }
     }
     else
@@ -176,24 +180,27 @@ Vector3d DCMPlanner::computeCoM(int iter)
         if(iter < ((tStep_ * currentStepNum_) / dt_) + (tDS_ / dt_) * (1 - alpha_))
         {
             time = fmod(time, tStep_ * currentStepNum_ - tDS_ * alpha_);
-            xi = DSXiCoef_[currentStepNum_][0] + DSXiCoef_[currentStepNum_][1] * time + DSXiCoef_[currentStepNum_][2] * pow(time, 2) + DSXiCoef_[currentStepNum_][3] * pow(time, 3);
+            currentXi_ = DSXiCoef_[currentStepNum_][0] + DSXiCoef_[currentStepNum_][1] * time + DSXiCoef_[currentStepNum_][2] * pow(time, 2) + DSXiCoef_[currentStepNum_][3] * pow(time, 3);
+            currentXiDot_ = DSXiCoef_[currentStepNum_][1] + 2 * DSXiCoef_[currentStepNum_][2] * time + 3 * DSXiCoef_[currentStepNum_][3] * pow(time, 2);
         }       
     }
 
     if(currentStepNum_ < (stepCount_ - 1) && iter > ((tStep_ * (currentStepNum_ + 1)) / dt_) - (tDS_ * alpha_ / dt_))
     {
         time = fmod(time, tStep_ * (currentStepNum_+1) - tDS_ * alpha_);
-        xi = DSXiCoef_[currentStepNum_ + 1][0] + DSXiCoef_[currentStepNum_ + 1][1] * time + DSXiCoef_[currentStepNum_ + 1][2] * pow(time, 2) + DSXiCoef_[currentStepNum_ + 1][3] * pow(time, 3);
+        currentXi_ = DSXiCoef_[currentStepNum_ + 1][0] + DSXiCoef_[currentStepNum_ + 1][1] * time + DSXiCoef_[currentStepNum_ + 1][2] * pow(time, 2) + DSXiCoef_[currentStepNum_ + 1][3] * pow(time, 3);
+        currentXiDot_ = DSXiCoef_[currentStepNum_ + 1][1] + 2 * DSXiCoef_[currentStepNum_ + 1][2] * time + 3 * DSXiCoef_[currentStepNum_ + 1][3] * pow(time, 2);
     }
 
     // Compute CoM trajectory
     if (iter > 0)
-        this->CoMIntegral_ += sqrt(K_G / deltaZ_) * ((prevXi_ * exp((iter - 1) * dt_ * sqrt(K_G / deltaZ_))) + (xi * exp((iter) * dt_ * sqrt(K_G / deltaZ_)))) * 0.5 * dt_;
+        this->CoMIntegral_ += sqrt(K_G / deltaZ_) * ((prevXi_ * exp((iter - 1) * dt_ * sqrt(K_G / deltaZ_))) + (currentXi_ * exp((iter) * dt_ * sqrt(K_G / deltaZ_)))) * 0.5 * dt_;
     
     Vector3d com = (this->CoMIntegral_ + CoMInit_) * exp(-iter * dt_ * sqrt(K_G / deltaZ_));
     com(2) = deltaZ_;
-
-    prevXi_ = xi;
+    currentZMP_ = currentXi_ - currentXiDot_ * sqrt(deltaZ_ / K_G);
+    prevXi_ = currentXi_;
+    prevXiDot_ = currentXiDot_;
     return com;
 }
 

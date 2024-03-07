@@ -49,6 +49,7 @@ public:
     void initROSCommunication();
     void initializeRobotParams();
     void initializeLinkObjects(Vector3d a[], Vector3d b[], Vector3d com_pos[], double links_mass[]);
+    void resetRobotParams();
 
     void spinOnline(double config[], double jnt_vel[], Vector3d torque_r, Vector3d torque_l,
                     double f_r, double f_l, Vector3d gyro, Vector3d accelerometer, int bump_r[], int bump_l[],

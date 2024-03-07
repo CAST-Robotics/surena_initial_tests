@@ -5,23 +5,8 @@ Robot::Robot(ros::NodeHandle *nh, std::string config_path, bool simulation)
 {
     initROSCommunication();
     initializeRobotParams();
-
-    currentCommandedCoMPos_ = Vector3d::Zero();
-    currentCommandedCoMRot_ = Matrix3d::Identity();
-    currentCommandedLeftAnklePos_ = Vector3d::Zero();
-    currentCommandedLeftAnkleRot_ = Matrix3d::Identity();
-    currentCommandedRightAnklePos_ = Vector3d::Zero();
-    currentCommandedRightAnkleRot_ = Matrix3d::Identity();
-    currentZMPPos_ = Vector3d::Zero();
-    currentRobotPhase_ = 0;
-    currentWalkState_ = IDLE;
-
+    resetRobotParams();
     prevCommandedCoMPos_ = Vector3d(0, 0, 0.71);
-    prevCommandedCoMRot_ = Matrix3d::Identity();
-    prevCommandedLeftAnklePos_ = Vector3d(0, 0.0975, 0);
-    prevCommandedLeftAnkleRot_ = Matrix3d::Identity();
-    prevCommandedRightAnklePos_ = Vector3d(0, -0.0975, 0);
-    prevCommandedRightAnkleRot_ = Matrix3d::Identity();
 
     bumpSensorCalibrated_ = false; // doc
     isTrajAvailable_ = false;      // doc
@@ -39,7 +24,6 @@ Robot::Robot(ros::NodeHandle *nh, std::string config_path, bool simulation)
     DCMPlanner_ = nullptr;
     anklePlanner_ = nullptr;
     onlineWalk_ = new Controller(kp, ki, kzmp, kcom);
-
     ankleColide_ = new Collision(soleXFront_, soleY_, soleXBack_, soleMinDist_);
     quatEKF_ = new QuatEKF();
     lieEKF_ = new LieEKF();
@@ -104,6 +88,26 @@ void Robot::initializeLinkObjects(Vector3d a[], Vector3d b[], Vector3d com_pos[]
             links_[i + 1] = new _Link(i + 1, a[i], b[i], links_mass[i + 1], Matrix3d::Identity(3, 3),
                                       com_pos[i + 1], links_[i]);
     }
+}
+
+void Robot::resetRobotParams()
+{
+    currentCommandedCoMPos_ = Vector3d::Zero();
+    currentCommandedCoMRot_ = Matrix3d::Identity();
+    currentCommandedLeftAnklePos_ = Vector3d::Zero();
+    currentCommandedLeftAnkleRot_ = Matrix3d::Identity();
+    currentCommandedRightAnklePos_ = Vector3d::Zero();
+    currentCommandedRightAnkleRot_ = Matrix3d::Identity();
+    currentZMPPos_ = Vector3d::Zero();
+    currentRobotPhase_ = 0;
+    currentWalkState_ = IDLE;
+
+    // prevCommandedCoMPos_ = Vector3d(0, 0, 0.71);
+    prevCommandedCoMRot_ = Matrix3d::Identity();
+    prevCommandedLeftAnklePos_ = Vector3d(0, 0.0975, 0);
+    prevCommandedLeftAnkleRot_ = Matrix3d::Identity();
+    prevCommandedRightAnklePos_ = Vector3d(0, -0.0975, 0);
+    prevCommandedRightAnkleRot_ = Matrix3d::Identity();
 }
 
 void Robot::spinOnline(double config[], double jnt_vel[], Vector3d torque_r, Vector3d torque_l,
@@ -923,9 +927,9 @@ void Robot::getDCMTrajJointAngs(int index, double config[12], double jnt_vel[12]
     ControlState robot_cs = WALK;
     currentRobotPhase_ = anklePlanner_->getStateIndicator();
 
-    // cout << currentCommandedCoMPos_(0) << ", " << currentCommandedCoMPos_(1) << ", " << currentCommandedCoMPos_(2) << ", ";
-    // cout << currentCommandedLeftAnklePos_(0) << ", " << currentCommandedLeftAnklePos_(1) << ", " << currentCommandedLeftAnklePos_(2) << ", ";
-    // cout << currentCommandedRightAnklePos_(0) << ", " << currentCommandedRightAnklePos_(1) << ", " << currentCommandedRightAnklePos_(2) << endl;
+    cout << currentCommandedCoMPos_(0) << ", " << currentCommandedCoMPos_(1) << ", " << currentCommandedCoMPos_(2) << ", ";
+    cout << currentCommandedLeftAnklePos_(0) << ", " << currentCommandedLeftAnklePos_(1) << ", " << currentCommandedLeftAnklePos_(2) << ", ";
+    cout << currentCommandedRightAnklePos_(0) << ", " << currentCommandedRightAnklePos_(1) << ", " << currentCommandedRightAnklePos_(2) << endl;
         
     this->spinOnline(robot_config, robot_jnt_vel, right_torque, left_torque, right_ft[0], left_ft[0],
                      Vector3d(gyro[0], gyro[1], gyro[2]), Vector3d(accelerometer[0], accelerometer[1], accelerometer[2]),
@@ -1066,8 +1070,9 @@ bool Robot::getJointAngs(int iter, double config[12], double jnt_vel[12], double
 
 bool Robot::resetTraj()
 {
-    delete DCMPlanner_;
-    delete anklePlanner_;
+    DCMPlanner_ = nullptr;
+    anklePlanner_ = nullptr;
+    resetRobotParams();
 
     CoMPos_.clear();
     CoMRot_.clear();

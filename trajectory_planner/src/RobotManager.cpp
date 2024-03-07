@@ -102,6 +102,10 @@ RobotManager::RobotManager(ros::NodeHandle *n)
         currentLFT_[i] = temp[i];
         currentRFT_[i] = temp[i];
     }
+    q_ra.resize(7);
+    q_init_r.resize(7);
+    q_ra<<10*M_PI/180,-10*M_PI/180,0,-25*M_PI/180,0,0,0; // initial condition
+    q_init_r = q_ra;
 }
 
 bool RobotManager::sendCommand()
@@ -694,6 +698,158 @@ bool RobotManager::walk(trajectory_planner::Trajectory::Request &req,
     return true;
 }
 
+void RobotManager::HandInitialCondition()
+{
+    MinimumJerkInterpolation coef_generator;
+    MatrixXd P_x_r(1,4);      
+    MatrixXd V_x_r(1,4);      
+    MatrixXd A_x_r(1,4); 
+    MatrixXd P_y_r(1,4);   
+    MatrixXd V_y_r(1,4);      
+    MatrixXd A_y_r(1,4);      
+    MatrixXd P_z_r(1,4);      
+    MatrixXd V_z_r(1,4);      
+    MatrixXd A_z_r(1,4);
+    MatrixXd X_coef_r;        
+    MatrixXd Y_coef_r;        
+    MatrixXd Z_coef_r;
+    MatrixXd X_coef_deliver;
+    MatrixXd Y_coef_deliver;
+    MatrixXd Z_coef_deliver;
+    VectorXd P_r(3);
+    VectorXd V_r(3);
+
+    MatrixXd t_r_init(1,4);
+    t_r_init<<0,1,2,3;
+    int count = 0;
+    double T = 0.005; 
+    double time_r;
+    time_r=count*T;
+
+    int M = t_r_init(3)/T;
+
+    qref_r.resize(7,M);
+    qref_r.setZero();
+    VectorXd q_end(7,1);
+
+    // define right_hand objs
+    right_hand hand_func;
+    right_hand hand_r;
+
+    VectorXd r_middle_target1(3);
+    VectorXd r_middle_target2(3);
+    VectorXd r_target_r(3);
+    MatrixXd R_target_r(3,3);
+
+    VectorXd r_right_palm(3);
+    MatrixXd R_right_palm(3,3);
+
+    right_hand hand0_r(q_ra,r_target_r,R_target_r,0,0);
+    d0_r=hand0_r.dist;
+    d_r=d0_r;
+    d_des_r=hand0_r.d_des;
+    theta_r=hand0_r.theta;
+    theta_target_r=hand0_r.theta_target;
+    sai_r=hand0_r.sai; 
+    sai_target_r=hand0_r.sai_target;
+    phi_r=hand0_r.phi; 
+    phi_target_r=hand0_r.phi_target; 
+    hand0_r.HO_FK_right_palm(q_ra); 
+    
+    r_middle_target1<<.05,-0.05, -0.4;
+    r_middle_target2<<0.1, -0.05 ,-0.37;
+    r_target_r<<.17, -0.02, -0.35;
+    R_target_r=hand_func.rot(2,0*M_PI/180,3);
+    V_x_r<<0,INFINITY,0,0;
+    V_y_r<<0,INFINITY,0,0;
+    V_z_r<<0,INFINITY,0,0;
+    A_x_r<<0,INFINITY,0,0;
+    A_y_r<<0,INFINITY,0,0;
+    A_z_r<<0,INFINITY,0,0;
+    P_x_r<<hand0_r.r_right_palm(0),r_middle_target1(0),r_middle_target2(0),r_target_r(0);
+    P_y_r<<hand0_r.r_right_palm(1),r_middle_target1(1),r_middle_target2(1),r_target_r(1);
+    P_z_r<<hand0_r.r_right_palm(2),r_middle_target1(2),r_middle_target2(2),r_target_r(2);
+
+    MatrixXd ord(1,3);
+    ord.fill(5);
+    MatrixXd conx(3,4); conx<<P_x_r,V_x_r,A_x_r;
+    MatrixXd cony(3,4); cony<<P_y_r,V_y_r,A_y_r;
+    MatrixXd conz(3,4); conz<<P_z_r,V_z_r,A_z_r;
+    X_coef_r=coef_generator.Coefficient1(t_r_init,ord,conx,.1).transpose();
+    Y_coef_r=coef_generator.Coefficient1(t_r_init,ord,cony,.1).transpose();
+    Z_coef_r=coef_generator.Coefficient1(t_r_init,ord,conz,.1).transpose();
+
+    handWriting hwr;
+    while(count < M)
+    {
+        for(int i=0;i<t_r_init.cols()-1;i++){
+
+            if(time_r>=t_r_init(i)&&time_r<t_r_init(i+1)){
+                P_r<<coef_generator.GetAccVelPos(X_coef_r.row(i),time_r,0,5)(0,0),
+                        coef_generator.GetAccVelPos(Y_coef_r.row(i),time_r,0,5)(0,0),
+                        coef_generator.GetAccVelPos(Z_coef_r.row(i),time_r,0,5)(0,0);
+                V_r<<coef_generator.GetAccVelPos(X_coef_r.row(i),time_r,0,5)(0,1),
+                        coef_generator.GetAccVelPos(Y_coef_r.row(i),time_r,0,5)(0,1),
+                        coef_generator.GetAccVelPos(Z_coef_r.row(i),time_r,0,5)(0,1);
+                hand_r.update_right_hand(q_ra,V_r,r_target_r,R_target_r);
+                r_right_palm=hand_r.r_right_palm;
+                R_right_palm=hand_r.R_right_palm;
+                hand_r.doQP(q_ra); 
+                q_ra=hand_r.q_next;
+                d_r=hand_r.dist;
+                theta_r=hand_r.theta; sai_r=hand_r.sai; phi_r=hand_r.phi;
+                q_end=q_ra-q_init_r;
+            }
+
+        }
+        qref_r.block(0,count,7,1)=q_end;
+        count++;
+        time_r=(count)*T;
+    }
+}
+
+void RobotManager::computeHandLinearMotion(double length, double time)
+{
+    VectorXd P_r(3);
+    VectorXd V_r(3);
+
+    int count = 0;
+    double T = 0.005; 
+    double time_r;
+    time_r=count*T;
+    double t_total = time;
+
+    int M = t_total/T;
+
+    qref_r.resize(7,M);
+    qref_r.setZero();
+    VectorXd q_end(7,1);
+
+    // define right_hand obj
+    right_hand hand_r;
+
+    VectorXd r_target_r(3);
+    MatrixXd R_target_r(3,3);
+
+    VectorXd r_right_palm(3);
+    MatrixXd R_right_palm(3,3);
+
+    handWriting hwr;
+
+    while (count < M) {
+        hwr.t=time_r;
+        hwr.Write_y_axis(length, time);
+        V_r<<hwr.V_x,-hwr.V_y,hwr.V_z;
+        hand_r.update_right_hand(q_ra,V_r,r_target_r,R_target_r);
+        r_right_palm=hand_r.r_right_palm;    R_right_palm=hand_r.R_right_palm;
+        hand_r.doQP(q_ra); q_ra=hand_r.q_next; d_r=hand_r.dist;
+        q_end=q_ra-q_init_r;
+        qref_r.block(0,count,7,1)=q_end;
+        count++;
+        time_r=(count)*T;
+    }
+}
+
 bool RobotManager::computeLowerLimbJointMotion(double jnt_command[], int iter)
 {
     for (int j = 0; j < 12; j++)
@@ -867,6 +1023,18 @@ void RobotManager::keyboardHandler(const std_msgs::Int32 &msg)
     //     trajSize_ = robot->changeStep();
     // }
 
+    // if (command == 105)
+    // {
+    //     this->HandInitialCondition();
+    //     hasUpperBodyMotion_ = true;
+    // }
+    // if (command == 106)
+    // {
+    //     this->computeHandLinearMotion(0.1, 4);
+    //     hasUpperBodyMotion_ = true;
+    // }
+    
+
     if (this->isKeyboardTrajectoryEnabled)
     {
         switch (command)
@@ -969,6 +1137,7 @@ bool RobotManager::keyboardWalk(std_srvs::Empty::Request &req, std_srvs::Empty::
     int status;
 
     int iter = 0;
+    int upper_iter = 0;
     int final_iter;
     trajSize_ = robot->OnlineGeneralTrajGen(dt, 2, final_com_pos, final_com_orient,
                                             final_lankle_pos, final_lankle_orient,
@@ -1026,6 +1195,20 @@ bool RobotManager::keyboardWalk(std_srvs::Empty::Request &req, std_srvs::Empty::
             iter = 0;
         }
 
+        if(hasUpperBodyMotion_)
+        {
+            motorCommandArray_[12]=int(qref_r(0,upper_iter)*encoderResolution[0]*harmonicRatio[0]/M_PI/2); 
+            motorCommandArray_[13]=-int(qref_r(1,upper_iter)*encoderResolution[0]*harmonicRatio[1]/M_PI/2);
+            motorCommandArray_[14]=int(qref_r(2,upper_iter)*encoderResolution[1]*harmonicRatio[2]/M_PI/2);
+            motorCommandArray_[15]=int(qref_r(3,upper_iter)*encoderResolution[1]*harmonicRatio[3]/M_PI/2);
+            sendCommand();
+            upper_iter++;
+        }
+        if (upper_iter == qref_r.cols() - 1)
+        {
+            upper_iter = 0;
+            hasUpperBodyMotion_ = false;
+        }
         ros::spinOnce();
         rate_.sleep();
     }

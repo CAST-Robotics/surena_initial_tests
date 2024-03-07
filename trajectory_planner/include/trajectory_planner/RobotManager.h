@@ -28,6 +28,7 @@
 #include "MinimumJerkInterpolation.h"
 #include "S5mod_right_hand.h"
 #include "S5mod_left_hand.h"
+#include "handwriting.h"
 
 #include <Robot.h>
 
@@ -89,6 +90,9 @@ public:
 
     void handMotion(vector<double> &right_motion, vector<double> &left_motion, 
                     double t_step, int step_count, double max_angle, double dt, bool isLeftFirst=true);
+
+    void computeHandLinearMotion(double length, double time);
+    void HandInitialCondition();
 
 private:
     Robot *robot;
@@ -162,6 +166,7 @@ private:
 
     int FTOffsetPeriod_;
     int trajSize_;
+    bool hasUpperBodyMotion_=false;
 
     // Upper Body
     ros::ServiceServer move_hand_single_service;

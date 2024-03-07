@@ -38,7 +38,7 @@ RobotManager::RobotManager(ros::NodeHandle *n)
     isWalkingWithKeyboard = false;
 
     int temp_ratio[12] = {100, 100, 50, 80, 100, 100, 50, 80, 120, 120, 120, 120};
-    int temp_home_abs[12] = {121482, 141026, 128809, 9439, 134584, 130539, 144401, 145695, 131590, 62400, 130202, 141072};
+    int temp_home_abs[12] = {121482, 139938, 128809, 9439, 134584, 130539, 144401, 146783, 131590, 62400, 130202, 141072};
     int temp_abs_high[12] = {108426, 119010, 89733, 136440, 71608, 102443, 119697, 82527, 168562, 160000, 191978, 111376};
     int temp_abs_low[12] = {145354, 183778, 194153, 7000, 203256, 160491, 150225, 180000, 61510, 61000, 61482, 172752};
     int temp_abs2inc_dir[12] = {1, 1, -1, -1, -1, 1, 1, 1, -1, 1, 1, 1};
@@ -817,8 +817,7 @@ void RobotManager::handMotion(vector<double> &right_traj, vector<double> &left_t
                 q_l[k] = q_l[k-1] - delta_sign * delta_q/2;
             } 
             else if(i == step_count)
-            {
-                
+            {   
                 int idx = (i-1) * t_step / dt + j;
                 q_r[idx] = q_r[idx-1] + delta_sign * pow((-1),(i-1)) * delta_q/2;
                 q_l[idx] = q_l[idx-1] - delta_sign * pow((-1),(i-1)) * delta_q/2;
@@ -849,7 +848,7 @@ void RobotManager::keyboardHandler(const std_msgs::Int32 &msg)
     double step_height = 0;
     double theta = 0.0;
     double slope = 0.0;
-    double offset = 0.0;
+    double offset = 0.01;
     bool is_config = false;
 
     double final_com_pos[3] = {0, 0, COM_height};
@@ -873,8 +872,9 @@ void RobotManager::keyboardHandler(const std_msgs::Int32 &msg)
         switch (command)
         {
         case 119: // w: move forward
-            step_count = 2;
-            step_width = -0.1;
+            step_count = 4;
+            step_width = -0.0;
+            step_length = 0.15;
             theta = 0.0;
             // robot->trajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 
             //                step_width, dt, theta, ankle_height, step_height, slope, offset, is_config);
@@ -899,7 +899,7 @@ void RobotManager::keyboardHandler(const std_msgs::Int32 &msg)
             // step_count = 2;
             // step_length = -0.15;
             // theta = 0.17;
-            final_com_pos[1] = 0.07;
+            final_com_pos[1] = 0.1;
             trajSize_ = robot->OnlineGeneralTrajGen(dt, 2, final_com_pos, final_com_orient,
                                                     final_lankle_pos, final_lankle_orient,
                                                     final_rankle_pos, final_rankle_orient);
@@ -911,9 +911,14 @@ void RobotManager::keyboardHandler(const std_msgs::Int32 &msg)
             break;
 
         case 100: // d: turn right
-            step_count = 2;
-            step_length = 0.15;
-            theta = 0.17;
+            // step_count = 2;
+            // step_length = 0.15;
+            // theta = 0.17;
+            final_com_pos[1] = 0.1;
+            final_rankle_pos[2] = 0.035;
+            trajSize_ = robot->OnlineGeneralTrajGen(dt, 2, final_com_pos, final_com_orient,
+                                                    final_lankle_pos, final_lankle_orient,
+                                                    final_rankle_pos, final_rankle_orient);
             // robot->trajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 
             //                step_width, dt, theta, ankle_height, step_height, slope, offset, is_config);
             // trajSize_ = robot->OnlineDCMTrajGen(step_count, t_step, alpha, t_double_support, COM_height, step_length, 

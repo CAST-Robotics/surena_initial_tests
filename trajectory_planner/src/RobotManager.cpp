@@ -1018,19 +1018,19 @@ void RobotManager::keyboardHandler(const std_msgs::Int32 &msg)
 
     int command = msg.data;
 
-    // if (command == 101)
+    // if (command == 101) // e
     // {
     //     trajSize_ = robot->changeStep();
     // }
 
-    // if (command == 105)
+    // if (command == 105) // i
     // {
     //     this->HandInitialCondition();
     //     hasUpperBodyMotion_ = true;
     // }
-    // if (command == 106)
+    // if (command == 106) // j
     // {
-    //     this->computeHandLinearMotion(0.1, 4);
+    //     this->computeHandLinearMotion(0.15, 4);
     //     hasUpperBodyMotion_ = true;
     // }
     
@@ -1040,7 +1040,7 @@ void RobotManager::keyboardHandler(const std_msgs::Int32 &msg)
         switch (command)
         {
         case 119: // w: move forward
-            step_count = 4;
+            step_count = 2;
             step_width = -0.0;
             step_length = 0.15;
             theta = 0.0;

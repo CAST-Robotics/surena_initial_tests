@@ -7,6 +7,11 @@ Robot::Robot(ros::NodeHandle *nh, std::string config_path, bool simulation)
     initializeRobotParams();
     resetRobotParams();
     prevCommandedCoMPos_ = Vector3d(0, 0, 0.71);
+    prevCommandedCoMRot_ = Matrix3d::Identity();
+    prevCommandedLeftAnklePos_ = Vector3d(0, 0.0975, 0);
+    prevCommandedLeftAnkleRot_ = Matrix3d::Identity();
+    prevCommandedRightAnklePos_ = Vector3d(0, -0.0975, 0);
+    prevCommandedRightAnkleRot_ = Matrix3d::Identity();
 
     bumpSensorCalibrated_ = false; // doc
     isTrajAvailable_ = false;      // doc
@@ -103,11 +108,11 @@ void Robot::resetRobotParams()
     currentWalkState_ = IDLE;
 
     // prevCommandedCoMPos_ = Vector3d(0, 0, 0.71);
-    prevCommandedCoMRot_ = Matrix3d::Identity();
-    prevCommandedLeftAnklePos_ = Vector3d(0, 0.0975, 0);
-    prevCommandedLeftAnkleRot_ = Matrix3d::Identity();
-    prevCommandedRightAnklePos_ = Vector3d(0, -0.0975, 0);
-    prevCommandedRightAnkleRot_ = Matrix3d::Identity();
+    // prevCommandedCoMRot_ = Matrix3d::Identity();
+    // prevCommandedLeftAnklePos_ = Vector3d(0, 0.0975, 0);
+    // prevCommandedLeftAnkleRot_ = Matrix3d::Identity();
+    // prevCommandedRightAnklePos_ = Vector3d(0, -0.0975, 0);
+    // prevCommandedRightAnkleRot_ = Matrix3d::Identity();
 }
 
 void Robot::spinOnline(double config[], double jnt_vel[], Vector3d torque_r, Vector3d torque_l,
@@ -842,8 +847,8 @@ int Robot::OnlineDCMTrajGen(int step_count, double t_step, double alpha, double 
         stepPlanner_->generateFootSteps(ankle_rf, dcm_rf, step_length, step_width, step_height, foot_step_size, theta, com_offset);
     }
 
-    dcm_rf[0] = Vector3d(currentCommandedCoMPos_(0), currentCommandedCoMPos_(1), 0.0);
-
+    dcm_rf[0] = Vector3d(prevCommandedCoMPos_(0), prevCommandedCoMPos_(1), 0.0);
+    
     COM_height_ = COM_height;
 
     if (DCMPlanner_ != nullptr) {
@@ -858,7 +863,7 @@ int Robot::OnlineDCMTrajGen(int step_count, double t_step, double alpha, double 
 
     int trajectory_size = DCMPlanner_->getLength();
     
-    DCMPlanner_->setInitCoM(currentCommandedCoMPos_);
+    DCMPlanner_->setInitCoM(prevCommandedCoMPos_);
     DCMPlanner_->setOnlineFoot(dcm_rf, -sign);
     DCMPlanner_->calculateRotCoeffs();
 
@@ -868,7 +873,7 @@ int Robot::OnlineDCMTrajGen(int step_count, double t_step, double alpha, double 
     onlineWalk_->setBaseHeight(COM_height);
     onlineWalk_->setBaseIdle(shank_ + thigh_);
     onlineWalk_->setBaseLowHeight(0.65);
-    onlineWalk_->setInitCoM(currentCommandedCoMPos_);
+    onlineWalk_->setInitCoM(prevCommandedCoMPos_);
 
     currentWalkState_ = WALK;
 
@@ -1072,7 +1077,6 @@ bool Robot::resetTraj()
 {
     DCMPlanner_ = nullptr;
     anklePlanner_ = nullptr;
-    resetRobotParams();
 
     CoMPos_.clear();
     CoMRot_.clear();
